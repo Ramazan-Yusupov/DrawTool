@@ -7,7 +7,6 @@ import {
 } from "@/entities/element";
 import { toolStore } from "@/entities/tool";
 import { sceneStore } from "@/entities/scene";
-import { CANVAS_CONFIG } from "@/shared/config";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
 import { toolSettingsStore } from "@/features/change-style";
@@ -54,7 +53,7 @@ export function useDrawShape() {
   }, []);
 
   function updateIdleIndicator(event: ReactPointerEvent<HTMLCanvasElement>) {
-    const settings = toolSettingsStore.get();
+    const settings = toolSettingsStore.get("rectangle");
 
     if (toolStore.get() !== "rectangle" || !settings.snapToGrid) {
       snapIndicatorStore.clear();
@@ -63,7 +62,7 @@ export function useDrawShape() {
 
     const point = getWorldPointerPosition(event);
 
-    snapIndicatorStore.set(snapPointToGrid(point, CANVAS_CONFIG.snapSize));
+    snapIndicatorStore.set(snapPointToGrid(point, settings.snapSize));
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
@@ -72,13 +71,14 @@ export function useDrawShape() {
     }
 
     const rawStartPoint = getWorldPointerPosition(event);
-    const settings = toolSettingsStore.get();
+    const settings = toolSettingsStore.get("rectangle");
 
     const { startPoint } = getDrawingPoints(
       rawStartPoint,
       rawStartPoint,
       event.shiftKey,
       settings.snapToGrid,
+      settings.snapSize,
     );
 
     const element = createRectangle({
@@ -108,13 +108,14 @@ export function useDrawShape() {
     }
 
     const currentPoint = getWorldPointerPosition(event);
-    const settings = toolSettingsStore.get();
+    const settings = toolSettingsStore.get("rectangle");
 
     const points = getDrawingPoints(
       drawing.startPoint,
       currentPoint,
       event.shiftKey,
       settings.snapToGrid,
+      settings.snapSize,
     );
 
     sceneStore.updateById(drawing.elementId, (element) =>

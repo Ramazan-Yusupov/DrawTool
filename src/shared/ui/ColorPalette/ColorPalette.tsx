@@ -1,4 +1,4 @@
-import type { ColorOption } from "@/features/change-style/model/styleOptions";
+import type { ColorOption } from "@/shared/types";
 
 type ColorPaletteProps = {
   label: string;

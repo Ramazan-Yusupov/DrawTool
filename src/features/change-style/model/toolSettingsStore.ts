@@ -1,10 +1,15 @@
 import type { ElementStyle } from "@/entities/element";
+import type { ToolId } from "@/entities/tool";
+import { CANVAS_CONFIG } from "@/shared/config";
+import { clamp } from "@/shared/lib";
 import { createToolSettings } from "./createToolSettings";
 import type { ToolSettings } from "./types";
 
 type SettingsListener = () => void;
 
-let settings = createToolSettings();
+const defaultSettings = createToolSettings();
+
+let settingsByTool: Partial<Record<ToolId, ToolSettings>> = {};
 
 const listeners = new Set<SettingsListener>();
 
@@ -12,35 +17,61 @@ function notifyListeners() {
   listeners.forEach((listener) => listener());
 }
 
-function setSettings(nextSettings: ToolSettings) {
-  settings = nextSettings;
+function getSettings(toolId: ToolId) {
+  return settingsByTool[toolId] ?? defaultSettings;
+}
+
+function updateSettings(
+  toolId: ToolId,
+  updater: (settings: ToolSettings) => ToolSettings,
+) {
+  settingsByTool = {
+    ...settingsByTool,
+    [toolId]: updater(getSettings(toolId)),
+  };
+
   notifyListeners();
 }
 
+function normalizeSnapSize(value: number) {
+  return clamp(
+    Math.round(value),
+    CANVAS_CONFIG.minSnapSize,
+    CANVAS_CONFIG.maxSnapSize,
+  );
+}
+
 export const toolSettingsStore = {
-  get() {
-    return settings;
+  get(toolId: ToolId) {
+    return getSettings(toolId);
   },
 
-  patchStyle(patch: Partial<ElementStyle>) {
-    setSettings({
+  patchStyle(toolId: ToolId, patch: Partial<ElementStyle>) {
+    updateSettings(toolId, (settings) => ({
       ...settings,
       style: {
         ...settings.style,
         ...patch,
       },
-    });
+    }));
   },
 
-  setSnapToGrid(snapToGrid: boolean) {
-    setSettings({
+  setSnapToGrid(toolId: ToolId, snapToGrid: boolean) {
+    updateSettings(toolId, (settings) => ({
       ...settings,
       snapToGrid,
-    });
+    }));
   },
 
-  reset() {
-    setSettings(createToolSettings());
+  setSnapSize(toolId: ToolId, snapSize: number) {
+    updateSettings(toolId, (settings) => ({
+      ...settings,
+      snapSize: normalizeSnapSize(snapSize),
+    }));
+  },
+
+  reset(toolId: ToolId) {
+    updateSettings(toolId, () => createToolSettings());
   },
 
   subscribe(listener: SettingsListener) {

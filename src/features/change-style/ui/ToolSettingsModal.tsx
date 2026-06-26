@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import { TOOL_LABELS, toolStore } from "@/entities/tool";
 import { Modal } from "@/shared/ui";
 import { TOOL_SETTINGS_CAPABILITIES } from "../model/toolCapabilities";
@@ -18,10 +18,15 @@ export function ToolSettingsModal({ isOpen, onClose }: ToolSettingsModalProps) {
     toolStore.get,
   );
 
+  const getSettingsSnapshot = useCallback(
+    () => toolSettingsStore.get(activeTool),
+    [activeTool],
+  );
+
   const settings = useSyncExternalStore(
     toolSettingsStore.subscribe,
-    toolSettingsStore.get,
-    toolSettingsStore.get,
+    getSettingsSnapshot,
+    getSettingsSnapshot,
   );
 
   const capabilities = TOOL_SETTINGS_CAPABILITIES[activeTool];
@@ -33,7 +38,7 @@ export function ToolSettingsModal({ isOpen, onClose }: ToolSettingsModalProps) {
       title={`Настройки: ${TOOL_LABELS[activeTool]}`}
     >
       <p className="mb-5 text-sm text-text-muted">
-        Настройки применяются к следующим созданным элементам.
+        Параметры сохраняются отдельно для каждого инструмента.
       </p>
 
       {(capabilities.stroke ||
@@ -42,7 +47,7 @@ export function ToolSettingsModal({ isOpen, onClose }: ToolSettingsModalProps) {
         capabilities.opacity) && (
         <ToolStyleSection
           capabilities={capabilities}
-          onChange={toolSettingsStore.patchStyle}
+          onChange={(patch) => toolSettingsStore.patchStyle(activeTool, patch)}
           style={settings.style}
         />
       )}
@@ -50,7 +55,13 @@ export function ToolSettingsModal({ isOpen, onClose }: ToolSettingsModalProps) {
       {capabilities.snap && (
         <SnapSection
           checked={settings.snapToGrid}
-          onChange={toolSettingsStore.setSnapToGrid}
+          onCheckedChange={(checked) =>
+            toolSettingsStore.setSnapToGrid(activeTool, checked)
+          }
+          onSnapSizeChange={(snapSize) =>
+            toolSettingsStore.setSnapSize(activeTool, snapSize)
+          }
+          snapSize={settings.snapSize}
         />
       )}
     </Modal>

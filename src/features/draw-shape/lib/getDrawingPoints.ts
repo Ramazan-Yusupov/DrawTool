@@ -1,4 +1,3 @@
-import { CANVAS_CONFIG } from "@/shared/config";
 import type { Point } from "@/shared/types";
 import { constrainPointToSquare } from "@/shared/lib/math/constrainPointToSquare";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
@@ -13,15 +12,16 @@ export function getDrawingPoints(
   currentPoint: Point,
   isShiftPressed: boolean,
   snapToGrid: boolean,
+  snapSize: number,
 ): DrawingPoints {
   const shouldSnap = isShiftPressed || snapToGrid;
 
   const adjustedStart = shouldSnap
-    ? snapPointToGrid(startPoint, CANVAS_CONFIG.snapSize)
+    ? snapPointToGrid(startPoint, snapSize)
     : startPoint;
 
   const adjustedEnd = shouldSnap
-    ? snapPointToGrid(currentPoint, CANVAS_CONFIG.snapSize)
+    ? snapPointToGrid(currentPoint, snapSize)
     : currentPoint;
 
   if (!isShiftPressed) {
@@ -33,10 +33,6 @@ export function getDrawingPoints(
 
   return {
     startPoint: adjustedStart,
-    endPoint: constrainPointToSquare(
-      adjustedStart,
-      adjustedEnd,
-      CANVAS_CONFIG.snapSize,
-    ),
+    endPoint: constrainPointToSquare(adjustedStart, adjustedEnd, snapSize),
   };
 }

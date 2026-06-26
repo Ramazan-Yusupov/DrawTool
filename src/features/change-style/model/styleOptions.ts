@@ -1,7 +1,4 @@
-export type ColorOption = {
-  label: string;
-  value: string;
-};
+import type { ColorOption } from "@/shared/types";
 
 export const STROKE_COLORS: readonly ColorOption[] = [
   { label: "Тёмный", value: "#1e293b" },

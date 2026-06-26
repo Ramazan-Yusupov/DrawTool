@@ -1,16 +1,25 @@
+import { NumberField } from "@/shared/ui";
+
 type SnapSectionProps = {
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  snapSize: number;
+  onCheckedChange: (checked: boolean) => void;
+  onSnapSizeChange: (snapSize: number) => void;
 };
 
-export function SnapSection({ checked, onChange }: SnapSectionProps) {
+export function SnapSection({
+  checked,
+  snapSize,
+  onCheckedChange,
+  onSnapSizeChange,
+}: SnapSectionProps) {
   return (
-    <section className="border-t border-border pt-5">
+    <section className="space-y-4 border-t border-border pt-5">
       <label className="flex cursor-pointer items-start gap-3">
         <input
           checked={checked}
           className="mt-1 size-4 accent-accent"
-          onChange={(event) => onChange(event.currentTarget.checked)}
+          onChange={(event) => onCheckedChange(event.currentTarget.checked)}
           type="checkbox"
         />
 
@@ -20,10 +29,21 @@ export function SnapSection({ checked, onChange }: SnapSectionProps) {
           </strong>
 
           <span className="block text-xs text-text-muted">
-            Новые фигуры привязываются к шагу 10px.
+            Новые фигуры будут захватывать ближайшую точку.
           </span>
         </span>
       </label>
+
+      <NumberField
+        description="Используется для привязки и Shift + ЛКМ."
+        label="Шаг привязки"
+        max={200}
+        min={1}
+        onChange={onSnapSizeChange}
+        step={1}
+        suffix="px"
+        value={snapSize}
+      />
     </section>
   );
 }
