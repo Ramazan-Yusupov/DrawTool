@@ -16,7 +16,7 @@ export function ToolButton({ isActive, item, onClick }: ToolButtonProps) {
       className={`relative grid size-10 place-items-center rounded-lg transition-colors ${
         isActive
           ? "bg-accent text-white"
-          : "text-text hover:bg-surface-muted"
+          : "text-text hover:bg-control"
       }`}
       onClick={onClick}
       title={`${item.label} (${item.shortcut})`}

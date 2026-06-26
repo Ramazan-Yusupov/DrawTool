@@ -18,7 +18,7 @@ export function useTextTool() {
     const point = settings.snapToGrid
       ? snapPointToGrid(worldPoint, settings.snapSize)
       : worldPoint;
-    const size = getTextSize(" ", settings.fontSize);
+    const size = getTextSize(" ", settings.fontSize, settings.fontFamily);
     const element = createText({
       x: point.x,
       y: point.y,

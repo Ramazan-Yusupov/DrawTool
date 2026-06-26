@@ -1,5 +1,5 @@
 import { getElementBounds, renderElement } from "@/entities/element";
-import { getVisibleBounds, worldToScreen } from "@/entities/viewport";
+import { getVisibleBounds } from "@/entities/viewport";
 import { sceneStore } from "@/entities/scene";
 import { textEditorStore } from "@/features/edit-text/model/textEditorStore";
 import { renderSelection } from "./renderSelection";
@@ -24,51 +24,33 @@ function isVisible(
   );
 }
 
-function renderWorldOrigin(
-  context: CanvasRenderingContext2D,
-  viewport: Viewport,
-  size: CanvasSize,
-) {
-  const origin = worldToScreen({ x: 0, y: 0 }, viewport);
-
-  context.save();
-  context.strokeStyle = "rgb(37 99 235 / 45%)";
-  context.lineWidth = 1;
-
-  context.beginPath();
-
-  if (origin.x >= 0 && origin.x <= size.width) {
-    context.moveTo(origin.x + 0.5, 0);
-    context.lineTo(origin.x + 0.5, size.height);
-  }
-
-  if (origin.y >= 0 && origin.y <= size.height) {
-    context.moveTo(0, origin.y + 0.5);
-    context.lineTo(size.width, origin.y + 0.5);
-  }
-
-  context.stroke();
-  context.restore();
-}
-
 export function renderScene({ context, viewport, size }: RenderSceneParams) {
   const visibleBounds = getVisibleBounds(viewport, size);
   const { elements } = sceneStore.get();
   const editingTextId = textEditorStore.get().elementId;
 
-  renderWorldOrigin(context, viewport, size);
-
   context.save();
   context.translate(-viewport.x * viewport.zoom, -viewport.y * viewport.zoom);
   context.scale(viewport.zoom, viewport.zoom);
 
-  elements.forEach((element) => {
-    const isEditedText = element.type === "text" && element.id === editingTextId;
+  const visibleElements = elements.filter((element) => {
+    const isEditedText =
+      element.type === "text" && element.id === editingTextId;
 
-    if (!isEditedText && isVisible(getElementBounds(element), visibleBounds)) {
-      renderElement(context, element);
-    }
+    return !isEditedText && isVisible(getElementBounds(element), visibleBounds);
   });
+
+  visibleElements
+    .filter((element) => element.type !== "text")
+    .forEach((element) => {
+      renderElement(context, element);
+    });
+
+  visibleElements
+    .filter((element) => element.type === "text")
+    .forEach((element) => {
+      renderElement(context, element);
+    });
 
   context.restore();
   renderSelection(context, viewport);

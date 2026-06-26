@@ -49,7 +49,7 @@ export function NumberField({
 
       <div className="flex items-center gap-2">
         <input
-          className="h-9 w-24 rounded-md border border-border bg-surface px-2 text-sm text-text outline-none focus:border-accent"
+          className="h-9 w-24 rounded-md border border-border bg-control px-2 text-sm text-text outline-none focus:border-accent"
           inputMode="numeric"
           max={max}
           min={min}

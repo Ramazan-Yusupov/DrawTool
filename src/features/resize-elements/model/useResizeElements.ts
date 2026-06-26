@@ -3,13 +3,19 @@ import type { BoardElement } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import type { Point } from "@/shared/types";
 import { resizeElement } from "./resizeElements";
-import type { ResizeHandle } from "./types";
+import type { ResizeHandle, ResizeModifiers } from "./types";
 
 type ActiveResize = {
   elementId: string;
   handle: ResizeHandle;
   initialElement: BoardElement;
   startPoint: Point;
+};
+
+const DEFAULT_MODIFIERS: ResizeModifiers = {
+  snapToGrid: false,
+  keepAspectRatio: false,
+  resizeFromCenter: false,
 };
 
 function cloneElementForResize(element: BoardElement): BoardElement {
@@ -44,7 +50,10 @@ export function useResizeElements() {
     };
   }
 
-  function updateResize(point: Point) {
+  function updateResize(
+    point: Point,
+    modifiers: ResizeModifiers = DEFAULT_MODIFIERS,
+  ) {
     const activeResize = resizeRef.current;
 
     if (!activeResize) {
@@ -56,6 +65,7 @@ export function useResizeElements() {
       activeResize.handle,
       activeResize.startPoint,
       point,
+      modifiers,
     );
 
     return true;

@@ -18,19 +18,19 @@ export function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
   return (
     <fieldset className="m-0 border-0 p-0">
-      <legend className="mb-2 text-sm text-text-muted">{label}</legend>
+      <legend className="mb-2 text-xs font-medium text-text-muted">{label}</legend>
 
-      <div className="grid grid-flow-col auto-cols-fr overflow-hidden rounded-md border border-border">
+      <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-lg">
         {items.map((item) => {
           const isActive = item.value === value;
 
           return (
             <button
               aria-pressed={isActive}
-              className={`min-h-9 px-2 text-xs ${
+              className={`min-h-9 rounded-md border border-transparent px-2 text-xs transition-colors ${
                 isActive
-                  ? "bg-accent font-medium text-white"
-                  : "bg-surface hover:bg-surface-muted"
+                  ? "bg-control-active font-medium text-white shadow-sm"
+                  : "bg-control text-text hover:bg-surface-muted"
               }`}
               key={item.value}
               onClick={() => onChange(item.value)}

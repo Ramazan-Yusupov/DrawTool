@@ -16,11 +16,11 @@ export function RangeField({
   onChange,
 }: RangeFieldProps) {
   return (
-    <label className="grid gap-2 text-sm text-text-muted">
+    <label className="grid gap-2 text-xs font-medium text-text-muted">
       <span>{label}</span>
 
       <input
-        className="w-full accent-accent"
+        className="drawtool-range w-full"
         max={max}
         min={min}
         onChange={(event) => onChange(Number(event.currentTarget.value))}

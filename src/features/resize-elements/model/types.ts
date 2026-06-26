@@ -18,6 +18,12 @@ export type ResizeHandlePoint = {
   point: Point;
 };
 
+export type ResizeModifiers = {
+  snapToGrid: boolean;
+  keepAspectRatio: boolean;
+  resizeFromCenter: boolean;
+};
+
 export type ResizeState = {
   elementId: string;
   handle: ResizeHandle;

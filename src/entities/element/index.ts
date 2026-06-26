@@ -12,7 +12,13 @@ export { updateElement } from "./model/updateElement";
 
 export { getArrowPathPoints } from "./lib/getArrowPathPoints";
 export { getElementBounds } from "./lib/getElementBounds";
-export { getTextSize, getTextElementSize } from "./lib/getTextSize";
+export {
+  getTextContentSize,
+  getTextSize,
+  getTextElementSize,
+  TEXT_ELEMENT_PADDING,
+  TEXT_LINE_HEIGHT_RATIO,
+} from "./lib/getTextSize";
 export { hitTestElement } from "./lib/hitTestElement";
 export { normalizeElement } from "./lib/normalizeElement";
 

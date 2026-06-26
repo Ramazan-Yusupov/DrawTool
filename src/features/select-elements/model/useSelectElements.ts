@@ -107,7 +107,11 @@ export function useSelectElements() {
     const point = getWorldPointerPosition(event);
 
     if (interaction.mode === "resize") {
-      resize.updateResize(point);
+      resize.updateResize(point, {
+        snapToGrid: event.ctrlKey || event.metaKey,
+        keepAspectRatio: event.shiftKey,
+        resizeFromCenter: event.altKey,
+      });
       return;
     }
 

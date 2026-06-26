@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { getTextSize, updateElement } from "@/entities/element";
+import {
+  getTextContentSize,
+  getTextSize,
+  TEXT_ELEMENT_PADDING,
+  TEXT_LINE_HEIGHT_RATIO,
+  updateElement,
+} from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import { viewportStore } from "@/entities/viewport";
 import { textEditorStore } from "../model/textEditorStore";
@@ -12,6 +18,7 @@ export function TextEditorOverlay() {
   );
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const draftRef = useRef("");
+  const isFinishingRef = useRef(false);
   const [draft, setDraft] = useState("");
 
   const scene = useSyncExternalStore(
@@ -30,14 +37,19 @@ export function TextEditorOverlay() {
   const editingText = element?.type === "text" ? element : null;
 
   useEffect(() => {
-    if (!editingText) {
+    const elementId = editorState.elementId;
+    const currentElement = elementId
+      ? sceneStore.get().elements.find((item) => item.id === elementId)
+      : null;
+
+    if (!currentElement || currentElement.type !== "text") {
       return;
     }
 
-    const initialText = editingText.text;
-    draftRef.current = initialText;
+    isFinishingRef.current = false;
+    draftRef.current = currentElement.text;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDraft(initialText);
+    setDraft(currentElement.text);
 
     const frame = requestAnimationFrame(() => {
       const textarea = textareaRef.current;
@@ -46,7 +58,7 @@ export function TextEditorOverlay() {
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [editorState.elementId, editingText]);
+  }, [editorState.elementId]);
 
   if (!editingText) {
     return null;
@@ -55,15 +67,44 @@ export function TextEditorOverlay() {
   const editingElement = editingText;
   const screenX = (editingElement.x - viewport.x) * viewport.zoom;
   const screenY = (editingElement.y - viewport.y) * viewport.zoom;
+  const contentSize = getTextContentSize(
+    draft || " ",
+    editingElement.fontSize,
+    editingElement.fontFamily,
+  );
   const fontSize = editingElement.fontSize * viewport.zoom;
-  const draftSize = getTextSize(draft || " ", editingElement.fontSize);
+
+  function syncTextElement(nextText: string) {
+    const size = getTextSize(
+      nextText || " ",
+      editingElement.fontSize,
+      editingElement.fontFamily,
+    );
+
+    sceneStore.updateById(editingElement.id, (item) =>
+      item.type === "text"
+        ? updateElement(item, {
+            text: nextText,
+            width: size.width,
+            height: size.height,
+          })
+        : item,
+    );
+  }
 
   function updateDraft(nextDraft: string) {
     draftRef.current = nextDraft;
     setDraft(nextDraft);
+    syncTextElement(nextDraft);
   }
 
   function commit() {
+    if (isFinishingRef.current) {
+      return;
+    }
+
+    isFinishingRef.current = true;
+
     const currentElement = sceneStore
       .get()
       .elements.find((item) => item.id === editingElement.id);
@@ -73,12 +114,12 @@ export function TextEditorOverlay() {
       return;
     }
 
-    const text = draftRef.current.trimEnd();
+    const text = draftRef.current.replace(/\r\n/g, "\n");
 
-    if (!text && editorState.wasCreated) {
+    if (!text.trim() && editorState.wasCreated) {
       sceneStore.removeById(currentElement.id);
     } else {
-      const size = getTextSize(text || " ", currentElement.fontSize);
+      const size = getTextSize(text || " ", currentElement.fontSize, currentElement.fontFamily);
       sceneStore.updateById(currentElement.id, (item) =>
         item.type === "text"
           ? updateElement(item, {
@@ -94,6 +135,12 @@ export function TextEditorOverlay() {
   }
 
   function cancel() {
+    if (isFinishingRef.current) {
+      return;
+    }
+
+    isFinishingRef.current = true;
+
     if (editorState.wasCreated) {
       sceneStore.removeById(editingElement.id);
     }
@@ -105,13 +152,23 @@ export function TextEditorOverlay() {
     <textarea
       ref={textareaRef}
       aria-label="Редактирование текста"
-      className="absolute z-30 resize-none overflow-hidden border-0 bg-transparent p-0 outline-none"
+      className="absolute z-30 resize-none overflow-hidden rounded-sm border border-dashed border-accent/60 bg-transparent p-0 outline-none"
       onBlur={commit}
       onChange={(event) => updateDraft(event.currentTarget.value)}
       onKeyDown={(event) => {
-        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        if (
+          (event.ctrlKey || event.metaKey) &&
+          event.key === "Enter"
+        ) {
           event.preventDefault();
-          event.currentTarget.blur();
+          commit();
+          return;
+        }
+
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          commit();
+          return;
         }
 
         if (event.key === "Escape") {
@@ -121,15 +178,15 @@ export function TextEditorOverlay() {
       }}
       spellCheck={false}
       style={{
-        left: screenX,
-        top: screenY,
-        width: Math.max(draftSize.width * viewport.zoom + 16, 80),
-        height: Math.max(draftSize.height * viewport.zoom + 12, fontSize * 1.4),
+        left: screenX + TEXT_ELEMENT_PADDING * viewport.zoom,
+        top: screenY + TEXT_ELEMENT_PADDING * viewport.zoom,
+        width: Math.max(contentSize.width * viewport.zoom + 2, 52),
+        height: Math.max(contentSize.height * viewport.zoom + 2, fontSize * 1.25),
         caretColor: editingElement.style.strokeColor,
         color: editingElement.style.strokeColor,
         fontFamily: editingElement.fontFamily,
         fontSize,
-        lineHeight: 1.25,
+        lineHeight: TEXT_LINE_HEIGHT_RATIO,
         opacity: editingElement.style.opacity,
         textAlign: editingElement.textAlign,
       }}

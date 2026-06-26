@@ -1,3 +1,4 @@
+import { themeStore } from "@/features/toggle-theme";
 import type { Viewport } from "@/entities/viewport";
 import { CANVAS_CONFIG } from "@/shared/config";
 import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
@@ -8,8 +9,8 @@ type RenderGridParams = {
   size: CanvasSize;
 };
 
-function getGridStep(zoom: number) {
-  const minPixelDistance = 16;
+function getDotStep(zoom: number) {
+  const minPixelDistance = 14;
   const baseStep = CANVAS_CONFIG.gridSize;
   const multiplier = Math.max(
     1,
@@ -24,29 +25,26 @@ function getOffset(position: number, step: number) {
 }
 
 export function renderGrid({ context, viewport, size }: RenderGridParams) {
-  const worldStep = getGridStep(viewport.zoom);
+  const worldStep = getDotStep(viewport.zoom);
   const screenStep = worldStep * viewport.zoom;
-
   const startX = getOffset(viewport.x * viewport.zoom, screenStep);
   const startY = getOffset(viewport.y * viewport.zoom, screenStep);
+  const isDark = themeStore.get() === "dark";
+  const dotRadius = Math.min(1.35, Math.max(0.65, viewport.zoom * 0.85));
 
   context.save();
-
-  context.strokeStyle = "rgb(148 163 184 / 22%)";
-  context.lineWidth = 1;
-
+  context.fillStyle = isDark
+    ? "rgb(148 163 184 / 28%)"
+    : "rgb(100 116 139 / 21%)";
   context.beginPath();
 
-  for (let x = startX; x <= size.width; x += screenStep) {
-    context.moveTo(x + 0.5, 0);
-    context.lineTo(x + 0.5, size.height);
+  for (let x = startX; x <= size.width + screenStep; x += screenStep) {
+    for (let y = startY; y <= size.height + screenStep; y += screenStep) {
+      context.moveTo(x + dotRadius, y);
+      context.arc(x, y, dotRadius, 0, Math.PI * 2);
+    }
   }
 
-  for (let y = startY; y <= size.height; y += screenStep) {
-    context.moveTo(0, y + 0.5);
-    context.lineTo(size.width, y + 0.5);
-  }
-
-  context.stroke();
+  context.fill();
   context.restore();
 }

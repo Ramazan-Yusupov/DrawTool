@@ -1,3 +1,5 @@
+import { getElementBounds } from "../lib/getElementBounds";
+import { TEXT_ELEMENT_PADDING, TEXT_LINE_HEIGHT_RATIO } from "../lib/getTextSize";
 import type { TextElement } from "../model/types";
 
 export function renderText(
@@ -5,7 +7,10 @@ export function renderText(
   element: TextElement,
 ) {
   const { style } = element;
-  const lineHeight = Math.round(element.fontSize * 1.25);
+  const bounds = getElementBounds(element);
+  const lineHeight = Math.round(element.fontSize * TEXT_LINE_HEIGHT_RATIO);
+  const contentLeft = bounds.x + TEXT_ELEMENT_PADDING;
+  const contentRight = bounds.x + bounds.width - TEXT_ELEMENT_PADDING;
 
   context.save();
   context.globalAlpha = style.opacity;
@@ -16,13 +21,17 @@ export function renderText(
 
   const anchorX =
     element.textAlign === "center"
-      ? element.x + element.width / 2
+      ? (contentLeft + contentRight) / 2
       : element.textAlign === "right"
-        ? element.x + element.width
-        : element.x;
+        ? contentRight
+        : contentLeft;
 
   element.text.split("\n").forEach((line, index) => {
-    context.fillText(line || " ", anchorX, element.y + index * lineHeight);
+    context.fillText(
+      line || " ",
+      anchorX,
+      bounds.y + TEXT_ELEMENT_PADDING + index * lineHeight,
+    );
   });
 
   context.restore();

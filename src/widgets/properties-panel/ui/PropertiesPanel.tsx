@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { ArrowRightLeft, CaseSensitive, SlidersHorizontal } from "lucide-react";
-import { updateElement } from "@/entities/element";
+import { getTextSize, updateElement } from "@/entities/element";
 import type { ArrowRouting, BoardElement, ElementStyle, TextAlign } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import { getSelectedElements, selectionStore } from "@/entities/selection";
@@ -110,9 +110,20 @@ export function PropertiesPanel() {
     textAlign?: TextAlign;
   }) {
     if (primaryElement?.type === "text") {
-      sceneStore.updateById(primaryElement.id, (element) =>
-        element.type === "text" ? updateElement(element, patch) : element,
-      );
+      sceneStore.updateById(primaryElement.id, (element) => {
+        if (element.type !== "text") {
+          return element;
+        }
+
+        const fontSize = patch.fontSize ?? element.fontSize;
+        const size = getTextSize(
+          element.text || " ",
+          fontSize,
+          element.fontFamily,
+        );
+
+        return updateElement(element, { ...patch, width: size.width, height: size.height });
+      });
       return;
     }
 
@@ -124,7 +135,7 @@ export function PropertiesPanel() {
   }
 
   return (
-    <aside className="absolute right-4 top-20 z-20 max-h-[calc(100dvh-7rem)] w-72 overflow-y-auto rounded-xl border border-border bg-surface p-3 shadow-panel">
+    <aside className="absolute right-4 top-20 z-20 max-h-[calc(100dvh-7rem)] w-[18rem] overflow-y-auto rounded-xl border border-border bg-panel p-3 shadow-panel">
       <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
         <SlidersHorizontal size={17} className="text-accent" />
         <div>
@@ -163,7 +174,7 @@ export function PropertiesPanel() {
             />
             {primaryElement?.type === "arrow" && primaryElement.routing === "elbow" && (
               <button
-                className="w-full rounded-md border border-border px-2 py-2 text-xs text-text hover:bg-surface-muted"
+                className="w-full rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
                 onClick={() =>
                   sceneStore.updateById(primaryElement.id, (element) =>
                     element.type === "arrow"
