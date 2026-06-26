@@ -15,7 +15,10 @@ import { viewportStore } from "@/entities/viewport";
 import { textEditorStore } from "../model/textEditorStore";
 
 function cloneTextElement(element: TextElement): TextElement {
-  return { ...element, style: { ...element.style } };
+  return {
+    ...element,
+    style: { ...element.style },
+  };
 }
 
 export function TextEditorOverlay() {
@@ -24,10 +27,12 @@ export function TextEditorOverlay() {
     textEditorStore.get,
     textEditorStore.get,
   );
+
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const draftRef = useRef("");
   const originalElementRef = useRef<TextElement | null>(null);
   const isFinishingRef = useRef(false);
+
   const [draft, setDraft] = useState("");
 
   const scene = useSyncExternalStore(
@@ -35,18 +40,22 @@ export function TextEditorOverlay() {
     sceneStore.get,
     sceneStore.get,
   );
-  const element = editorState.elementId
-    ? scene.elements.find((item) => item.id === editorState.elementId)
-    : null;
+
   const viewport = useSyncExternalStore(
     viewportStore.subscribe,
     viewportStore.get,
     viewportStore.get,
   );
+
+  const element = editorState.elementId
+    ? scene.elements.find((item) => item.id === editorState.elementId)
+    : null;
+
   const editingText = element?.type === "text" ? element : null;
 
   useEffect(() => {
     const elementId = editorState.elementId;
+
     const currentElement = elementId
       ? sceneStore.get().elements.find((item) => item.id === elementId)
       : null;
@@ -58,11 +67,17 @@ export function TextEditorOverlay() {
     isFinishingRef.current = false;
     originalElementRef.current = cloneTextElement(currentElement);
     draftRef.current = currentElement.text;
+
+    // Во время печати текст не должен иметь selection-frame,
+    // resize-handles и dashed-border от выделения.
+    selectionStore.clear();
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(currentElement.text);
 
     const frame = requestAnimationFrame(() => {
       const textarea = textareaRef.current;
+
       textarea?.focus();
       textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
     });
@@ -75,47 +90,36 @@ export function TextEditorOverlay() {
   }
 
   const editingElement = editingText;
+
   const screenX = (editingElement.x - viewport.x) * viewport.zoom;
   const screenY = (editingElement.y - viewport.y) * viewport.zoom;
+
   const contentSize = getTextContentSize(
     draft || " ",
     editingElement.fontSize,
     editingElement.fontFamily,
   );
+
   const fontSize = editingElement.fontSize * viewport.zoom;
 
-  function growParentFramesIfNeeded() {
-    const nextElements = expandFramesToFitChildren(sceneStore.get().elements);
-
-    if (nextElements !== sceneStore.get().elements) {
-      sceneStore.setElements(nextElements);
-    }
-  }
-
-  function syncTextElement(nextText: string) {
-    const size = getTextSize(
-      nextText || " ",
-      editingElement.fontSize,
-      editingElement.fontFamily,
-    );
-
-    sceneStore.updateById(editingElement.id, (item) =>
-      item.type === "text"
-        ? updateElement(item, {
-            text: nextText,
-            width: size.width,
-            height: size.height,
-          })
-        : item,
-    );
-
-    growParentFramesIfNeeded();
-  }
-
   function updateDraft(nextDraft: string) {
+    /*
+     * Во время ввода не обновляем sceneStore:
+     * - selection-frame остаётся скрытым;
+     * - Frame не прыгает и не расширяется на каждый символ;
+     * - textarea сам растёт по draft.
+     */
     draftRef.current = nextDraft;
     setDraft(nextDraft);
-    syncTextElement(nextDraft);
+  }
+
+  function growParentFramesIfNeeded() {
+    const currentElements = sceneStore.get().elements;
+    const nextElements = expandFramesToFitChildren(currentElements);
+
+    if (nextElements !== currentElements) {
+      sceneStore.setElements(nextElements);
+    }
   }
 
   function commit() {
@@ -139,33 +143,52 @@ export function TextEditorOverlay() {
 
     const text = draftRef.current.replace(/\r\n/g, "\n");
 
-    if (!text.trim() && editorState.wasCreated) {
+    /*
+     * Удаляем только действительно пустой текст.
+     * Один пробел или несколько пробелов считаются содержимым
+     * и будут сохранены.
+     */
+    if (text.length === 0 && editorState.wasCreated) {
       sceneStore.removeById(currentElement.id);
       selectionStore.clear();
-    } else {
-      const size = getTextSize(
-        text || " ",
-        currentElement.fontSize,
-        currentElement.fontFamily,
-      );
-      sceneStore.updateById(currentElement.id, (item) =>
-        item.type === "text"
-          ? updateElement(item, {
-              text,
-              width: size.width,
-              height: size.height,
-            })
-          : item,
-      );
-      growParentFramesIfNeeded();
-      selectionStore.setElementIds([currentElement.id]);
+
+      historyStore.commit();
+      textEditorStore.close();
+      toolStore.set("selection");
+      return;
     }
+
+    const size = getTextSize(
+      text || " ",
+      currentElement.fontSize,
+      currentElement.fontFamily,
+    );
+
+    sceneStore.updateById(currentElement.id, (item) =>
+      item.type === "text"
+        ? updateElement(item, {
+            text,
+            width: size.width,
+            height: size.height,
+          })
+        : item,
+    );
+
+    /*
+     * Только после Enter / blur Frame адаптируется под итоговый текст.
+     * До этого пользователь не видит прыгающую рамку родителя.
+     */
+    growParentFramesIfNeeded();
 
     historyStore.commit();
     textEditorStore.close();
 
-    // Text is also a one-shot tool: return to the selection cursor after
-    // committing so the finished label can immediately be moved or resized.
+    /*
+     * После подтверждения текст снова становится выбранным:
+     * его можно сразу перетаскивать, менять размер или вращать.
+     */
+    selectionStore.setElementIds([currentElement.id]);
+
     toolStore.set("selection");
   }
 
@@ -180,10 +203,13 @@ export function TextEditorOverlay() {
       sceneStore.removeById(editingElement.id);
       selectionStore.clear();
     } else if (originalElementRef.current) {
-      const original = originalElementRef.current;
+      const originalElement = originalElementRef.current;
+
       sceneStore.updateById(editingElement.id, () =>
-        cloneTextElement(original),
+        cloneTextElement(originalElement),
       );
+
+      selectionStore.setElementIds([editingElement.id]);
     }
 
     historyStore.cancel();
@@ -195,7 +221,7 @@ export function TextEditorOverlay() {
     <textarea
       ref={textareaRef}
       aria-label="Редактирование текста"
-      className="absolute z-30 resize-none overflow-hidden rounded-sm border border-dashed border-accent/60 bg-transparent p-0 outline-none"
+      className="absolute z-30 resize-none overflow-hidden border-0 bg-transparent p-0 outline-none"
       onBlur={commit}
       onChange={(event) => updateDraft(event.currentTarget.value)}
       onKeyDown={(event) => {

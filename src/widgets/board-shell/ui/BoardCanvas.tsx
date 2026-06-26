@@ -2,15 +2,17 @@ import { useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 import { toolStore } from "@/entities/tool";
 import { useDrawShape, useFreeDraw } from "@/features/draw-shape";
+import { textEditorStore, useTextTool } from "@/features/edit-text";
 import { useEraser } from "@/features/erase-elements";
-import { useTextTool } from "@/features/edit-text";
 import { useLaserPointer } from "@/features/laser-pointer";
 import { useLassoSelect } from "@/features/lasso-select";
 import { useSelectElements } from "@/features/select-elements";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
 
-type BoardCanvasProps = { canvasRef: RefObject<HTMLCanvasElement | null> };
+type BoardCanvasProps = {
+  canvasRef: RefObject<HTMLCanvasElement | null>;
+};
 
 export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   const activeTool = useSyncExternalStore(
@@ -18,6 +20,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     toolStore.get,
     toolStore.get,
   );
+
   const panEvents = useCanvasPointerEvents();
   const drawingEvents = useDrawShape();
   const freeDrawEvents = useFreeDraw();
@@ -34,44 +37,109 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       ? "cursor-default"
       : activeTool === "eraser"
         ? "cursor-cell"
-        : activeTool === "laser"
-          ? "cursor-crosshair"
-          : "cursor-crosshair";
+        : "cursor-crosshair";
 
   function onToolPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") return selectionEvents.onPointerDown(event);
-    if (activeTool === "text") return textEvents.onPointerDown(event);
-    if (activeTool === "freedraw") return freeDrawEvents.onPointerDown(event);
-    if (activeTool === "eraser") return eraserEvents.onPointerDown(event);
-    if (activeTool === "laser") return laserEvents.onPointerDown(event);
-    if (activeTool === "lasso") return lassoEvents.onPointerDown(event);
+    if (activeTool === "selection") {
+      return selectionEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "text") {
+      return textEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "freedraw") {
+      return freeDrawEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "eraser") {
+      return eraserEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "laser") {
+      return laserEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "lasso") {
+      return lassoEvents.onPointerDown(event);
+    }
+
     return drawingEvents.onPointerDown(event);
   }
 
   function onToolPointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") return selectionEvents.onPointerMove(event);
-    if (activeTool === "freedraw") return freeDrawEvents.onPointerMove(event);
-    if (activeTool === "eraser") return eraserEvents.onPointerMove(event);
-    if (activeTool === "laser") return laserEvents.onPointerMove(event);
-    if (activeTool === "lasso") return lassoEvents.onPointerMove(event);
-    if (activeTool !== "text") return drawingEvents.onPointerMove(event);
+    if (activeTool === "selection") {
+      return selectionEvents.onPointerMove(event);
+    }
+
+    if (activeTool === "freedraw") {
+      return freeDrawEvents.onPointerMove(event);
+    }
+
+    if (activeTool === "eraser") {
+      return eraserEvents.onPointerMove(event);
+    }
+
+    if (activeTool === "laser") {
+      return laserEvents.onPointerMove(event);
+    }
+
+    if (activeTool === "lasso") {
+      return lassoEvents.onPointerMove(event);
+    }
+
+    if (activeTool !== "text") {
+      return drawingEvents.onPointerMove(event);
+    }
   }
 
   function onToolPointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") return selectionEvents.onPointerUp(event);
-    if (activeTool === "freedraw") return freeDrawEvents.onPointerUp(event);
-    if (activeTool === "eraser") return eraserEvents.onPointerUp(event);
-    if (activeTool === "laser") return laserEvents.onPointerUp(event);
-    if (activeTool === "lasso") return lassoEvents.onPointerUp(event);
-    if (activeTool !== "text") return drawingEvents.onPointerUp(event);
+    if (activeTool === "selection") {
+      return selectionEvents.onPointerUp(event);
+    }
+
+    if (activeTool === "freedraw") {
+      return freeDrawEvents.onPointerUp(event);
+    }
+
+    if (activeTool === "eraser") {
+      return eraserEvents.onPointerUp(event);
+    }
+
+    if (activeTool === "laser") {
+      return laserEvents.onPointerUp(event);
+    }
+
+    if (activeTool === "lasso") {
+      return lassoEvents.onPointerUp(event);
+    }
+
+    if (activeTool !== "text") {
+      return drawingEvents.onPointerUp(event);
+    }
   }
 
   function onToolPointerCancel(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") return selectionEvents.onPointerCancel(event);
-    if (activeTool === "freedraw") return freeDrawEvents.onPointerCancel(event);
-    if (activeTool === "eraser") return eraserEvents.onPointerCancel(event);
-    if (activeTool === "laser") return laserEvents.onPointerCancel(event);
-    if (activeTool === "lasso") return lassoEvents.onPointerCancel(event);
+    if (activeTool === "selection") {
+      return selectionEvents.onPointerCancel(event);
+    }
+
+    if (activeTool === "freedraw") {
+      return freeDrawEvents.onPointerCancel(event);
+    }
+
+    if (activeTool === "eraser") {
+      return eraserEvents.onPointerCancel(event);
+    }
+
+    if (activeTool === "laser") {
+      return laserEvents.onPointerCancel(event);
+    }
+
+    if (activeTool === "lasso") {
+      return lassoEvents.onPointerCancel(event);
+    }
+
     return drawingEvents.onPointerCancel(event);
   }
 
@@ -81,13 +149,19 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       aria-label="Интерактивная доска"
       className={`size-full touch-none ${cursorClass}`}
       onDoubleClick={(event) => {
-        if (activeTool === "selection") selectionEvents.onDoubleClick(event);
+        if (activeTool === "selection") {
+          selectionEvents.onDoubleClick(event);
+        }
       }}
       onPointerCancel={(event) => {
         panEvents.onPointerUp(event);
         onToolPointerCancel(event);
       }}
       onPointerDown={(event) => {
+        if (textEditorStore.get().elementId) {
+          return;
+        }
+
         panEvents.onPointerDown(event);
         onToolPointerDown(event);
       }}
