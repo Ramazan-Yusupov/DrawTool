@@ -29,7 +29,6 @@ import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
 import { getSelectedElements, selectionStore } from "@/entities/selection";
 import { TOOL_LABELS, toolStore } from "@/entities/tool";
 import {
-  SnapSection,
   ToolStyleSection,
   TOOL_SETTINGS_CAPABILITIES,
   toolSettingsStore,
@@ -38,7 +37,12 @@ import { NumberField, SegmentedControl } from "@/shared/ui";
 import { EmbedSection } from "./EmbedSection";
 
 const ARROW_ROUTING_ITEMS = [
-  { label: "Прямая стрелка", value: "straight", icon: Route, iconOnly: true },
+  {
+    label: "Прямая стрелка",
+    value: "straight",
+    icon: Route,
+    iconOnly: true,
+  },
   {
     label: "Сгибающаяся стрелка",
     value: "elbow",
@@ -126,6 +130,7 @@ function reorderElements(
         [next[index], next[index + 1]] = [next[index + 1], next[index]];
       }
     }
+
     return next;
   }
 
@@ -147,11 +152,11 @@ export function PropertiesPanel() {
   useEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
 
-    const closeCompactPanelOnDesktop = () => {
+    function closeCompactPanelOnDesktop() {
       if (desktopQuery.matches) {
         setIsCompactPanelOpen(false);
       }
-    };
+    }
 
     closeCompactPanelOnDesktop();
     desktopQuery.addEventListener("change", closeCompactPanelOnDesktop);
@@ -166,35 +171,45 @@ export function PropertiesPanel() {
     toolStore.get,
     toolStore.get,
   );
+
   const scene = useSyncExternalStore(
     sceneStore.subscribe,
     sceneStore.get,
     sceneStore.get,
   );
+
   const selection = useSyncExternalStore(
     selectionStore.subscribe,
     selectionStore.get,
     selectionStore.get,
   );
+
+  const selectedElements = getSelectedElements(scene.elements, selection);
+
+  const primaryElement =
+    selectedElements.length === 1 ? selectedElements[0] : null;
+
+  const settingsTool = primaryElement?.type ?? activeTool;
+
   const getSettings = useCallback(
-    () => toolSettingsStore.get(activeTool),
-    [activeTool],
+    () => toolSettingsStore.get(settingsTool),
+    [settingsTool],
   );
+
   const toolSettings = useSyncExternalStore(
     toolSettingsStore.subscribe,
     getSettings,
     getSettings,
   );
 
-  const selectedElements = getSelectedElements(scene.elements, selection);
-  const primaryElement =
-    selectedElements.length === 1 ? selectedElements[0] : null;
-  const targetType = primaryElement?.type ?? activeTool;
+  const targetType = settingsTool;
   const capabilities = TOOL_SETTINGS_CAPABILITIES[targetType];
+
   const target: StyleTarget = {
     type: primaryElement?.type ?? "tool",
     style: primaryElement?.style ?? toolSettings.style,
   };
+
   const title = primaryElement
     ? TOOL_LABELS[primaryElement.type]
     : selectedElements.length > 1
@@ -209,15 +224,21 @@ export function PropertiesPanel() {
 
   function patchSelectedStyle(patch: Partial<ElementStyle>) {
     if (selectedElements.length === 0) {
-      toolSettingsStore.patchStyle(activeTool, patch);
+      toolSettingsStore.patchStyle(settingsTool, patch);
       return;
     }
 
     const selectedIds = new Set(selectedElements.map((element) => element.id));
+
     mutateScene(() => {
       sceneStore.updateAll((element) =>
         selectedIds.has(element.id)
-          ? updateElement(element, { style: { ...element.style, ...patch } })
+          ? updateElement(element, {
+              style: {
+                ...element.style,
+                ...patch,
+              },
+            })
           : element,
       );
     });
@@ -244,10 +265,11 @@ export function PropertiesPanel() {
             : element,
         );
       });
+
       return;
     }
 
-    toolSettingsStore.setArrowRouting(activeTool, routing);
+    toolSettingsStore.setArrowRouting(settingsTool, routing);
   }
 
   function changeTextOptions(patch: {
@@ -262,6 +284,7 @@ export function PropertiesPanel() {
           }
 
           const fontSize = patch.fontSize ?? element.fontSize;
+
           const size = getTextSize(
             element.text || " ",
             fontSize,
@@ -275,11 +298,15 @@ export function PropertiesPanel() {
           });
         });
 
-        const nextElements = expandFramesToFitChildren(sceneStore.get().elements);
+        const nextElements = expandFramesToFitChildren(
+          sceneStore.get().elements,
+        );
+
         if (nextElements !== sceneStore.get().elements) {
           sceneStore.setElements(nextElements);
         }
       });
+
       return;
     }
 
@@ -308,7 +335,9 @@ export function PropertiesPanel() {
 
     mutateScene(() => {
       const copies = selectedElements.map(cloneForDuplicate);
+
       sceneStore.setElements([...sceneStore.get().elements, ...copies]);
+
       selectionStore.setElementIds(copies.map((element) => element.id));
     });
   }
@@ -319,6 +348,7 @@ export function PropertiesPanel() {
     }
 
     const selectedIds = new Set(selectedElements.map((element) => element.id));
+
     mutateScene(() => {
       sceneStore.setElements(
         reorderElements(sceneStore.get().elements, selectedIds, action),
@@ -350,20 +380,23 @@ export function PropertiesPanel() {
       )}
 
       <aside
-        className={`fixed inset-x-2 scrollbar-none bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 max-h-[min(72dvh,34rem)] overflow-y-auto rounded-2xl border border-border bg-panel p-3 shadow-panel ${
+        className={`fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 max-h-[min(72dvh,34rem)] overflow-y-auto rounded-2xl border border-border bg-panel p-3 shadow-panel scrollbar-none ${
           isCompactPanelOpen ? "max-lg:block" : "max-lg:hidden"
         } lg:absolute lg:right-4 lg:top-20 lg:z-20 lg:block lg:max-h-[calc(100dvh-13rem)] lg:w-[18rem] lg:rounded-xl`}
       >
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
-          <SlidersHorizontal size={17} className="text-accent" />
+          <SlidersHorizontal className="text-accent" size={17} />
+
           <div className="min-w-0 flex-1">
             <p className="m-0 text-sm font-semibold text-text">{title}</p>
+
             <p className="m-0 text-xs text-text-muted">
               {primaryElement
                 ? "Изменения применяются сразу"
                 : "Стиль следующих объектов"}
             </p>
           </div>
+
           <button
             aria-label="Закрыть настройки"
             className="grid size-10 place-items-center rounded-lg text-text-muted transition-colors hover:bg-control hover:text-text lg:hidden"
@@ -389,8 +422,10 @@ export function PropertiesPanel() {
           {capabilities.arrowRouting && (
             <section className="space-y-3 border-t border-border pt-4">
               <div className="flex items-center gap-2 text-sm font-medium text-text">
-                <ArrowRightLeft size={16} /> Тип стрелки
+                <ArrowRightLeft size={16} />
+                Тип стрелки
               </div>
+
               <SegmentedControl<ArrowRouting>
                 items={ARROW_ROUTING_ITEMS}
                 label="Маршрут"
@@ -401,10 +436,11 @@ export function PropertiesPanel() {
                     : toolSettings.arrowRouting
                 }
               />
+
               {primaryElement?.type === "arrow" &&
                 primaryElement.routing === "elbow" && (
                   <button
-                    className="w-full rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
+                    className="mt-2 w-full rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
                     onClick={() =>
                       mutateScene(() => {
                         sceneStore.updateById(primaryElement.id, (element) =>
@@ -430,8 +466,10 @@ export function PropertiesPanel() {
           {capabilities.text && (
             <section className="space-y-3 border-t border-border pt-4">
               <div className="flex items-center gap-2 text-sm font-medium text-text">
-                <CaseSensitive size={18} /> Текст
+                <CaseSensitive size={18} />
+                Текст
               </div>
+
               <NumberField
                 label="Размер шрифта"
                 max={120}
@@ -445,6 +483,7 @@ export function PropertiesPanel() {
                     : toolSettings.fontSize
                 }
               />
+
               <SegmentedControl<TextAlign>
                 items={TEXT_ALIGN_ITEMS}
                 label="Выравнивание"
@@ -458,28 +497,8 @@ export function PropertiesPanel() {
             </section>
           )}
 
-          {!primaryElement && capabilities.snap && (
-            <SnapSection
-              checked={toolSettings.snapToGrid}
-              onCheckedChange={(checked) =>
-                toolSettingsStore.setSnapToGrid(activeTool, checked)
-              }
-              onSnapSizeChange={(snapSize) =>
-                toolSettingsStore.setSnapSize(activeTool, snapSize)
-              }
-              snapSize={toolSettings.snapSize}
-            />
-          )}
-
-          {primaryElement && (
-            <>
-              {primaryElement.type === "embed" && (
-                <EmbedSection
-                  url={primaryElement.url}
-                  onChange={changeEmbedUrl}
-                />
-              )}
-            </>
+          {primaryElement?.type === "embed" && (
+            <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
           )}
 
           {selectedElements.length > 0 && (
@@ -487,6 +506,7 @@ export function PropertiesPanel() {
               <p className="m-0 text-xs font-medium text-text-muted">
                 Действия
               </p>
+
               <div className="grid grid-cols-2 gap-2">
                 <button
                   className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted"
@@ -494,17 +514,21 @@ export function PropertiesPanel() {
                   title="Дублировать выбранные объекты"
                   type="button"
                 >
-                  <Copy aria-hidden size={15} /> Копия
+                  <Copy aria-hidden size={15} />
+                  Копия
                 </button>
+
                 <button
                   className="flex h-9 items-center justify-center gap-2 rounded-md bg-red-500/15 text-xs text-red-300 transition-colors hover:bg-red-500/25"
                   onClick={deleteSelection}
                   title="Удалить выбранные объекты"
                   type="button"
                 >
-                  <Trash2 aria-hidden size={15} /> Удалить
+                  <Trash2 aria-hidden size={15} />
+                  Удалить
                 </button>
               </div>
+
               <div className="grid grid-cols-4 gap-1">
                 <button
                   aria-label="На задний слой"
@@ -515,6 +539,7 @@ export function PropertiesPanel() {
                 >
                   <SendToBack size={16} />
                 </button>
+
                 <button
                   aria-label="Ниже на один слой"
                   className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
@@ -524,6 +549,7 @@ export function PropertiesPanel() {
                 >
                   <MoveDown size={16} />
                 </button>
+
                 <button
                   aria-label="Выше на один слой"
                   className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
@@ -533,6 +559,7 @@ export function PropertiesPanel() {
                 >
                   <MoveUp size={16} />
                 </button>
+
                 <button
                   aria-label="На передний слой"
                   className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
