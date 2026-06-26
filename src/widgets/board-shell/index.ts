@@ -1,1 +1,1 @@
-export {};
+export { BoardShell } from "./ui/BoardShell";
