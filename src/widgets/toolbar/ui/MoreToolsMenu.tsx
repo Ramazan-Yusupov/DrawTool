@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Bot,
   Braces,
@@ -13,25 +14,129 @@ import { toolStore } from "@/entities/tool";
 import { generateStore } from "@/features/generate";
 import { MORE_SHAPE_ITEMS } from "../model/toolItems";
 
+type MenuPosition = {
+  bottom?: number;
+  left: number;
+  maxHeight: number;
+  top?: number;
+  width: number;
+};
+
+const MOBILE_BREAKPOINT = 1023;
+const VIEWPORT_GUTTER = 8;
+const MENU_GAP = 8;
+const DESKTOP_MENU_WIDTH = 288;
+const MOBILE_MENU_WIDTH = 320;
+
 export function MoreToolsMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
+
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  function updateMenuPosition() {
+    const button = buttonRef.current;
+
+    if (!button) {
+      return;
+    }
+
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const isMobile = viewportWidth <= MOBILE_BREAKPOINT;
+    const width = Math.min(
+      isMobile ? MOBILE_MENU_WIDTH : DESKTOP_MENU_WIDTH,
+      viewportWidth - VIEWPORT_GUTTER * 2,
+    );
+
+    const left = Math.max(
+      VIEWPORT_GUTTER,
+      Math.min(rect.right - width, viewportWidth - width - VIEWPORT_GUTTER),
+    );
+
+    if (isMobile) {
+      /*
+       * Нижний toolbar находится внизу.
+       * Поэтому menu получает bottom, а не top:
+       * оно всегда открывается вверх над кнопкой "...".
+       */
+      setMenuPosition({
+        bottom: Math.max(VIEWPORT_GUTTER, viewportHeight - rect.top + MENU_GAP),
+        left,
+        maxHeight: Math.max(160, rect.top - VIEWPORT_GUTTER * 2),
+        width,
+      });
+
+      return;
+    }
+
+    setMenuPosition({
+      left,
+      maxHeight: Math.max(
+        180,
+        viewportHeight - rect.bottom - VIEWPORT_GUTTER * 2,
+      ),
+      top: rect.bottom + MENU_GAP,
+      width,
+    });
+  }
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    updateMenuPosition();
+
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     function onPointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+
+      const clickedButton = buttonRef.current?.contains(target);
+      const clickedMenu = menuRef.current?.contains(target);
+
+      if (!clickedButton && !clickedMenu) {
+        setIsOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
         setIsOpen(false);
       }
     }
 
     window.addEventListener("pointerdown", onPointerDown);
-    return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, []);
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen]);
 
   return (
-    <div className="relative shrink-0" ref={rootRef}>
+    <div className="shrink-0">
       <button
+        ref={buttonRef}
         aria-expanded={isOpen}
+        aria-haspopup="menu"
         aria-label="Больше инструментов"
         className="grid size-10 place-items-center rounded-lg text-text hover:bg-control max-lg:size-11"
         onClick={() => setIsOpen((open) => !open)}
@@ -41,67 +146,143 @@ export function MoreToolsMenu() {
         <Ellipsis size={20} />
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 top-12 z-40 w-72 max-w-[calc(100dvw-1rem)] rounded-xl border border-border bg-panel p-2 shadow-panel max-lg:fixed max-lg:inset-x-2 max-lg:bottom-[5.25rem] max-lg:top-auto max-lg:w-auto">
-          <div className="space-y-1">
-            {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                  key={item.id}
-                  onClick={() => {
-                    toolStore.set(item.id);
-                    setIsOpen(false);
-                  }}
-                  type="button"
-                >
-                  {item.id === "embed" ? <Globe2 size={17} /> : <Icon size={17} />}
-                  <span className="flex-1">{item.label}</span>
-                  <kbd className="text-xs text-text-muted">{item.shortcut}</kbd>
-                </button>
-              );
-            })}
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control" onClick={() => { toolStore.set("laser"); setIsOpen(false); }} type="button">
-              <Crosshair size={17} /><span className="flex-1">Лазерная указка</span><kbd className="text-xs text-text-muted">K</kbd>
-            </button>
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control" onClick={() => { toolStore.set("lasso"); setIsOpen(false); }} type="button">
-              <LassoSelect size={17} /><span className="flex-1">Выделение лассо</span><kbd className="text-xs text-text-muted">Q</kbd>
-            </button>
-          </div>
+      {isOpen &&
+        menuPosition &&
+        createPortal(
+          <div
+            ref={menuRef}
+            aria-label="Дополнительные инструменты"
+            className="fixed z-60 overflow-y-auto overscroll-contain rounded-xl border border-border bg-panel p-2 shadow-panel"
+            role="menu"
+            style={menuPosition}
+          >
+            <div className="space-y-1">
+              {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
+                const Icon = item.icon;
 
-          <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">Generate</p>
-          <div className="space-y-1">
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control" onClick={() => { generateStore.open("diagram"); setIsOpen(false); }} type="button">
-              <Sparkles size={17} /><span className="flex-1">Текст в диаграмму</span><Bot size={15} className="text-accent" />
-            </button>
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control" onClick={() => { generateStore.open("mermaid"); setIsOpen(false); }} type="button">
-              <Network size={17} /><span className="flex-1">Mermaid в DrawTool</span>
-            </button>
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control" onClick={() => { generateStore.open("code"); setIsOpen(false); }} type="button">
-              <Braces size={17} /><span className="flex-1">Каркас для кода</span><Bot size={15} className="text-accent" />
-            </button>
-          </div>
+                return (
+                  <button
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                    key={item.id}
+                    onClick={() => {
+                      toolStore.set(item.id);
+                      setIsOpen(false);
+                    }}
+                    type="button"
+                  >
+                    {item.id === "embed" ? (
+                      <Globe2 size={17} />
+                    ) : (
+                      <Icon size={17} />
+                    )}
 
-          <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">Другие фигуры</p>
-          <div className="grid grid-cols-2 gap-1">
-            {MORE_SHAPE_ITEMS.slice(2).map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-text hover:bg-control"
-                  key={item.id}
-                  onClick={() => { toolStore.set(item.id); setIsOpen(false); }}
-                  title={`${item.label} (${item.shortcut})`}
-                  type="button"
-                >
-                  <Icon size={16} /><span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                    <span className="flex-1">{item.label}</span>
+                    <kbd className="text-xs text-text-muted">
+                      {item.shortcut}
+                    </kbd>
+                  </button>
+                );
+              })}
+
+              <button
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                onClick={() => {
+                  toolStore.set("laser");
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                <Crosshair size={17} />
+                <span className="flex-1">Лазерная указка</span>
+                <kbd className="text-xs text-text-muted">K</kbd>
+              </button>
+
+              <button
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                onClick={() => {
+                  toolStore.set("lasso");
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                <LassoSelect size={17} />
+                <span className="flex-1">Выделение лассо</span>
+                <kbd className="text-xs text-text-muted">Q</kbd>
+              </button>
+            </div>
+
+            <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+              Generate
+            </p>
+
+            <div className="space-y-1">
+              <button
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                onClick={() => {
+                  generateStore.open("diagram");
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                <Sparkles size={17} />
+                <span className="flex-1">Текст в диаграмму</span>
+                <Bot className="text-accent" size={15} />
+              </button>
+
+              <button
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                onClick={() => {
+                  generateStore.open("mermaid");
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                <Network size={17} />
+                <span className="flex-1">Mermaid в DrawTool</span>
+              </button>
+
+              <button
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                onClick={() => {
+                  generateStore.open("code");
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                <Braces size={17} />
+                <span className="flex-1">Каркас для кода</span>
+                <Bot className="text-accent" size={15} />
+              </button>
+            </div>
+
+            <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+              Другие фигуры
+            </p>
+
+            <div className="grid grid-cols-2 gap-1">
+              {MORE_SHAPE_ITEMS.slice(2).map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-text hover:bg-control"
+                    key={item.id}
+                    onClick={() => {
+                      toolStore.set(item.id);
+                      setIsOpen(false);
+                    }}
+                    title={`${item.label} (${item.shortcut})`}
+                    type="button"
+                  >
+                    <Icon size={16} />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

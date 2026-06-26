@@ -1,75 +1,54 @@
-# React + TypeScript + Vite
+**DrawTool** — интерактивная бесконечная доска для схем, заметок, диаграмм и свободного рисования.  
+Проект самостоятельно реализует привычные сценарии редакторов наподобие Excalidraw и Figma: создание фигур, редактирование текста, перемещение, поворот, выравнивание, работа со слоями и сохранение сцены.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Возможности
 
-Currently, two official plugins are available:
+- Бесконечный холст с панорамированием и масштабированием.
+- Тёмная и светлая темы, тёмная включена по умолчанию.
+- Точечный фон вместо обычной сетки.
+- Создание и редактирование:
+  - прямоугольников;
+  - эллипсов;
+  - ромбов;
+  - линий и стрелок;
+  - текста;
+  - свободного рисования;
+  - дополнительных фигур: треугольник, шестиугольник, звезда и облако;
+  - фреймов;
+  - Code Sketch;
+  - встроенных страниц.
+- Настройка обводки, заливки, прозрачности, толщины и стиля линий.
+- Готовые свотчи и системный color picker для произвольных цветов.
+- Выделение, перемещение, изменение размера и свободный поворот объектов.
+- Круглая ручка для поворота объектов.
+- Текст всегда отрисовывается поверх фигур.
+- Изменение размеров текста с корректным масштабированием содержимого.
+- Поддержка слоёв, дублирования и удаления объектов.
+- Ластик для удаления объектов кликом или проведением.
+- Undo / Redo.
+- Привязка к сеточному шагу при изменении размеров.
+- Выравнивание объектов при перемещении:
+  - `Shift` фиксирует движение по горизонтальной или вертикальной оси;
+  - `Ctrl` / `Cmd` включает smart alignment;
+  - короткие красные направляющие показывают выравнивание по краям и центрам.
+- Frame работает как контейнер: дочерние элементы перемещаются и масштабируются вместе с ним.
+- Code Sketch сохраняет заголовок и содержимое внутри карточки при изменении размера.
+- Автосохранение сцены в `localStorage`.
+- Экспорт сцены в JSON и импорт JSON-файла.
+- Адаптивный интерфейс для desktop, планшетов и мобильных устройств.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Технологии
 
-## React Compiler
+- React
+- TypeScript
+- Canvas API
+- Tailwind CSS
+- Lucide React
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Запуск
 
-## Expanding the ESLint configuration
+Установите зависимости:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
 ```
