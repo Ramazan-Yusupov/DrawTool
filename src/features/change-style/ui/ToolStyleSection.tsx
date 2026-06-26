@@ -1,9 +1,9 @@
 import {
-  CornerDownRight,
-  CornerUpRight,
+  BoxIcon,
   Minus,
   MoreHorizontal,
   PanelTopDashed,
+  Square,
 } from "lucide-react";
 import type { ElementStyle, StrokeStyle } from "@/entities/element";
 import { ColorPalette, RangeField, SegmentedControl } from "@/shared/ui";
@@ -24,13 +24,28 @@ const STROKE_WIDTHS = [
 
 const STROKE_STYLES = [
   { label: "Сплошная линия", value: "solid", icon: Minus, iconOnly: true },
-  { label: "Штриховая линия", value: "dashed", icon: PanelTopDashed, iconOnly: true },
-  { label: "Точечная линия", value: "dotted", icon: MoreHorizontal, iconOnly: true },
+  {
+    label: "Штриховая линия",
+    value: "dashed",
+    icon: PanelTopDashed,
+    iconOnly: true,
+  },
+  {
+    label: "Точечная линия",
+    value: "dotted",
+    icon: MoreHorizontal,
+    iconOnly: true,
+  },
 ] as const;
 
 const CORNER_STYLES = [
-  { label: "Острые углы", value: "sharp", icon: CornerUpRight, iconOnly: true },
-  { label: "Скруглённые углы", value: "rounded", icon: CornerDownRight, iconOnly: true },
+  { label: "Острые углы", value: "sharp", icon: BoxIcon, iconOnly: true },
+  {
+    label: "Скруглённые углы",
+    value: "rounded",
+    icon: Square,
+    iconOnly: true,
+  },
 ] as const;
 
 export function ToolStyleSection({
@@ -39,9 +54,9 @@ export function ToolStyleSection({
   onChange,
 }: ToolStyleSectionProps) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 scrollbar-none">
       {capabilities.stroke && (
-        <section className="space-y-3">
+        <section className="flex flex-col gap-3">
           <ColorPalette
             label="Цвет контура"
             onChange={(strokeColor) => onChange({ strokeColor })}

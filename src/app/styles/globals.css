@@ -6,13 +6,15 @@ html,
 body,
 #root {
   width: 100%;
-  min-width: 320px;
+  min-width: 0;
   min-height: 100%;
+  height: 100%;
   margin: 0;
 }
 
 body {
   overflow: hidden;
+  overscroll-behavior: none;
   color: var(--app-color-text);
   background: var(--app-color-canvas);
   font-family:
@@ -64,4 +66,48 @@ canvas {
   border-radius: 50%;
   background: var(--app-color-accent);
   box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+}
+
+
+.drawtool-toolbar-scroll {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drawtool-toolbar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  html,
+  body,
+  #root {
+    min-height: 100dvh;
+  }
+
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    min-height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    touch-action: manipulation;
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  input[type="range"],
+  input[type="color"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }

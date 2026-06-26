@@ -13,7 +13,7 @@ export function ToolButton({ isActive, item, onClick }: ToolButtonProps) {
     <button
       aria-label={`${item.label}. Клавиша ${item.shortcut}`}
       aria-pressed={isActive}
-      className={`relative grid size-10 place-items-center rounded-lg transition-colors ${
+      className={`relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors max-lg:size-11 ${
         isActive
           ? "bg-accent text-white"
           : "text-text hover:bg-control"

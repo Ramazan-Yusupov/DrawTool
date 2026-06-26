@@ -29,11 +29,11 @@ export function MoreToolsMenu() {
   }, []);
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div className="relative shrink-0" ref={rootRef}>
       <button
         aria-expanded={isOpen}
         aria-label="Больше инструментов"
-        className="grid size-10 place-items-center rounded-lg text-text hover:bg-control"
+        className="grid size-10 place-items-center rounded-lg text-text hover:bg-control max-lg:size-11"
         onClick={() => setIsOpen((open) => !open)}
         title="Больше инструментов"
         type="button"
@@ -42,7 +42,7 @@ export function MoreToolsMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-12 z-40 w-72 rounded-xl border border-border bg-panel p-2 shadow-panel">
+        <div className="absolute right-0 top-12 z-40 w-72 max-w-[calc(100dvw-1rem)] rounded-xl border border-border bg-panel p-2 shadow-panel max-lg:fixed max-lg:inset-x-2 max-lg:bottom-[5.25rem] max-lg:top-auto max-lg:w-auto">
           <div className="space-y-1">
             {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
               const Icon = item.icon;
