@@ -19,14 +19,6 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      "max-lines": [
-        "error",
-        {
-          max: 120,
-          skipBlankLines: true,
-          skipComments: true,
-        },
-      ],
       "@typescript-eslint/consistent-type-imports": [
         "error",
         {

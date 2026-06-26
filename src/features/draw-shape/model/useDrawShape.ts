@@ -1,14 +1,17 @@
 import { useEffect, useRef } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   createRectangle,
   normalizeElement,
   updateElement,
 } from "@/entities/element";
-import { screenToWorld, viewportStore } from "@/entities/viewport";
 import { sceneStore } from "@/entities/scene";
+import { screenToWorld, viewportStore } from "@/entities/viewport";
 import { getCanvasPointerPosition } from "@/shared/lib/dom/getCanvasPointerPosition";
 import type { Point } from "@/shared/types";
+import { getDrawingPoints } from "../lib/getDrawingPoints";
 import { activeToolStore } from "./activeToolStore";
+import { snapIndicatorStore } from "./snapIndicatorStore";
 
 type DrawingState = {
   elementId: string;
@@ -39,7 +42,41 @@ export function useDrawShape() {
     };
   }, []);
 
-  function onPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
+  function updateDrawing(
+    event: ReactPointerEvent<HTMLCanvasElement>,
+    drawing: DrawingState,
+  ) {
+    const screenPoint = getCanvasPointerPosition(
+      event.nativeEvent,
+      event.currentTarget,
+    );
+
+    const currentPoint = screenToWorld(screenPoint, viewportStore.get());
+
+    const points = getDrawingPoints(
+      drawing.startPoint,
+      currentPoint,
+      event.shiftKey,
+    );
+
+    sceneStore.updateById(drawing.elementId, (element) =>
+      updateElement(element, {
+        x: points.startPoint.x,
+        y: points.startPoint.y,
+        width: points.endPoint.x - points.startPoint.x,
+        height: points.endPoint.y - points.startPoint.y,
+      }),
+    );
+
+    if (event.shiftKey) {
+      snapIndicatorStore.set(points.endPoint);
+      return;
+    }
+
+    snapIndicatorStore.clear();
+  }
+
+  function onPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
     if (event.button !== 0 || activeToolStore.get() !== "rectangle") {
       return;
     }
@@ -68,53 +105,42 @@ export function useDrawShape() {
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
-  function onPointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
+  function onPointerMove(event: ReactPointerEvent<HTMLCanvasElement>) {
     const drawing = drawingRef.current;
 
     if (!drawing || drawing.pointerId !== event.pointerId) {
       return;
     }
 
-    const screenPoint = getCanvasPointerPosition(
-      event.nativeEvent,
-      event.currentTarget,
-    );
-
-    const currentPoint = screenToWorld(screenPoint, viewportStore.get());
-
-    sceneStore.updateById(drawing.elementId, (element) =>
-      updateElement(element, {
-        width: currentPoint.x - drawing.startPoint.x,
-        height: currentPoint.y - drawing.startPoint.y,
-      }),
-    );
+    updateDrawing(event, drawing);
   }
 
-  function finishDrawing(event: React.PointerEvent<HTMLCanvasElement>) {
+  function finishDrawing(event: ReactPointerEvent<HTMLCanvasElement>) {
     const drawing = drawingRef.current;
 
     if (!drawing || drawing.pointerId !== event.pointerId) {
       return;
     }
+
+    updateDrawing(event, drawing);
 
     const element = sceneStore
       .get()
       .elements.find((item) => item.id === drawing.elementId);
 
     drawingRef.current = null;
+    snapIndicatorStore.clear();
 
-    if (!element) {
-      return;
-    }
+    if (element) {
+      const isTooSmall =
+        Math.abs(element.width) < MIN_ELEMENT_SIZE ||
+        Math.abs(element.height) < MIN_ELEMENT_SIZE;
 
-    const isTooSmall =
-      Math.abs(element.width) < MIN_ELEMENT_SIZE ||
-      Math.abs(element.height) < MIN_ELEMENT_SIZE;
-
-    if (isTooSmall) {
-      sceneStore.removeById(element.id);
-    } else {
-      sceneStore.updateById(element.id, normalizeElement);
+      if (isTooSmall) {
+        sceneStore.removeById(element.id);
+      } else {
+        sceneStore.updateById(element.id, normalizeElement);
+      }
     }
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {

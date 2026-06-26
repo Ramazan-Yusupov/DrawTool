@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { RefObject } from "react";
+import { sceneStore } from "@/entities/scene";
 import { viewportStore } from "@/entities/viewport";
 import { clearCanvas } from "@/shared/lib/canvas/clearCanvas";
 import { prepareCanvas } from "@/shared/lib/canvas/prepareCanvas";
@@ -6,10 +8,10 @@ import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
 import { renderGrid } from "../lib/renderGrid";
 import { renderScene } from "../lib/renderScene";
 import { useCanvasSize } from "./useCanvasSize";
-import { sceneStore } from "@/entities/scene";
+import { renderSnapIndicator, snapIndicatorStore } from "@/features/draw-shape";
 
 export function useBoardRenderer(
-  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  canvasRef: RefObject<HTMLCanvasElement | null>,
 ) {
   const frameRef = useRef<number | null>(null);
   const sizeRef = useRef<CanvasSize | null>(null);
@@ -37,6 +39,7 @@ export function useBoardRenderer(
 
     renderGrid({ context, viewport, size });
     renderScene({ context, viewport, size });
+    renderSnapIndicator(context, viewport);
   }, [canvasRef]);
 
   const scheduleRender = useCallback(() => {
@@ -58,16 +61,20 @@ export function useBoardRenderer(
   useEffect(() => {
     const unsubscribeViewport = viewportStore.subscribe(scheduleRender);
     const unsubscribeScene = sceneStore.subscribe(scheduleRender);
+    const unsubscribeSnapIndicator =
+      snapIndicatorStore.subscribe(scheduleRender);
 
     scheduleRender();
 
     return () => {
       unsubscribeViewport();
       unsubscribeScene();
-
+      unsubscribeSnapIndicator();
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }
+
+      frameRef.current = null;
     };
   }, [scheduleRender]);
 }

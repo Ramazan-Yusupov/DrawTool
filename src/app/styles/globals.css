@@ -13,8 +13,8 @@ body,
 
 body {
   overflow: hidden;
-  color: var(--color-text);
-  background: var(--color-canvas);
+  color: var(--app-color-text);
+  background: var(--app-color-canvas);
   font-family:
     Inter,
     ui-sans-serif,
