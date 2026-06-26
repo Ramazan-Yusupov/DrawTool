@@ -1,5 +1,6 @@
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { createText, getTextSize } from "@/entities/element";
+import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolSettingsStore } from "@/features/change-style";
@@ -19,6 +20,8 @@ export function useTextTool() {
       ? snapPointToGrid(worldPoint, settings.snapSize)
       : worldPoint;
     const size = getTextSize(" ", settings.fontSize, settings.fontFamily);
+
+    historyStore.begin();
     const element = createText({
       x: point.x,
       y: point.y,

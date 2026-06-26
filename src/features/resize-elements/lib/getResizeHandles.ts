@@ -1,5 +1,11 @@
-import { getArrowPathPoints, getElementBounds } from "@/entities/element";
+import {
+  getArrowPathPoints,
+  getElementBounds,
+  getElementCenter,
+  getElementRotation,
+} from "@/entities/element";
 import type { ArrowElement, BoardElement } from "@/entities/element";
+import { rotatePoint } from "@/shared/lib";
 import type { Point } from "@/shared/types";
 import type { ResizeHandle, ResizeHandlePoint } from "../model/types";
 
@@ -22,22 +28,47 @@ function getArrowBendHandle(element: ArrowElement): Point | null {
   };
 }
 
+function toWorldPoint(element: BoardElement, point: Point) {
+  return rotatePoint(point, getElementCenter(element), getElementRotation(element));
+}
+
+/**
+ * The small rotation circle lives above the visual top edge. The distance is
+ * supplied in world pixels by the renderer and pointer interaction.
+ */
+export function getElementRotationHandle(
+  element: BoardElement,
+  offset = 30,
+): ResizeHandlePoint {
+  const bounds = getElementBounds(element);
+  const localPoint = {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y - offset,
+  };
+
+  return { handle: "rotate", point: toWorldPoint(element, localPoint) };
+}
+
 export function getElementResizeHandles(
   element: BoardElement,
 ): ResizeHandlePoint[] {
   if (element.type === "line" || element.type === "arrow") {
-    const result: ResizeHandlePoint[] = [
+    const connectorHandles: ResizeHandlePoint[] = [
       { handle: "start", point: { x: element.x, y: element.y } },
       {
         handle: "end",
         point: { x: element.x + element.width, y: element.y + element.height },
       },
     ];
+    const result: ResizeHandlePoint[] = connectorHandles.map((item) => ({
+      ...item,
+      point: toWorldPoint(element, item.point),
+    }));
 
     if (element.type === "arrow") {
       const bendPoint = getArrowBendHandle(element);
       if (bendPoint) {
-        result.push({ handle: "elbow", point: bendPoint });
+        result.push({ handle: "elbow", point: toWorldPoint(element, bendPoint) });
       }
     }
 
@@ -50,7 +81,7 @@ export function getElementResizeHandles(
   const centerX = bounds.x + bounds.width / 2;
   const centerY = bounds.y + bounds.height / 2;
 
-  return [
+  const handles: ResizeHandlePoint[] = [
     { handle: "nw", point: { x: bounds.x, y: bounds.y } },
     { handle: "n", point: { x: centerX, y: bounds.y } },
     { handle: "ne", point: { x: x2, y: bounds.y } },
@@ -60,6 +91,11 @@ export function getElementResizeHandles(
     { handle: "sw", point: { x: bounds.x, y: y2 } },
     { handle: "w", point: { x: bounds.x, y: centerY } },
   ];
+
+  return handles.map((item) => ({
+    ...item,
+    point: toWorldPoint(element, item.point),
+  }));
 }
 
 export function findResizeHandleAtPoint(

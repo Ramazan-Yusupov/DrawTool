@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { normalizeElement, updateElement } from "@/entities/element";
+import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
 import { sceneStore } from "@/entities/scene";
@@ -23,16 +24,38 @@ const MIN_ELEMENT_SIZE = 2;
 
 const TOOL_BY_SHORTCUT: Partial<Record<string, ToolId>> = {
   a: "arrow",
+  c: "cloud",
   d: "diamond",
   e: "ellipse",
+  g: "triangle",
+  f: "frame",
+  h: "hexagon",
   l: "line",
+  p: "freedraw",
   r: "rectangle",
+  s: "star",
   t: "text",
   v: "selection",
+  b: "embed",
+  k: "laser",
+  q: "lasso",
+  x: "eraser",
 };
 
 function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
-  return ["rectangle", "ellipse", "diamond", "line", "arrow"].includes(toolId);
+  return [
+    "rectangle",
+    "ellipse",
+    "diamond",
+    "triangle",
+    "hexagon",
+    "star",
+    "cloud",
+    "frame",
+    "embed",
+    "line",
+    "arrow",
+  ].includes(toolId);
 }
 
 function getConstraint(toolId: ShapeToolId) {
@@ -125,6 +148,8 @@ export function useDrawShape() {
       constraint,
     );
 
+    historyStore.begin();
+
     const element = createElementByTool({
       startPoint,
       style: settings.style,
@@ -200,6 +225,8 @@ export function useDrawShape() {
         sceneStore.updateById(element.id, normalizeElement);
       }
     }
+
+    historyStore.commit();
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);

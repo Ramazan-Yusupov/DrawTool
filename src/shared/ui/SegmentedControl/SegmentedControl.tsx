@@ -1,6 +1,10 @@
+import type { LucideIcon } from "lucide-react";
+
 type SegmentedItem<T extends string> = {
   label: string;
   value: T;
+  icon?: LucideIcon;
+  iconOnly?: boolean;
 };
 
 type SegmentedControlProps<T extends string> = {
@@ -23,20 +27,25 @@ export function SegmentedControl<T extends string>({
       <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-lg">
         {items.map((item) => {
           const isActive = item.value === value;
+          const Icon = item.icon;
 
           return (
             <button
+              aria-label={item.label}
               aria-pressed={isActive}
-              className={`min-h-9 rounded-md border border-transparent px-2 text-xs transition-colors ${
+              className={`flex min-h-9 items-center justify-center gap-1 rounded-md border border-transparent px-2 text-xs transition-colors ${
                 isActive
                   ? "bg-control-active font-medium text-white shadow-sm"
                   : "bg-control text-text hover:bg-surface-muted"
-              }`}
+              } ${item.iconOnly ? "px-1.5" : ""}`}
               key={item.value}
               onClick={() => onChange(item.value)}
+              title={item.label}
               type="button"
             >
-              {item.label}
+              {Icon && <Icon aria-hidden size={17} strokeWidth={2} />}
+              {!item.iconOnly && <span>{item.label}</span>}
+              {item.iconOnly && <span className="sr-only">{item.label}</span>}
             </button>
           );
         })}

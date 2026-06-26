@@ -11,7 +11,8 @@ export type ResizeHandle =
   | "w"
   | "start"
   | "end"
-  | "elbow";
+  | "elbow"
+  | "rotate";
 
 export type ResizeHandlePoint = {
   handle: ResizeHandle;

@@ -1,13 +1,27 @@
 import { useRef } from "react";
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { hitTestElement } from "@/entities/element";
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
+import {
+  getElementCenter,
+  getElementRotation,
+  hitTestElement,
+  updateElement,
+} from "@/entities/element";
+import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text";
-import { useMoveElements } from "@/features/move-elements";
-import { findResizeHandleAtPoint, useResizeElements } from "@/features/resize-elements";
-import { viewportStore } from "@/entities/viewport";
 import { getWorldPointerPosition } from "@/features/draw-shape/lib/getWorldPointerPosition";
+import { useMoveElements } from "@/features/move-elements";
+import {
+  findResizeHandleAtPoint,
+  getElementRotationHandle,
+  useResizeElements,
+} from "@/features/resize-elements";
+import { viewportStore } from "@/entities/viewport";
+import { normalizeAngleDelta } from "@/shared/lib";
 import type { Point, Rect } from "@/shared/types";
 import { getElementsInSelectionBox } from "../lib/getElementsInSelectionBox";
 
@@ -15,6 +29,15 @@ type SelectionInteraction =
   | { mode: "area"; pointerId: number; startPoint: Point; append: boolean }
   | { mode: "move"; pointerId: number }
   | { mode: "resize"; pointerId: number }
+  | {
+      mode: "rotate";
+      pointerId: number;
+      elementId: string;
+      initialAngle: number;
+      previousPointerAngle: number;
+      accumulatedAngle: number;
+      center: Point;
+    }
   | null;
 
 function normalizeRect(start: Point, end: Point): Rect {
@@ -24,6 +47,10 @@ function normalizeRect(start: Point, end: Point): Rect {
     width: Math.abs(end.x - start.x),
     height: Math.abs(end.y - start.y),
   };
+}
+
+function getPointerAngle(point: Point, center: Point) {
+  return Math.atan2(point.y - center.y, point.x - center.x);
 }
 
 export function useSelectElements() {
@@ -50,11 +77,37 @@ export function useSelectElements() {
             .get()
             .elements.find((element) => element.id === selection.elementIds[0])
         : undefined;
+    const zoom = viewportStore.get().zoom;
+
+    if (selectedElement) {
+      const rotationHandle = getElementRotationHandle(selectedElement, 30 / zoom);
+      const isRotationHandle =
+        Math.hypot(point.x - rotationHandle.point.x, point.y - rotationHandle.point.y) <=
+        11 / zoom;
+
+      if (isRotationHandle) {
+        historyStore.begin();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const center = getElementCenter(selectedElement);
+        interactionRef.current = {
+          mode: "rotate",
+          pointerId: event.pointerId,
+          elementId: selectedElement.id,
+          initialAngle: getElementRotation(selectedElement),
+          previousPointerAngle: getPointerAngle(point, center),
+          accumulatedAngle: 0,
+          center,
+        };
+        return;
+      }
+    }
+
     const handle = selectedElement
-      ? findResizeHandleAtPoint(selectedElement, point, 10 / viewportStore.get().zoom)
+      ? findResizeHandleAtPoint(selectedElement, point, 10 / zoom)
       : null;
 
     if (selectedElement && handle) {
+      historyStore.begin();
       event.currentTarget.setPointerCapture(event.pointerId);
       resize.startResize(selectedElement.id, handle, point);
       interactionRef.current = { mode: "resize", pointerId: event.pointerId };
@@ -76,6 +129,7 @@ export function useSelectElements() {
       selectionStore.setElementIds(elementIds);
 
       if (!event.shiftKey && elementIds.length > 0) {
+        historyStore.begin();
         event.currentTarget.setPointerCapture(event.pointerId);
         move.startMove(elementIds, point);
         interactionRef.current = { mode: "move", pointerId: event.pointerId };
@@ -105,6 +159,20 @@ export function useSelectElements() {
     }
 
     const point = getWorldPointerPosition(event);
+
+    if (interaction.mode === "rotate") {
+      const pointerAngle = getPointerAngle(point, interaction.center);
+      const delta = normalizeAngleDelta(pointerAngle - interaction.previousPointerAngle);
+      interaction.previousPointerAngle = pointerAngle;
+      interaction.accumulatedAngle += delta;
+
+      sceneStore.updateById(interaction.elementId, (element) =>
+        updateElement(element, {
+          angle: interaction.initialAngle + interaction.accumulatedAngle,
+        }),
+      );
+      return;
+    }
 
     if (interaction.mode === "resize") {
       resize.updateResize(point, {
@@ -144,8 +212,16 @@ export function useSelectElements() {
       }
     }
 
-    move.finishMove();
-    resize.finishResize();
+    const finishedMove = move.finishMove();
+    const finishedResize = resize.finishResize();
+
+    if (
+      finishedMove ||
+      finishedResize ||
+      interaction.mode === "rotate"
+    ) {
+      historyStore.commit();
+    }
     interactionRef.current = null;
     selectionStore.setSelectionBox(null);
 
@@ -158,6 +234,7 @@ export function useSelectElements() {
     const hitElement = findTopElement(getWorldPointerPosition(event));
     if (hitElement?.type === "text") {
       selectionStore.setElementIds([hitElement.id]);
+      historyStore.begin();
       textEditorStore.open(hitElement.id);
     }
   }

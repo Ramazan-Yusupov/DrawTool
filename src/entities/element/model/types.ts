@@ -4,9 +4,16 @@ export type ElementType =
   | "rectangle"
   | "ellipse"
   | "diamond"
+  | "triangle"
+  | "hexagon"
+  | "star"
+  | "cloud"
   | "line"
   | "arrow"
-  | "text";
+  | "freedraw"
+  | "text"
+  | "frame"
+  | "embed";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type FillStyle = "transparent" | "solid";
@@ -32,6 +39,8 @@ export type BaseElement = {
   y: number;
   width: number;
   height: number;
+  /** Rotation in radians. It may exceed 2π while the user keeps rotating. */
+  angle: number;
   createdAt: number;
   updatedAt: number;
   style: ElementStyle;
@@ -40,6 +49,10 @@ export type BaseElement = {
 export type RectangleElement = BaseElement & { type: "rectangle" };
 export type EllipseElement = BaseElement & { type: "ellipse" };
 export type DiamondElement = BaseElement & { type: "diamond" };
+export type TriangleElement = BaseElement & { type: "triangle" };
+export type HexagonElement = BaseElement & { type: "hexagon" };
+export type StarElement = BaseElement & { type: "star" };
+export type CloudElement = BaseElement & { type: "cloud" };
 export type LineElement = BaseElement & { type: "line" };
 
 export type ArrowElement = BaseElement & {
@@ -47,6 +60,21 @@ export type ArrowElement = BaseElement & {
   routing: ArrowRouting;
   elbowAxis: ElbowAxis;
   elbowOffset: number;
+};
+
+export type FreeDrawElement = BaseElement & {
+  type: "freedraw";
+  points: Point[];
+};
+
+export type FrameElement = BaseElement & {
+  type: "frame";
+  name: string;
+};
+
+export type EmbedElement = BaseElement & {
+  type: "embed";
+  url: string;
 };
 
 export type TextElement = BaseElement & {
@@ -61,9 +89,16 @@ export type BoardElement =
   | RectangleElement
   | EllipseElement
   | DiamondElement
+  | TriangleElement
+  | HexagonElement
+  | StarElement
+  | CloudElement
   | LineElement
   | ArrowElement
-  | TextElement;
+  | FreeDrawElement
+  | TextElement
+  | FrameElement
+  | EmbedElement;
 
 export type ElementEndpoints = {
   start: Point;

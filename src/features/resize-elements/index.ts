@@ -1,4 +1,8 @@
-export { findResizeHandleAtPoint, getElementResizeHandles } from "./lib/getResizeHandles";
+export {
+  findResizeHandleAtPoint,
+  getElementResizeHandles,
+  getElementRotationHandle,
+} from "./lib/getResizeHandles";
 export { getResizeCursor } from "./lib/getResizeCursor";
 export { useResizeElements } from "./model/useResizeElements";
 

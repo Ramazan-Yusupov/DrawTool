@@ -6,9 +6,15 @@ import {
   TEXT_LINE_HEIGHT_RATIO,
   updateElement,
 } from "@/entities/element";
+import type { TextElement } from "@/entities/element";
+import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { viewportStore } from "@/entities/viewport";
 import { textEditorStore } from "../model/textEditorStore";
+
+function cloneTextElement(element: TextElement): TextElement {
+  return { ...element, style: { ...element.style } };
+}
 
 export function TextEditorOverlay() {
   const editorState = useSyncExternalStore(
@@ -18,6 +24,7 @@ export function TextEditorOverlay() {
   );
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const draftRef = useRef("");
+  const originalElementRef = useRef<TextElement | null>(null);
   const isFinishingRef = useRef(false);
   const [draft, setDraft] = useState("");
 
@@ -47,6 +54,7 @@ export function TextEditorOverlay() {
     }
 
     isFinishingRef.current = false;
+    originalElementRef.current = cloneTextElement(currentElement);
     draftRef.current = currentElement.text;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(currentElement.text);
@@ -110,6 +118,7 @@ export function TextEditorOverlay() {
       .elements.find((item) => item.id === editingElement.id);
 
     if (!currentElement || currentElement.type !== "text") {
+      historyStore.cancel();
       textEditorStore.close();
       return;
     }
@@ -119,7 +128,11 @@ export function TextEditorOverlay() {
     if (!text.trim() && editorState.wasCreated) {
       sceneStore.removeById(currentElement.id);
     } else {
-      const size = getTextSize(text || " ", currentElement.fontSize, currentElement.fontFamily);
+      const size = getTextSize(
+        text || " ",
+        currentElement.fontSize,
+        currentElement.fontFamily,
+      );
       sceneStore.updateById(currentElement.id, (item) =>
         item.type === "text"
           ? updateElement(item, {
@@ -131,6 +144,7 @@ export function TextEditorOverlay() {
       );
     }
 
+    historyStore.commit();
     textEditorStore.close();
   }
 
@@ -143,8 +157,12 @@ export function TextEditorOverlay() {
 
     if (editorState.wasCreated) {
       sceneStore.removeById(editingElement.id);
+    } else if (originalElementRef.current) {
+      const original = originalElementRef.current;
+      sceneStore.updateById(editingElement.id, () => cloneTextElement(original));
     }
 
+    historyStore.cancel();
     textEditorStore.close();
   }
 
@@ -156,10 +174,7 @@ export function TextEditorOverlay() {
       onBlur={commit}
       onChange={(event) => updateDraft(event.currentTarget.value)}
       onKeyDown={(event) => {
-        if (
-          (event.ctrlKey || event.metaKey) &&
-          event.key === "Enter"
-        ) {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
           event.preventDefault();
           commit();
           return;

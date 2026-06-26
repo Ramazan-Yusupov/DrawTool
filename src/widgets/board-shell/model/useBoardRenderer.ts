@@ -12,6 +12,8 @@ import { renderGrid } from "../lib/renderGrid";
 import { renderScene } from "../lib/renderScene";
 import { useCanvasSize } from "./useCanvasSize";
 import { renderSnapIndicator, snapIndicatorStore } from "@/features/draw-shape";
+import { renderLaserPointer, laserPointerStore } from "@/features/laser-pointer";
+import { renderLasso, lassoStore } from "@/features/lasso-select";
 
 export function useBoardRenderer(
   canvasRef: RefObject<HTMLCanvasElement | null>,
@@ -42,6 +44,8 @@ export function useBoardRenderer(
 
     renderGrid({ context, viewport, size });
     renderScene({ context, viewport, size });
+    renderLasso(context, viewport);
+    renderLaserPointer(context, viewport);
     renderSnapIndicator(context, viewport);
   }, [canvasRef]);
 
@@ -69,6 +73,8 @@ export function useBoardRenderer(
     const unsubscribeTheme = themeStore.subscribe(scheduleRender);
     const unsubscribeSnapIndicator =
       snapIndicatorStore.subscribe(scheduleRender);
+    const unsubscribeLaser = laserPointerStore.subscribe(scheduleRender);
+    const unsubscribeLasso = lassoStore.subscribe(scheduleRender);
 
     scheduleRender();
 
@@ -79,6 +85,8 @@ export function useBoardRenderer(
       unsubscribeTextEditor();
       unsubscribeTheme();
       unsubscribeSnapIndicator();
+      unsubscribeLaser();
+      unsubscribeLasso();
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }

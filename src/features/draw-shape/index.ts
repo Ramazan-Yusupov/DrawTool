@@ -1,3 +1,4 @@
 export { renderSnapIndicator } from "./lib/renderSnapIndicator";
-export { snapIndicatorStore } from "./model/snapIndicatorStore";
 export { useDrawShape } from "./model/useDrawShape";
+export { useFreeDraw } from "./model/useFreeDraw";
+export { snapIndicatorStore } from "./model/snapIndicatorStore";

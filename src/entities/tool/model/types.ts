@@ -2,7 +2,20 @@ export type ShapeToolId =
   | "rectangle"
   | "ellipse"
   | "diamond"
+  | "triangle"
+  | "hexagon"
+  | "star"
+  | "cloud"
   | "line"
-  | "arrow";
+  | "arrow"
+  | "frame"
+  | "embed";
 
-export type ToolId = "selection" | "text" | ShapeToolId;
+export type ToolId =
+  | "selection"
+  | "text"
+  | "freedraw"
+  | "eraser"
+  | "laser"
+  | "lasso"
+  | ShapeToolId;

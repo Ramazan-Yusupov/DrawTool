@@ -1,8 +1,14 @@
-import { getTextSize, updateElement } from "@/entities/element";
+import {
+  getElementBounds,
+  getElementCenter,
+  getElementRotation,
+  getTextSize,
+  updateElement,
+} from "@/entities/element";
 import type { BoardElement, TextElement } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import { CANVAS_CONFIG } from "@/shared/config";
-import { clamp } from "@/shared/lib";
+import { clamp, rotatePoint } from "@/shared/lib";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
 import { calculateResize } from "../lib/calculateResize";
@@ -166,11 +172,18 @@ export function resizeElement(
     return;
   }
 
+  // Handles are displayed in world space after rotation. Convert both pointer
+  // points back into the element's local coordinate system before resizing.
+  const center = getElementCenter(element);
+  const inverseAngle = -getElementRotation(element);
+  const localStartPoint = rotatePoint(startPoint, center, inverseAngle);
+  const localCurrentPoint = rotatePoint(currentPoint, center, inverseAngle);
+
   const rawPatch = calculateResize(
     element,
     handle,
-    startPoint,
-    currentPoint,
+    localStartPoint,
+    localCurrentPoint,
     modifiers,
   );
   const patch = modifiers.snapToGrid
@@ -178,6 +191,24 @@ export function resizeElement(
       ? snapConnectorPatch(element, handle, rawPatch)
       : snapShapePatch(element, handle, rawPatch)
     : rawPatch;
+
+  if (element.type === "freedraw") {
+    const geometry = getGeometry(element, patch);
+    const bounds = getElementBounds(element);
+    const scaleX = geometry.width / Math.max(bounds.width, 1);
+    const scaleY = geometry.height / Math.max(bounds.height, 1);
+    const points = element.points.map((point) => ({
+      x: geometry.x + (point.x - bounds.x) * scaleX,
+      y: geometry.y + (point.y - bounds.y) * scaleY,
+    }));
+
+    sceneStore.updateById(element.id, (current) =>
+      current.type === "freedraw"
+        ? updateElement(current, { ...geometry, points })
+        : current,
+    );
+    return;
+  }
 
   if (element.type === "text") {
     const textPatch = resizeTextElement(element, handle, patch, modifiers);

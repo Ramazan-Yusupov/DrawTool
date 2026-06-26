@@ -1,29 +1,105 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { ArrowRightLeft, CaseSensitive, SlidersHorizontal } from "lucide-react";
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  ArrowRightLeft,
+  BringToFront,
+  CaseSensitive,
+  Copy,
+  MoveDown,
+  MoveUp,
+  Route,
+  SendToBack,
+  SlidersHorizontal,
+  Trash2,
+} from "lucide-react";
+import { createId } from "@/shared/lib";
 import { getTextSize, updateElement } from "@/entities/element";
 import type { ArrowRouting, BoardElement, ElementStyle, TextAlign } from "@/entities/element";
+import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { getSelectedElements, selectionStore } from "@/entities/selection";
 import { TOOL_LABELS, toolStore } from "@/entities/tool";
 import { SnapSection, ToolStyleSection, TOOL_SETTINGS_CAPABILITIES, toolSettingsStore } from "@/features/change-style";
 import { NumberField, SegmentedControl } from "@/shared/ui";
 import { GeometrySection } from "./GeometrySection";
+import { RotationSection } from "./RotationSection";
+import { EmbedSection } from "./EmbedSection";
 
 const ARROW_ROUTING_ITEMS = [
-  { label: "Прямая", value: "straight" },
-  { label: "Сгиб", value: "elbow" },
+  { label: "Прямая стрелка", value: "straight", icon: Route, iconOnly: true },
+  { label: "Сгибающаяся стрелка", value: "elbow", icon: ArrowRightLeft, iconOnly: true },
 ] as const;
 
 const TEXT_ALIGN_ITEMS = [
-  { label: "Слева", value: "left" },
-  { label: "Центр", value: "center" },
-  { label: "Справа", value: "right" },
+  { label: "Выровнять по левому краю", value: "left", icon: AlignLeft, iconOnly: true },
+  { label: "Выровнять по центру", value: "center", icon: AlignCenter, iconOnly: true },
+  { label: "Выровнять по правому краю", value: "right", icon: AlignRight, iconOnly: true },
 ] as const;
 
 type StyleTarget = {
   style: ElementStyle;
   type: BoardElement["type"] | "tool";
 };
+
+type LayerAction = "back" | "backward" | "forward" | "front";
+
+function cloneForDuplicate(element: BoardElement): BoardElement {
+  const copy = JSON.parse(JSON.stringify(element)) as BoardElement;
+  const now = Date.now();
+
+  copy.id = createId(element.type);
+  copy.createdAt = now;
+  copy.updatedAt = now;
+  copy.x += 20;
+  copy.y += 20;
+  copy.style = { ...copy.style };
+
+  if (copy.type === "freedraw") {
+    copy.points = copy.points.map((point) => ({
+      x: point.x + 20,
+      y: point.y + 20,
+    }));
+  }
+
+  return copy;
+}
+
+function reorderElements(elements: BoardElement[], selectedIds: Set<string>, action: LayerAction) {
+  const next = [...elements];
+
+  if (action === "front") {
+    return [
+      ...next.filter((element) => !selectedIds.has(element.id)),
+      ...next.filter((element) => selectedIds.has(element.id)),
+    ];
+  }
+
+  if (action === "back") {
+    return [
+      ...next.filter((element) => selectedIds.has(element.id)),
+      ...next.filter((element) => !selectedIds.has(element.id)),
+    ];
+  }
+
+  if (action === "forward") {
+    for (let index = next.length - 2; index >= 0; index -= 1) {
+      if (selectedIds.has(next[index].id) && !selectedIds.has(next[index + 1].id)) {
+        [next[index], next[index + 1]] = [next[index + 1], next[index]];
+      }
+    }
+    return next;
+  }
+
+  for (let index = 1; index < next.length; index += 1) {
+    if (selectedIds.has(next[index].id) && !selectedIds.has(next[index - 1].id)) {
+      [next[index], next[index - 1]] = [next[index - 1], next[index]];
+    }
+  }
+
+  return next;
+}
 
 export function PropertiesPanel() {
   const activeTool = useSyncExternalStore(
@@ -65,6 +141,12 @@ export function PropertiesPanel() {
       ? `Выбрано: ${selectedElements.length}`
       : `Инструмент: ${TOOL_LABELS[activeTool]}`;
 
+  function mutateScene(action: () => void) {
+    historyStore.begin();
+    action();
+    historyStore.commit();
+  }
+
   function patchSelectedStyle(patch: Partial<ElementStyle>) {
     if (selectedElements.length === 0) {
       toolSettingsStore.patchStyle(activeTool, patch);
@@ -72,11 +154,13 @@ export function PropertiesPanel() {
     }
 
     const selectedIds = new Set(selectedElements.map((element) => element.id));
-    sceneStore.updateAll((element) =>
-      selectedIds.has(element.id)
-        ? updateElement(element, { style: { ...element.style, ...patch } })
-        : element,
-    );
+    mutateScene(() => {
+      sceneStore.updateAll((element) =>
+        selectedIds.has(element.id)
+          ? updateElement(element, { style: { ...element.style, ...patch } })
+          : element,
+      );
+    });
   }
 
   function changeGeometry(patch: Pick<BoardElement, "x" | "y" | "width" | "height">) {
@@ -84,21 +168,46 @@ export function PropertiesPanel() {
       return;
     }
 
-    sceneStore.updateById(primaryElement.id, (element) =>
-      updateElement(element, patch),
-    );
+    mutateScene(() => {
+      sceneStore.updateById(primaryElement.id, (element) =>
+        updateElement(element, patch),
+      );
+    });
+  }
+
+  function changeAngle(angle: number) {
+    if (!primaryElement) {
+      return;
+    }
+
+    mutateScene(() => {
+      sceneStore.updateById(primaryElement.id, (element) =>
+        updateElement(element, { angle }),
+      );
+    });
+  }
+
+  function changeEmbedUrl(url: string) {
+    if (primaryElement?.type !== "embed") {
+      return;
+    }
+
+    mutateScene(() => {
+      sceneStore.updateById(primaryElement.id, (element) =>
+        element.type === "embed" ? updateElement(element, { url }) : element,
+      );
+    });
   }
 
   function changeArrowRouting(routing: ArrowRouting) {
     if (primaryElement?.type === "arrow") {
-      sceneStore.updateById(primaryElement.id, (element) =>
-        element.type === "arrow"
-          ? updateElement(element, {
-              routing,
-              elbowAxis: routing === "elbow" ? element.elbowAxis : element.elbowAxis,
-            })
-          : element,
-      );
+      mutateScene(() => {
+        sceneStore.updateById(primaryElement.id, (element) =>
+          element.type === "arrow"
+            ? updateElement(element, { routing })
+            : element,
+        );
+      });
       return;
     }
 
@@ -110,19 +219,21 @@ export function PropertiesPanel() {
     textAlign?: TextAlign;
   }) {
     if (primaryElement?.type === "text") {
-      sceneStore.updateById(primaryElement.id, (element) => {
-        if (element.type !== "text") {
-          return element;
-        }
+      mutateScene(() => {
+        sceneStore.updateById(primaryElement.id, (element) => {
+          if (element.type !== "text") {
+            return element;
+          }
 
-        const fontSize = patch.fontSize ?? element.fontSize;
-        const size = getTextSize(
-          element.text || " ",
-          fontSize,
-          element.fontFamily,
-        );
+          const fontSize = patch.fontSize ?? element.fontSize;
+          const size = getTextSize(
+            element.text || " ",
+            fontSize,
+            element.fontFamily,
+          );
 
-        return updateElement(element, { ...patch, width: size.width, height: size.height });
+          return updateElement(element, { ...patch, width: size.width, height: size.height });
+        });
       });
       return;
     }
@@ -131,6 +242,40 @@ export function PropertiesPanel() {
       fontSize: patch.fontSize ?? toolSettings.fontSize,
       fontFamily: toolSettings.fontFamily,
       textAlign: patch.textAlign ?? toolSettings.textAlign,
+    });
+  }
+
+  function deleteSelection() {
+    if (selectedElements.length === 0) {
+      return;
+    }
+
+    mutateScene(() => {
+      sceneStore.removeMany(selectedElements.map((element) => element.id));
+      selectionStore.clear();
+    });
+  }
+
+  function duplicateSelection() {
+    if (selectedElements.length === 0) {
+      return;
+    }
+
+    mutateScene(() => {
+      const copies = selectedElements.map(cloneForDuplicate);
+      sceneStore.setElements([...sceneStore.get().elements, ...copies]);
+      selectionStore.setElementIds(copies.map((element) => element.id));
+    });
+  }
+
+  function changeLayer(action: LayerAction) {
+    if (selectedElements.length === 0) {
+      return;
+    }
+
+    const selectedIds = new Set(selectedElements.map((element) => element.id));
+    mutateScene(() => {
+      sceneStore.setElements(reorderElements(sceneStore.get().elements, selectedIds, action));
     });
   }
 
@@ -176,16 +321,18 @@ export function PropertiesPanel() {
               <button
                 className="w-full rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
                 onClick={() =>
-                  sceneStore.updateById(primaryElement.id, (element) =>
-                    element.type === "arrow"
-                      ? updateElement(element, {
-                          elbowAxis:
-                            element.elbowAxis === "horizontal"
-                              ? "vertical"
-                              : "horizontal",
-                        })
-                      : element,
-                  )
+                  mutateScene(() => {
+                    sceneStore.updateById(primaryElement.id, (element) =>
+                      element.type === "arrow"
+                        ? updateElement(element, {
+                            elbowAxis:
+                              element.elbowAxis === "horizontal"
+                                ? "vertical"
+                                : "horizontal",
+                          })
+                        : element,
+                    );
+                  })
                 }
                 type="button"
               >
@@ -240,7 +387,43 @@ export function PropertiesPanel() {
         )}
 
         {primaryElement && (
-          <GeometrySection element={primaryElement} onChange={changeGeometry} />
+          <>
+            <GeometrySection element={primaryElement} onChange={changeGeometry} />
+            <RotationSection angle={primaryElement.angle} onChange={changeAngle} />
+            {primaryElement.type === "embed" && (
+              <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
+            )}
+          </>
+        )}
+
+        {selectedElements.length > 0 && (
+          <section className="space-y-3 border-t border-border pt-4">
+            <p className="m-0 text-xs font-medium text-text-muted">Действия</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted"
+                onClick={duplicateSelection}
+                title="Дублировать выбранные объекты"
+                type="button"
+              >
+                <Copy aria-hidden size={15} /> Копия
+              </button>
+              <button
+                className="flex h-9 items-center justify-center gap-2 rounded-md bg-red-500/15 text-xs text-red-300 transition-colors hover:bg-red-500/25"
+                onClick={deleteSelection}
+                title="Удалить выбранные объекты"
+                type="button"
+              >
+                <Trash2 aria-hidden size={15} /> Удалить
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              <button aria-label="На задний слой" className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted" onClick={() => changeLayer("back")} title="На задний слой" type="button"><SendToBack size={16} /></button>
+              <button aria-label="Ниже на один слой" className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted" onClick={() => changeLayer("backward")} title="Ниже на один слой" type="button"><MoveDown size={16} /></button>
+              <button aria-label="Выше на один слой" className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted" onClick={() => changeLayer("forward")} title="Выше на один слой" type="button"><MoveUp size={16} /></button>
+              <button aria-label="На передний слой" className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted" onClick={() => changeLayer("front")} title="На передний слой" type="button"><BringToFront size={16} /></button>
+            </div>
+          </section>
         )}
       </div>
     </aside>

@@ -1,6 +1,9 @@
 import type { Point } from "@/shared/types";
+import { rotatePoint } from "@/shared/lib";
 import { getArrowPathPoints } from "./getArrowPathPoints";
 import { getElementBounds } from "./getElementBounds";
+import { getElementCenter } from "./getElementCenter";
+import { getElementRotation } from "./getElementRotation";
 import type { BoardElement } from "../model/types";
 
 const HIT_PADDING = 9;
@@ -36,13 +39,23 @@ function isPointNearPath(point: Point, points: Point[], tolerance: number) {
   });
 }
 
+/** Converts a world point to the element's unrotated local canvas position. */
+function toLocalPoint(element: BoardElement, point: Point) {
+  const angle = getElementRotation(element);
+
+  return angle === 0
+    ? point
+    : rotatePoint(point, getElementCenter(element), -angle);
+}
+
 export function hitTestElement(element: BoardElement, point: Point) {
+  const localPoint = toLocalPoint(element, point);
   const tolerance = Math.max(HIT_PADDING, element.style.strokeWidth + 5);
 
   if (element.type === "line") {
     return (
       distanceToSegment(
-        point,
+        localPoint,
         { x: element.x, y: element.y },
         { x: element.x + element.width, y: element.y + element.height },
       ) <= tolerance
@@ -50,7 +63,13 @@ export function hitTestElement(element: BoardElement, point: Point) {
   }
 
   if (element.type === "arrow") {
-    return isPointNearPath(point, getArrowPathPoints(element), tolerance);
+    return isPointNearPath(localPoint, getArrowPathPoints(element), tolerance);
+  }
+
+  if (element.type === "freedraw") {
+    return element.points.length <= 1
+      ? Math.hypot(localPoint.x - element.x, localPoint.y - element.y) <= tolerance
+      : isPointNearPath(localPoint, element.points, tolerance);
   }
 
   const bounds = getElementBounds(element);
@@ -58,8 +77,8 @@ export function hitTestElement(element: BoardElement, point: Point) {
   if (element.type === "ellipse") {
     const radiusX = Math.max(bounds.width / 2, 1);
     const radiusY = Math.max(bounds.height / 2, 1);
-    const normalizedX = (point.x - (bounds.x + radiusX)) / radiusX;
-    const normalizedY = (point.y - (bounds.y + radiusY)) / radiusY;
+    const normalizedX = (localPoint.x - (bounds.x + radiusX)) / radiusX;
+    const normalizedY = (localPoint.y - (bounds.y + radiusY)) / radiusY;
 
     return normalizedX * normalizedX + normalizedY * normalizedY <= 1.18;
   }
@@ -67,16 +86,16 @@ export function hitTestElement(element: BoardElement, point: Point) {
   if (element.type === "diamond") {
     const centerX = bounds.x + bounds.width / 2;
     const centerY = bounds.y + bounds.height / 2;
-    const normalizedX = Math.abs(point.x - centerX) / Math.max(bounds.width / 2, 1);
-    const normalizedY = Math.abs(point.y - centerY) / Math.max(bounds.height / 2, 1);
+    const normalizedX = Math.abs(localPoint.x - centerX) / Math.max(bounds.width / 2, 1);
+    const normalizedY = Math.abs(localPoint.y - centerY) / Math.max(bounds.height / 2, 1);
 
     return normalizedX + normalizedY <= 1.15;
   }
 
   return (
-    point.x >= bounds.x - tolerance &&
-    point.x <= bounds.x + bounds.width + tolerance &&
-    point.y >= bounds.y - tolerance &&
-    point.y <= bounds.y + bounds.height + tolerance
+    localPoint.x >= bounds.x - tolerance &&
+    localPoint.x <= bounds.x + bounds.width + tolerance &&
+    localPoint.y >= bounds.y - tolerance &&
+    localPoint.y <= bounds.y + bounds.height + tolerance
   );
 }

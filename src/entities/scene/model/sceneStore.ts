@@ -5,7 +5,6 @@ import type { SceneState } from "./types";
 type SceneListener = () => void;
 
 let scene = createScene();
-
 const listeners = new Set<SceneListener>();
 
 function notifyListeners() {
@@ -17,9 +16,20 @@ function setScene(nextScene: SceneState) {
   notifyListeners();
 }
 
+function cloneElements(elements: BoardElement[]) {
+  return JSON.parse(JSON.stringify(elements)) as BoardElement[];
+}
+
 export const sceneStore = {
   get() {
     return scene;
+  },
+
+  setElements(elements: BoardElement[]) {
+    setScene({
+      elements: cloneElements(elements),
+      version: scene.version + 1,
+    });
   },
 
   add(element: BoardElement) {
@@ -55,15 +65,20 @@ export const sceneStore = {
     });
   },
 
+  removeMany(elementIds: string[]) {
+    const ids = new Set(elementIds);
+    setScene({
+      elements: scene.elements.filter((element) => !ids.has(element.id)),
+      version: scene.version + 1,
+    });
+  },
+
   clear() {
     setScene(createScene());
   },
 
   subscribe(listener: SceneListener) {
     listeners.add(listener);
-
-    return () => {
-      listeners.delete(listener);
-    };
+    return () => listeners.delete(listener);
   },
 };

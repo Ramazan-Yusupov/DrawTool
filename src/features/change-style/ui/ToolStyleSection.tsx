@@ -1,3 +1,10 @@
+import {
+  CornerDownRight,
+  CornerUpRight,
+  Minus,
+  MoreHorizontal,
+  PanelTopDashed,
+} from "lucide-react";
 import type { ElementStyle, StrokeStyle } from "@/entities/element";
 import { ColorPalette, RangeField, SegmentedControl } from "@/shared/ui";
 import type { ToolStyleCapabilities } from "../model/toolCapabilities";
@@ -10,20 +17,20 @@ type ToolStyleSectionProps = {
 };
 
 const STROKE_WIDTHS = [
-  { label: "1px", value: "1" },
-  { label: "2px", value: "2" },
-  { label: "4px", value: "4" },
+  { label: "Тонкая линия: 1px", value: "1", icon: Minus, iconOnly: true },
+  { label: "Средняя линия: 2px", value: "2", icon: Minus, iconOnly: true },
+  { label: "Толстая линия: 4px", value: "4", icon: Minus, iconOnly: true },
 ] as const;
 
 const STROKE_STYLES = [
-  { label: "Сплошная", value: "solid" },
-  { label: "Штрих", value: "dashed" },
-  { label: "Точки", value: "dotted" },
+  { label: "Сплошная линия", value: "solid", icon: Minus, iconOnly: true },
+  { label: "Штриховая линия", value: "dashed", icon: PanelTopDashed, iconOnly: true },
+  { label: "Точечная линия", value: "dotted", icon: MoreHorizontal, iconOnly: true },
 ] as const;
 
 const CORNER_STYLES = [
-  { label: "Острые", value: "sharp" },
-  { label: "Скруглённые", value: "rounded" },
+  { label: "Острые углы", value: "sharp", icon: CornerUpRight, iconOnly: true },
+  { label: "Скруглённые углы", value: "rounded", icon: CornerDownRight, iconOnly: true },
 ] as const;
 
 export function ToolStyleSection({
@@ -44,7 +51,7 @@ export function ToolStyleSection({
 
           <SegmentedControl
             items={STROKE_WIDTHS}
-            label="Толщина"
+            label="Толщина линии"
             onChange={(value) => onChange({ strokeWidth: Number(value) })}
             value={String(style.strokeWidth) as "1" | "2" | "4"}
           />
