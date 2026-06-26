@@ -326,7 +326,7 @@ export function PropertiesPanel() {
       {!isCompactPanelOpen && (
         <button
           aria-label="Открыть настройки"
-          className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-[4.25rem] z-30 grid size-11 place-items-center rounded-xl border border-border bg-panel text-text shadow-panel transition-colors hover:bg-control lg:hidden"
+          className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-17 z-30 grid size-11 place-items-center rounded-xl border border-border bg-panel text-text shadow-panel transition-colors hover:bg-control lg:hidden"
           onClick={() => setIsCompactPanelOpen(true)}
           title="Настройки"
           type="button"

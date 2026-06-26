@@ -29,7 +29,7 @@ export function SceneStorageControls() {
   }
 
   return (
-    <div className="absolute left-[8.5rem] top-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:left-[8.25rem] max-lg:top-[max(0.5rem,env(safe-area-inset-top))] max-lg:gap-0.5">
+    <div className="absolute left-34 top-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:left-33 max-lg:top-[max(0.5rem,env(safe-area-inset-top))] max-lg:gap-0.5">
       <button
         aria-label="Сохранить на этом устройстве"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
