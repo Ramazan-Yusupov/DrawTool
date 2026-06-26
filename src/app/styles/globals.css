@@ -111,3 +111,24 @@ canvas {
     min-height: 44px;
   }
 }
+
+
+@keyframes drawtool-projects-enter {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawtool-projects-sidebar {
+  animation: drawtool-projects-enter 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawtool-projects-sidebar {
+    animation: none;
+  }
+}

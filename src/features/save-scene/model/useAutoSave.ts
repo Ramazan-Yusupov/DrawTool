@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { sceneStore } from "@/entities/scene";
 import { saveScene } from "./saveScene";
 
-/** Persists the board shortly after every scene change. */
+/** Persists the active IndexedDB project shortly after every scene change. */
 export function useAutoSave() {
   useEffect(() => {
     let timeoutId: number | undefined;
@@ -10,8 +10,8 @@ export function useAutoSave() {
     const unsubscribe = sceneStore.subscribe(() => {
       window.clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => {
-        saveScene();
-      }, 180);
+        void saveScene();
+      }, 240);
     });
 
     return () => {

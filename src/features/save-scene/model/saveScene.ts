@@ -1,6 +1,7 @@
 import { sceneStore } from "@/entities/scene";
-import { saveSceneToLocalStorage } from "../api/localSceneRepository";
+import { projectStore } from "@/features/projects";
 
+/** Saves the active project to IndexedDB. */
 export function saveScene() {
-  return saveSceneToLocalStorage(sceneStore.get().elements);
+  return projectStore.saveActiveProject(sceneStore.get().elements);
 }

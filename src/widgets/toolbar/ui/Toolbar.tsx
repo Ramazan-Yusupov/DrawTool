@@ -22,7 +22,7 @@ export function Toolbar() {
   return (
     <nav
       aria-label="Инструменты доски"
-      className={`drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 lg:ms-10 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-lg:top-auto max-lg:w-[calc(100dvw-1rem)] max-lg:max-w-none max-lg:overflow-x-auto max-lg:overscroll-contain ${
+      className={`drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 lg:ms-40 flex sm:justify-center max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-lg:top-auto max-lg:w-[calc(100dvw-1rem)] max-lg:max-w-none max-lg:overflow-x-auto max-lg:overscroll-contain ${
         textEditor.elementId ? "max-lg:hidden" : ""
       }`}
     >

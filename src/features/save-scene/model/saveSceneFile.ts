@@ -1,13 +1,16 @@
 import { deserializeScene } from "@/entities/scene/lib/deserializeScene";
 import { serializeScene } from "@/entities/scene/lib/serializeScene";
-import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
-import { selectionStore } from "@/entities/selection";
-import { saveSceneToLocalStorage } from "../api/localSceneRepository";
+import { projectStore } from "@/features/projects";
 
 function getFileName() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   return `drawtool-scene-${timestamp}.json`;
+}
+
+function getProjectNameFromFileName(fileName: string) {
+  const sanitized = fileName.replace(/\.json$/i, "").trim();
+  return sanitized || "Импортированный проект";
 }
 
 export function downloadSceneFile() {
@@ -23,11 +26,20 @@ export function downloadSceneFile() {
   URL.revokeObjectURL(url);
 }
 
+/** Imports a JSON scene as a separate IndexedDB project. */
 export async function restoreSceneFromFile(file: File) {
   const source = await file.text();
   const elements = deserializeScene(source);
-  sceneStore.setElements(elements);
-  selectionStore.clear();
-  historyStore.clear();
-  saveSceneToLocalStorage(elements);
+  const result = await projectStore.createImportedProject(
+    getProjectNameFromFileName(file.name),
+    elements,
+  );
+
+  if (!result.ok) {
+    throw new Error(
+      result.reason === "limit"
+        ? "Project limit reached"
+        : "Unable to import project",
+    );
+  }
 }

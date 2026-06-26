@@ -1,5 +1,7 @@
-import { Download, FolderOpen, Save } from "lucide-react";
+import { Download, FolderOpen, FolderTree, Keyboard, Save } from "lucide-react";
 import { useRef, useState } from "react";
+import { projectStore } from "@/features/projects";
+import { shortcutsHelpStore } from "@/features/shortcuts-help";
 import {
   downloadSceneFile,
   restoreSceneFromFile,
@@ -20,27 +22,44 @@ export function SceneStorageControls() {
 
     try {
       await restoreSceneFromFile(file);
-      notify("Сцена загружена");
-    } catch {
-      notify("Не удалось прочитать файл");
+      notify("Проект импортирован");
+    } catch (error) {
+      notify(
+        error instanceof Error && error.message === "Project limit reached"
+          ? "Достигнут лимит: 20 проектов"
+          : "Не удалось прочитать файл",
+      );
     } finally {
       if (inputRef.current) inputRef.current.value = "";
     }
   }
 
   return (
-    <div className="absolute left-34 top-4 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:left-33 max-lg:top-[max(0.5rem,env(safe-area-inset-top))] max-lg:gap-0.5">
+    <div className="absolute left-34 max-sm:left-2 sm:top-4 top-20 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:left-33  max-lg:gap-0.5">
       <button
-        aria-label="Сохранить на этом устройстве"
+        aria-label="Открыть проекты"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
-        onClick={() =>
-          notify(saveScene() ? "Сохранено" : "Не удалось сохранить")
-        }
-        title="Сохранить в localStorage"
+        onClick={() => projectStore.toggleSidebar()}
+        title="Проекты"
+        type="button"
+      >
+        <FolderTree aria-hidden size={17} />
+      </button>
+
+      <button
+        aria-label="Сохранить активный проект"
+        className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+        onClick={() => {
+          void saveScene().then((saved) => {
+            notify(saved ? "Сохранено" : "Не удалось сохранить");
+          });
+        }}
+        title="Сохранить проект"
         type="button"
       >
         <Save aria-hidden size={17} />
       </button>
+
       <button
         aria-label="Скачать файл сцены"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
@@ -50,22 +69,35 @@ export function SceneStorageControls() {
       >
         <Download aria-hidden size={17} />
       </button>
+
       <button
-        aria-label="Открыть файл сцены"
+        aria-label="Импортировать JSON-проект"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
         onClick={() => inputRef.current?.click()}
-        title="Открыть JSON-файл"
+        title="Импортировать JSON-файл как новый проект"
         type="button"
       >
         <FolderOpen aria-hidden size={17} />
       </button>
+
+      <button
+        aria-label="Открыть горячие клавиши"
+        className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+        onClick={() => shortcutsHelpStore.open()}
+        title="Горячие клавиши"
+        type="button"
+      >
+        <Keyboard aria-hidden size={17} />
+      </button>
+
       <input
         accept="application/json,.json"
         className="hidden"
-        onChange={(event) => importFile(event.currentTarget.files?.[0])}
+        onChange={(event) => void importFile(event.currentTarget.files?.[0])}
         ref={inputRef}
         type="file"
       />
+
       {message && (
         <span className="absolute left-0 top-12 whitespace-nowrap rounded-md border border-border bg-panel px-2 py-1 text-xs text-text shadow-panel">
           {message}
