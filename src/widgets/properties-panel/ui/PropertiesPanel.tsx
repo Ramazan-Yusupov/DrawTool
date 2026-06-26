@@ -23,8 +23,6 @@ import { getSelectedElements, selectionStore } from "@/entities/selection";
 import { TOOL_LABELS, toolStore } from "@/entities/tool";
 import { SnapSection, ToolStyleSection, TOOL_SETTINGS_CAPABILITIES, toolSettingsStore } from "@/features/change-style";
 import { NumberField, SegmentedControl } from "@/shared/ui";
-import { GeometrySection } from "./GeometrySection";
-import { RotationSection } from "./RotationSection";
 import { EmbedSection } from "./EmbedSection";
 
 const ARROW_ROUTING_ITEMS = [
@@ -159,30 +157,6 @@ export function PropertiesPanel() {
         selectedIds.has(element.id)
           ? updateElement(element, { style: { ...element.style, ...patch } })
           : element,
-      );
-    });
-  }
-
-  function changeGeometry(patch: Pick<BoardElement, "x" | "y" | "width" | "height">) {
-    if (!primaryElement) {
-      return;
-    }
-
-    mutateScene(() => {
-      sceneStore.updateById(primaryElement.id, (element) =>
-        updateElement(element, patch),
-      );
-    });
-  }
-
-  function changeAngle(angle: number) {
-    if (!primaryElement) {
-      return;
-    }
-
-    mutateScene(() => {
-      sceneStore.updateById(primaryElement.id, (element) =>
-        updateElement(element, { angle }),
       );
     });
   }
@@ -388,8 +362,6 @@ export function PropertiesPanel() {
 
         {primaryElement && (
           <>
-            <GeometrySection element={primaryElement} onChange={changeGeometry} />
-            <RotationSection angle={primaryElement.angle} onChange={changeAngle} />
             {primaryElement.type === "embed" && (
               <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
             )}

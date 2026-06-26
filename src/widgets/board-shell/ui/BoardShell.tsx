@@ -6,7 +6,6 @@ import { UndoRedoButtons } from "@/features/undo-redo";
 import { PropertiesPanel } from "@/widgets/properties-panel";
 import { Toolbar } from "@/widgets/toolbar";
 import { BoardCanvas } from "./BoardCanvas";
-import { CanvasOverlay } from "./CanvasOverlay";
 import { useBoardRenderer } from "../model/useBoardRenderer";
 
 export function BoardShell() {
@@ -23,7 +22,6 @@ export function BoardShell() {
       <Toolbar />
       <ThemeToggle />
       <PropertiesPanel />
-      <CanvasOverlay />
     </section>
   );
 }

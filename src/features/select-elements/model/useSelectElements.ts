@@ -184,7 +184,11 @@ export function useSelectElements() {
     }
 
     if (interaction.mode === "move") {
-      move.updateMove(point);
+      move.updateMove(point, {
+        alignToElements: event.ctrlKey || event.metaKey,
+        constrainToAxis: event.shiftKey,
+        zoom: viewportStore.get().zoom,
+      });
       return;
     }
 
