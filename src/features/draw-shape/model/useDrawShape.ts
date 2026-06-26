@@ -5,6 +5,7 @@ import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
 import { attachFrameChildren, findContainingFrame, sceneStore } from "@/entities/scene";
+import { selectionStore } from "@/entities/selection";
 import { toolSettingsStore } from "@/features/change-style";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
@@ -246,6 +247,14 @@ export function useDrawShape() {
             );
           }
         }
+
+        /*
+         * Фигуры — одноразовые инструменты: после завершения сразу
+         * переключаемся на курсор и выделяем созданный объект, чтобы его
+         * можно было сразу передвинуть, изменить или повернуть.
+         */
+        selectionStore.setElementIds([element.id]);
+        toolStore.set("selection");
       }
     }
 

@@ -8,7 +8,9 @@ import {
 } from "@/entities/element";
 import type { TextElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { sceneStore } from "@/entities/scene";
+import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
+import { selectionStore } from "@/entities/selection";
+import { toolStore } from "@/entities/tool";
 import { viewportStore } from "@/entities/viewport";
 import { textEditorStore } from "../model/textEditorStore";
 
@@ -82,6 +84,14 @@ export function TextEditorOverlay() {
   );
   const fontSize = editingElement.fontSize * viewport.zoom;
 
+  function growParentFramesIfNeeded() {
+    const nextElements = expandFramesToFitChildren(sceneStore.get().elements);
+
+    if (nextElements !== sceneStore.get().elements) {
+      sceneStore.setElements(nextElements);
+    }
+  }
+
   function syncTextElement(nextText: string) {
     const size = getTextSize(
       nextText || " ",
@@ -98,6 +108,8 @@ export function TextEditorOverlay() {
           })
         : item,
     );
+
+    growParentFramesIfNeeded();
   }
 
   function updateDraft(nextDraft: string) {
@@ -119,7 +131,9 @@ export function TextEditorOverlay() {
 
     if (!currentElement || currentElement.type !== "text") {
       historyStore.cancel();
+      selectionStore.clear();
       textEditorStore.close();
+      toolStore.set("selection");
       return;
     }
 
@@ -127,6 +141,7 @@ export function TextEditorOverlay() {
 
     if (!text.trim() && editorState.wasCreated) {
       sceneStore.removeById(currentElement.id);
+      selectionStore.clear();
     } else {
       const size = getTextSize(
         text || " ",
@@ -142,10 +157,16 @@ export function TextEditorOverlay() {
             })
           : item,
       );
+      growParentFramesIfNeeded();
+      selectionStore.setElementIds([currentElement.id]);
     }
 
     historyStore.commit();
     textEditorStore.close();
+
+    // Text is also a one-shot tool: return to the selection cursor after
+    // committing so the finished label can immediately be moved or resized.
+    toolStore.set("selection");
   }
 
   function cancel() {
@@ -157,13 +178,17 @@ export function TextEditorOverlay() {
 
     if (editorState.wasCreated) {
       sceneStore.removeById(editingElement.id);
+      selectionStore.clear();
     } else if (originalElementRef.current) {
       const original = originalElementRef.current;
-      sceneStore.updateById(editingElement.id, () => cloneTextElement(original));
+      sceneStore.updateById(editingElement.id, () =>
+        cloneTextElement(original),
+      );
     }
 
     historyStore.cancel();
     textEditorStore.close();
+    toolStore.set("selection");
   }
 
   return (
@@ -195,8 +220,11 @@ export function TextEditorOverlay() {
       style={{
         left: screenX + TEXT_ELEMENT_PADDING * viewport.zoom,
         top: screenY + TEXT_ELEMENT_PADDING * viewport.zoom,
-        width: Math.max(contentSize.width * viewport.zoom + 2, 52),
-        height: Math.max(contentSize.height * viewport.zoom + 2, fontSize * 1.25),
+        width: Math.max(contentSize.width * viewport.zoom + 2, 22),
+        height: Math.max(
+          contentSize.height * viewport.zoom + 2,
+          fontSize * 1.25,
+        ),
         caretColor: editingElement.style.strokeColor,
         color: editingElement.style.strokeColor,
         fontFamily: editingElement.fontFamily,

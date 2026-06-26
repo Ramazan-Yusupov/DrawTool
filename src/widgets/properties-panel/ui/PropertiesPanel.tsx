@@ -25,7 +25,7 @@ import type {
   TextAlign,
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { sceneStore } from "@/entities/scene";
+import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
 import { getSelectedElements, selectionStore } from "@/entities/selection";
 import { TOOL_LABELS, toolStore } from "@/entities/tool";
 import {
@@ -274,6 +274,11 @@ export function PropertiesPanel() {
             height: size.height,
           });
         });
+
+        const nextElements = expandFramesToFitChildren(sceneStore.get().elements);
+        if (nextElements !== sceneStore.get().elements) {
+          sceneStore.setElements(nextElements);
+        }
       });
       return;
     }

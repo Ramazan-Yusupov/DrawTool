@@ -3,6 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { getElementCenter } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
+import { toolStore } from "@/entities/tool";
 import { getWorldPointerPosition } from "@/features/draw-shape/lib/getWorldPointerPosition";
 import type { Point } from "@/shared/types";
 import { isPointInPolygon } from "../lib/isPointInPolygon";
@@ -58,6 +59,9 @@ export function useLassoSelect() {
 
     interactionRef.current = null;
     lassoStore.clear();
+
+    // Лассо — одноразовый инструмент: после завершения возвращаем курсор.
+    toolStore.set("selection");
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);

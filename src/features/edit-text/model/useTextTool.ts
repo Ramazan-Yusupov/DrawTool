@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { createText, getTextSize } from "@/entities/element";
+import { createText, getTextSize, updateElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { sceneStore } from "@/entities/scene";
+import { findContainingFrame, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolSettingsStore } from "@/features/change-style";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
@@ -34,6 +34,16 @@ export function useTextTool() {
     });
 
     sceneStore.add(element);
+
+    // Remember the Frame at the moment the text is created. The Frame can then
+    // grow with the text while it is being typed instead of clipping it.
+    const parentFrame = findContainingFrame(element, sceneStore.get().elements);
+    if (parentFrame) {
+      sceneStore.updateById(element.id, (current) =>
+        updateElement(current, { parentId: parentFrame.id }),
+      );
+    }
+
     selectionStore.setElementIds([element.id]);
     textEditorStore.open(element.id, true);
   }

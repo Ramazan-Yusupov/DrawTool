@@ -7,6 +7,7 @@ import {
 } from "@/entities/element";
 import type { BoardElement, FrameElement, TextElement } from "@/entities/element";
 import {
+  expandFramesToFitChildren,
   scaleFrameChild,
   sceneStore,
 } from "@/entities/scene";
@@ -235,6 +236,11 @@ export function resizeElement(
     sceneStore.updateById(element.id, (current) =>
       current.type === "text" ? updateElement(current, textPatch) : current,
     );
+
+    const nextElements = expandFramesToFitChildren(sceneStore.get().elements);
+    if (nextElements !== sceneStore.get().elements) {
+      sceneStore.setElements(nextElements);
+    }
     return;
   }
 

@@ -196,6 +196,98 @@ export function scaleFrameChild(
 }
 
 
+/**
+ * Grows ancestor Frames just enough to include their direct children.
+ *
+ * This is primarily important for text: a text element can grow while the
+ * user types, and clipping it would make its dashed editor/selection box seem
+ * to escape the Frame. Frames never shrink here; they only grow when a child
+ * needs more room. Nested Frames are processed from inner to outer parents.
+ */
+export function expandFramesToFitChildren(elements: BoardElement[]) {
+  const byId = new Map(elements.map((element) => [element.id, element] as const));
+  const childIdsByParent = new Map<string, string[]>();
+
+  elements.forEach((element) => {
+    if (!element.parentId || !byId.has(element.parentId)) return;
+    const childIds = childIdsByParent.get(element.parentId) ?? [];
+    childIds.push(element.id);
+    childIdsByParent.set(element.parentId, childIds);
+  });
+
+  const getDepth = (element: BoardElement) => {
+    let depth = 0;
+    let parentId = element.parentId;
+    const visited = new Set<string>();
+
+    while (parentId && !visited.has(parentId)) {
+      visited.add(parentId);
+      const parent = byId.get(parentId);
+      if (!parent) break;
+      depth += 1;
+      parentId = parent.parentId;
+    }
+
+    return depth;
+  };
+
+  const frames = elements
+    .filter((element): element is FrameElement => element.type === "frame")
+    .sort((left, right) => getDepth(right) - getDepth(left));
+
+  let changed = false;
+
+  frames.forEach((frame) => {
+    const childIds = childIdsByParent.get(frame.id) ?? [];
+    const children = childIds
+      .map((childId) => byId.get(childId))
+      .filter((child): child is BoardElement => Boolean(child));
+
+    if (children.length === 0) return;
+
+    const bounds = getElementBounds(frame);
+    const childBounds = children.map(getElementBounds);
+    const inset = Math.min(
+      FRAME_CONTENT_INSET,
+      Math.max(0, Math.min(bounds.width, bounds.height) / 4),
+    );
+    const nextLeft = Math.min(bounds.x, ...childBounds.map((child) => child.x - inset));
+    const nextTop = Math.min(bounds.y, ...childBounds.map((child) => child.y - inset));
+    const nextRight = Math.max(
+      bounds.x + bounds.width,
+      ...childBounds.map((child) => child.x + child.width + inset),
+    );
+    const nextBottom = Math.max(
+      bounds.y + bounds.height,
+      ...childBounds.map((child) => child.y + child.height + inset),
+    );
+
+    if (
+      nextLeft === bounds.x &&
+      nextTop === bounds.y &&
+      nextRight === bounds.x + bounds.width &&
+      nextBottom === bounds.y + bounds.height
+    ) {
+      return;
+    }
+
+    const nextFrame = updateElement(frame, {
+      x: nextLeft,
+      y: nextTop,
+      width: nextRight - nextLeft,
+      height: nextBottom - nextTop,
+    });
+
+    byId.set(frame.id, nextFrame);
+    changed = true;
+  });
+
+  if (!changed) return elements;
+
+  return elements.map((element) => byId.get(element.id) ?? element);
+}
+
+
 /** Assigns children for every Frame, starting from the smallest nested Frame. */
 export function attachAllFrameChildren(elements: BoardElement[]) {
   const frames = elements

@@ -6,6 +6,7 @@ export {
   attachAllFrameChildren,
   attachFrameChildren,
   clampDeltaToParentFrame,
+  expandFramesToFitChildren,
   findContainingFrame,
   getFrameContentBounds,
   getFrameDescendantIds,
