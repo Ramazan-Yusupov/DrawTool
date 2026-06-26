@@ -1,3 +1,5 @@
+import { BoardPage } from "@/pages/board";
+
 export function App() {
-  return <div>Apps</div>;
+  return <BoardPage />;
 }
