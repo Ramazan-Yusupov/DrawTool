@@ -13,7 +13,8 @@ export type ElementType =
   | "freedraw"
   | "text"
   | "frame"
-  | "embed";
+  | "embed"
+  | "code";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type FillStyle = "transparent" | "solid";
@@ -41,6 +42,8 @@ export type BaseElement = {
   height: number;
   /** Rotation in radians. It may exceed 2π while the user keeps rotating. */
   angle: number;
+  /** Optional containing Frame. Frame children move and resize with their parent. */
+  parentId?: string;
   createdAt: number;
   updatedAt: number;
   style: ElementStyle;
@@ -77,6 +80,14 @@ export type EmbedElement = BaseElement & {
   url: string;
 };
 
+/** A self-contained, resizable code card. Its title and source stay inside the card. */
+export type CodeSketchElement = BaseElement & {
+  type: "code";
+  title: string;
+  code: string;
+  language: string;
+};
+
 export type TextElement = BaseElement & {
   type: "text";
   text: string;
@@ -98,7 +109,8 @@ export type BoardElement =
   | FreeDrawElement
   | TextElement
   | FrameElement
-  | EmbedElement;
+  | EmbedElement
+  | CodeSketchElement;
 
 export type ElementEndpoints = {
   start: Point;

@@ -18,4 +18,5 @@ export type ToolId =
   | "eraser"
   | "laser"
   | "lasso"
+  | "code"
   | ShapeToolId;

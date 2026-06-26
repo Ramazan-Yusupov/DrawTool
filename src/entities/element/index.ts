@@ -2,6 +2,7 @@ export { DEFAULT_ELEMENT_STYLE } from "./model/constants";
 export {
   createArrow,
   createCloud,
+  createCodeSketch,
   createDiamond,
   createEmbed,
   createElement,
@@ -39,6 +40,7 @@ export type {
   BaseElement,
   BoardElement,
   CloudElement,
+  CodeSketchElement,
   CornerStyle,
   DiamondElement,
   EmbedElement,

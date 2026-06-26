@@ -5,8 +5,11 @@ import {
   getTextSize,
   updateElement,
 } from "@/entities/element";
-import type { BoardElement, TextElement } from "@/entities/element";
-import { sceneStore } from "@/entities/scene";
+import type { BoardElement, FrameElement, TextElement } from "@/entities/element";
+import {
+  scaleFrameChild,
+  sceneStore,
+} from "@/entities/scene";
 import { CANVAS_CONFIG } from "@/shared/config";
 import { clamp, rotatePoint } from "@/shared/lib";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
@@ -154,6 +157,7 @@ export function resizeElement(
   startPoint: Point,
   currentPoint: Point,
   modifiers: ResizeModifiers,
+  initialFrameChildren = new Map<string, BoardElement>(),
 ) {
   if (element.type === "arrow" && handle === "elbow") {
     const point = modifiers.snapToGrid
@@ -191,6 +195,22 @@ export function resizeElement(
       ? snapConnectorPatch(element, handle, rawPatch)
       : snapShapePatch(element, handle, rawPatch)
     : rawPatch;
+
+  if (element.type === "frame") {
+    const nextFrame = updateElement(element, patch) as FrameElement;
+
+    sceneStore.updateAll((current) => {
+      if (current.id === element.id) {
+        return nextFrame;
+      }
+
+      const initialChild = initialFrameChildren.get(current.id);
+      return initialChild
+        ? scaleFrameChild(initialChild, element, nextFrame)
+        : current;
+    });
+    return;
+  }
 
   if (element.type === "freedraw") {
     const geometry = getGeometry(element, patch);

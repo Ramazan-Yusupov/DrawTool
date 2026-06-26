@@ -5,6 +5,7 @@ import type {
   ArrowRouting,
   BoardElement,
   CloudElement,
+  CodeSketchElement,
   DiamondElement,
   ElementStyle,
   ElementType,
@@ -123,6 +124,21 @@ export function createEmbed(params: BaseCreateParams & { url?: string }): EmbedE
   };
 }
 
+export function createCodeSketch(
+  params: BaseCreateParams & {
+    title?: string;
+    code?: string;
+    language?: string;
+  },
+): CodeSketchElement {
+  return {
+    ...createBase<CodeSketchElement>("code", params),
+    title: params.title ?? "Code sketch",
+    code: params.code ?? "function component() {\n  return <main />;\n}",
+    language: params.language ?? "tsx",
+  };
+}
+
 export function createFreeDraw(
   params: FreeDrawCreateParams,
 ): FreeDrawElement {
@@ -170,6 +186,8 @@ export function createElement(
       return createFrame(params);
     case "embed":
       return createEmbed(params);
+    case "code":
+      return createCodeSketch(params);
     case "freedraw":
       return createFreeDraw(params);
     case "text":

@@ -1,6 +1,12 @@
 import { useRef } from "react";
 import { getSelectionBounds } from "@/entities/selection";
-import { sceneStore } from "@/entities/scene";
+import {
+  attachAllFrameChildren,
+  clampDeltaToParentFrame,
+  getFrameDescendantIds,
+  reparentElements,
+  sceneStore,
+} from "@/entities/scene";
 import type { BoardElement } from "@/entities/element";
 import { getAlignmentSnap } from "../lib/getAlignmentSnap";
 import { alignmentGuidesStore } from "./alignmentGuidesStore";
@@ -17,6 +23,7 @@ type MoveOptions = {
 
 type MoveState = {
   elementIds: string[];
+  rootElementIds: string[];
   initialBounds: Rect | null;
   initialElements: Map<string, BoardElement>;
   lockedAxis: MoveAxis | null;
@@ -38,10 +45,32 @@ export function useMoveElements() {
   const moveRef = useRef<MoveState | null>(null);
 
   function startMove(elementIds: string[], startPoint: Point) {
-    const initialElements = getInitialElements(elementIds);
+    const selectedFrames = sceneStore
+      .get()
+      .elements.filter((element) => elementIds.includes(element.id) && element.type === "frame");
+
+    if (selectedFrames.length > 0) {
+      sceneStore.setElements(attachAllFrameChildren(sceneStore.get().elements));
+    }
+
+    const sceneElements = sceneStore.get().elements;
+    const expandedIds = new Set(elementIds);
+
+    elementIds.forEach((elementId) => {
+      const element = sceneElements.find((item) => item.id === elementId);
+      if (element?.type === "frame") {
+        getFrameDescendantIds(element.id, sceneElements).forEach((id) =>
+          expandedIds.add(id),
+        );
+      }
+    });
+
+    const movingIds = [...expandedIds];
+    const initialElements = getInitialElements(movingIds);
 
     moveRef.current = {
-      elementIds,
+      elementIds: movingIds,
+      rootElementIds: elementIds,
       initialBounds: getSelectionBounds([...initialElements.values()]),
       initialElements,
       lockedAxis: null,
@@ -120,19 +149,41 @@ export function useMoveElements() {
       alignmentGuidesStore.clear();
     }
 
+    const movingIds = new Set(moveState.elementIds);
+    const currentElements = sceneStore.get().elements;
+
     sceneStore.updateAll((element) => {
       const initialElement = moveState.initialElements.get(element.id);
+      if (!initialElement) return element;
 
-      return initialElement
-        ? moveElementByDelta(initialElement, { x: deltaX, y: deltaY })
-        : element;
+      let elementDelta = { x: deltaX, y: deltaY };
+      const parent = initialElement.parentId
+        ? currentElements.find(
+            (candidate): candidate is Extract<BoardElement, { type: "frame" }> =>
+              candidate.id === initialElement.parentId && candidate.type === "frame",
+          )
+        : undefined;
+
+      if (parent && !movingIds.has(parent.id)) {
+        elementDelta = clampDeltaToParentFrame(initialElement, elementDelta, parent);
+      }
+
+      return moveElementByDelta(initialElement, elementDelta);
     });
 
     return true;
   }
 
   function finishMove() {
-    const hadMove = moveRef.current !== null;
+    const moveState = moveRef.current;
+    const hadMove = moveState !== null;
+
+    if (moveState) {
+      sceneStore.setElements(
+        reparentElements(sceneStore.get().elements, moveState.rootElementIds),
+      );
+    }
+
     moveRef.current = null;
     alignmentGuidesStore.clear();
     return hadMove;

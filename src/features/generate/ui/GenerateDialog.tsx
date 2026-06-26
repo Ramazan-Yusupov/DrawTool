@@ -2,6 +2,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { Bot, WandSparkles } from "lucide-react";
 import {
   createArrow,
+  createCodeSketch,
   createRectangle,
   createText,
   type BoardElement,
@@ -126,7 +127,7 @@ function createDiagramElements(labels: Map<string, string>, edges: Edge[]) {
   return elements;
 }
 
-function createCodeSketch(source: string) {
+function createCodeSketchElements(source: string): BoardElement[] {
   const viewport = viewportStore.get();
   const x = viewport.x + 160;
   const y = viewport.y + 140;
@@ -136,33 +137,20 @@ function createCodeSketch(source: string) {
   const height = Math.max(170, lines.length * 22 + 72);
 
   return [
-    createRectangle({
+    createCodeSketch({
       x,
       y,
       width,
       height,
+      title: "Code sketch",
+      code,
+      language: "tsx",
       style: {
         strokeColor: "#64748b",
         backgroundColor: "#111827",
         fillStyle: "solid",
         cornerStyle: "rounded",
       },
-    }),
-    createText({
-      x: x + 14,
-      y: y + 10,
-      text: "Code sketch",
-      fontSize: 15,
-      fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-      style: { strokeColor: "#93c5fd" },
-    }),
-    createText({
-      x: x + 14,
-      y: y + 40,
-      text: code,
-      fontSize: 15,
-      fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-      style: { strokeColor: "#e2e8f0" },
     }),
   ];
 }
@@ -201,7 +189,7 @@ export function GenerateDialog() {
   function generate() {
     const items =
       mode === "code"
-        ? createCodeSketch(source)
+        ? createCodeSketchElements(source)
         : (() => {
             const parsed = mode === "mermaid" ? parseMermaid(source) : parseDiagramText(source);
             return createDiagramElements(parsed.labels, parsed.edges);

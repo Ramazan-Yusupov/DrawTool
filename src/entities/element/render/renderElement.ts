@@ -3,6 +3,7 @@ import { getElementRotation } from "../lib/getElementRotation";
 import type { BoardElement } from "../model/types";
 import { renderArrow } from "./renderArrow";
 import { renderCloud } from "./renderCloud";
+import { renderCodeSketch } from "./renderCodeSketch";
 import { renderDiamond } from "./renderDiamond";
 import { renderEllipse } from "./renderEllipse";
 import { renderEmbed } from "./renderEmbed";
@@ -46,6 +47,9 @@ function renderUnrotated(
       return;
     case "embed":
       renderEmbed(context, element);
+      return;
+    case "code":
+      renderCodeSketch(context, element);
       return;
     case "line":
       renderLine(context, element);

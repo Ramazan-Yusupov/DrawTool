@@ -4,7 +4,7 @@ import { normalizeElement, updateElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
-import { sceneStore } from "@/entities/scene";
+import { attachFrameChildren, findContainingFrame, sceneStore } from "@/entities/scene";
 import { toolSettingsStore } from "@/features/change-style";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
@@ -221,8 +221,31 @@ export function useDrawShape() {
     if (element) {
       if (isTooSmall(element.width, element.height, drawing.toolId)) {
         sceneStore.removeById(element.id);
-      } else if (drawing.toolId !== "line" && drawing.toolId !== "arrow") {
-        sceneStore.updateById(element.id, normalizeElement);
+      } else {
+        if (drawing.toolId !== "line" && drawing.toolId !== "arrow") {
+          sceneStore.updateById(element.id, normalizeElement);
+        }
+
+        const normalizedElement = sceneStore
+          .get()
+          .elements.find((item) => item.id === element.id);
+
+        if (normalizedElement?.type === "frame") {
+          sceneStore.setElements(
+            attachFrameChildren(sceneStore.get().elements, normalizedElement.id),
+          );
+        } else if (normalizedElement) {
+          const parentFrame = findContainingFrame(
+            normalizedElement,
+            sceneStore.get().elements,
+          );
+
+          if (parentFrame) {
+            sceneStore.updateById(normalizedElement.id, (current) =>
+              updateElement(current, { parentId: parentFrame.id }),
+            );
+          }
+        }
       }
     }
 

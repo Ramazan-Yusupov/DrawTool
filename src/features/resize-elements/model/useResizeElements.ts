@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { BoardElement } from "@/entities/element";
-import { sceneStore } from "@/entities/scene";
+import { attachAllFrameChildren, getFrameDescendantIds, sceneStore } from "@/entities/scene";
 import type { Point } from "@/shared/types";
 import { resizeElement } from "./resizeElements";
 import type { ResizeHandle, ResizeModifiers } from "./types";
@@ -9,6 +9,7 @@ type ActiveResize = {
   elementId: string;
   handle: ResizeHandle;
   initialElement: BoardElement;
+  initialFrameChildren: Map<string, BoardElement>;
   startPoint: Point;
 };
 
@@ -19,10 +20,7 @@ const DEFAULT_MODIFIERS: ResizeModifiers = {
 };
 
 function cloneElementForResize(element: BoardElement): BoardElement {
-  return {
-    ...element,
-    style: { ...element.style },
-  };
+  return JSON.parse(JSON.stringify(element)) as BoardElement;
 }
 
 export function useResizeElements() {
@@ -33,19 +31,35 @@ export function useResizeElements() {
     handle: ResizeHandle,
     startPoint: Point,
   ) {
-    const element = sceneStore
-      .get()
-      .elements.find((item) => item.id === elementId);
+    const selected = sceneStore.get().elements.find((item) => item.id === elementId);
+
+    if (selected?.type === "frame") {
+      sceneStore.setElements(attachAllFrameChildren(sceneStore.get().elements));
+    }
+
+    const elements = sceneStore.get().elements;
+    const element = elements.find((item) => item.id === elementId);
 
     if (!element) {
       resizeRef.current = null;
       return;
     }
 
+    const descendants =
+      element.type === "frame"
+        ? getFrameDescendantIds(element.id, elements)
+        : new Set<string>();
+    const initialFrameChildren = new Map(
+      elements
+        .filter((item) => descendants.has(item.id))
+        .map((item) => [item.id, cloneElementForResize(item)] as const),
+    );
+
     resizeRef.current = {
       elementId,
       handle,
       initialElement: cloneElementForResize(element),
+      initialFrameChildren,
       startPoint,
     };
   }
@@ -66,6 +80,7 @@ export function useResizeElements() {
       activeResize.startPoint,
       point,
       modifiers,
+      activeResize.initialFrameChildren,
     );
 
     return true;
