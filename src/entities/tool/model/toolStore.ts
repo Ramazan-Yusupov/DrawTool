@@ -1,8 +1,8 @@
-import type { ActiveTool } from "./types";
+import type { ToolId } from "./types";
 
 type ToolListener = () => void;
 
-let activeTool: ActiveTool = "selection";
+let activeTool: ToolId = "selection";
 
 const listeners = new Set<ToolListener>();
 
@@ -10,12 +10,16 @@ function notifyListeners() {
   listeners.forEach((listener) => listener());
 }
 
-export const activeToolStore = {
+export const toolStore = {
   get() {
     return activeTool;
   },
 
-  set(nextTool: ActiveTool) {
+  set(nextTool: ToolId) {
+    if (activeTool === nextTool) {
+      return;
+    }
+
     activeTool = nextTool;
     notifyListeners();
   },

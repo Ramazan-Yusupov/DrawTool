@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { RefObject } from "react";
-import { activeToolStore, useDrawShape } from "@/features/draw-shape";
+import { toolStore } from "@/entities/tool";
+import { useDrawShape } from "@/features/draw-shape";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
 
@@ -10,9 +11,9 @@ type BoardCanvasProps = {
 
 export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   const activeTool = useSyncExternalStore(
-    activeToolStore.subscribe,
-    activeToolStore.get,
-    activeToolStore.get,
+    toolStore.subscribe,
+    toolStore.get,
+    toolStore.get,
   );
 
   const panEvents = useCanvasPointerEvents();
@@ -28,10 +29,15 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       ref={canvasRef}
       aria-label="Интерактивная доска"
       className={`size-full touch-none ${cursorClass}`}
+      onPointerCancel={(event) => {
+        panEvents.onPointerUp(event);
+        drawingEvents.onPointerCancel(event);
+      }}
       onPointerDown={(event) => {
         panEvents.onPointerDown(event);
         drawingEvents.onPointerDown(event);
       }}
+      onPointerLeave={drawingEvents.onPointerLeave}
       onPointerMove={(event) => {
         panEvents.onPointerMove(event);
         drawingEvents.onPointerMove(event);
@@ -39,10 +45,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       onPointerUp={(event) => {
         panEvents.onPointerUp(event);
         drawingEvents.onPointerUp(event);
-      }}
-      onPointerCancel={(event) => {
-        panEvents.onPointerUp(event);
-        drawingEvents.onPointerCancel(event);
       }}
     />
   );

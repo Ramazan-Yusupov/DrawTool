@@ -1,9 +1,18 @@
 export type ElementType = "rectangle";
 
+export type StrokeStyle = "solid" | "dashed" | "dotted";
+
+export type FillStyle = "transparent" | "solid";
+
+export type CornerStyle = "sharp" | "rounded";
+
 export type ElementStyle = {
   strokeColor: string;
   backgroundColor: string;
   strokeWidth: number;
+  strokeStyle: StrokeStyle;
+  fillStyle: FillStyle;
+  cornerStyle: CornerStyle;
   opacity: number;
 };
 

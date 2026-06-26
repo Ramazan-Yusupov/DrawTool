@@ -12,23 +12,30 @@ export function getDrawingPoints(
   startPoint: Point,
   currentPoint: Point,
   isShiftPressed: boolean,
+  snapToGrid: boolean,
 ): DrawingPoints {
+  const shouldSnap = isShiftPressed || snapToGrid;
+
+  const adjustedStart = shouldSnap
+    ? snapPointToGrid(startPoint, CANVAS_CONFIG.snapSize)
+    : startPoint;
+
+  const adjustedEnd = shouldSnap
+    ? snapPointToGrid(currentPoint, CANVAS_CONFIG.snapSize)
+    : currentPoint;
+
   if (!isShiftPressed) {
     return {
-      startPoint,
-      endPoint: currentPoint,
+      startPoint: adjustedStart,
+      endPoint: adjustedEnd,
     };
   }
 
-  const snappedStart = snapPointToGrid(startPoint, CANVAS_CONFIG.snapSize);
-
-  const snappedCurrent = snapPointToGrid(currentPoint, CANVAS_CONFIG.snapSize);
-
   return {
-    startPoint: snappedStart,
+    startPoint: adjustedStart,
     endPoint: constrainPointToSquare(
-      snappedStart,
-      snappedCurrent,
+      adjustedStart,
+      adjustedEnd,
       CANVAS_CONFIG.snapSize,
     ),
   };

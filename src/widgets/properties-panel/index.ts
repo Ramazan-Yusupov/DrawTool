@@ -1,1 +1,1 @@
-export {};
+export { PropertiesPanel } from "./ui/PropertiesPanel";

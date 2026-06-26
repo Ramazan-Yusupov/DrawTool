@@ -1,22 +1,38 @@
+import { getLineDash } from "@/shared/lib/canvas/getLineDash";
+import { getElementBounds } from "../lib/getElementBounds";
 import type { RectangleElement } from "../model/types";
+import { drawRoundedRectPath } from "./drawRoundedRectPath";
 
 export function renderRectangle(
   context: CanvasRenderingContext2D,
   element: RectangleElement,
 ) {
+  const bounds = getElementBounds(element);
+  const { style } = element;
+
+  const radius = style.cornerStyle === "rounded" ? 12 : 0;
+
   context.save();
 
-  context.globalAlpha = element.style.opacity;
-  context.lineWidth = element.style.strokeWidth;
-  context.strokeStyle = element.style.strokeColor;
+  context.globalAlpha = style.opacity;
+  context.lineWidth = style.strokeWidth;
+  context.strokeStyle = style.strokeColor;
+  context.setLineDash(getLineDash(style.strokeStyle, style.strokeWidth));
 
-  if (element.style.backgroundColor !== "transparent") {
-    context.fillStyle = element.style.backgroundColor;
+  drawRoundedRectPath(
+    context,
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height,
+    radius,
+  );
 
-    context.fillRect(element.x, element.y, element.width, element.height);
+  if (style.fillStyle === "solid" && style.backgroundColor !== "transparent") {
+    context.fillStyle = style.backgroundColor;
+    context.fill();
   }
 
-  context.strokeRect(element.x, element.y, element.width, element.height);
-
+  context.stroke();
   context.restore();
 }
