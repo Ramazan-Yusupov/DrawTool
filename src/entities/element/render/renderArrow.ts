@@ -1,4 +1,5 @@
 import { getLineDash } from "@/shared/lib/canvas/getLineDash";
+import { getArrowPathPoints } from "../lib/getArrowPathPoints";
 import type { ArrowElement } from "../model/types";
 
 const ARROW_HEAD_LENGTH = 12;
@@ -9,11 +10,15 @@ export function renderArrow(
   element: ArrowElement,
 ) {
   const { style } = element;
-  const startX = element.x;
-  const startY = element.y;
-  const endX = element.x + element.width;
-  const endY = element.y + element.height;
-  const angle = Math.atan2(endY - startY, endX - startX);
+  const points = getArrowPathPoints(element);
+  const end = points.at(-1);
+  const previousPoint = points.at(-2);
+
+  if (!end || !previousPoint) {
+    return;
+  }
+
+  const angle = Math.atan2(end.y - previousPoint.y, end.x - previousPoint.x);
 
   context.save();
   context.globalAlpha = style.opacity;
@@ -24,25 +29,22 @@ export function renderArrow(
   context.setLineDash(getLineDash(style.strokeStyle, style.strokeWidth));
 
   context.beginPath();
-  context.moveTo(startX, startY);
-  context.lineTo(endX, endY);
+  context.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
   context.stroke();
 
-  if (startX !== endX || startY !== endY) {
-    context.setLineDash([]);
-    context.beginPath();
-    context.moveTo(endX, endY);
-    context.lineTo(
-      endX - ARROW_HEAD_LENGTH * Math.cos(angle - ARROW_HEAD_ANGLE),
-      endY - ARROW_HEAD_LENGTH * Math.sin(angle - ARROW_HEAD_ANGLE),
-    );
-    context.moveTo(endX, endY);
-    context.lineTo(
-      endX - ARROW_HEAD_LENGTH * Math.cos(angle + ARROW_HEAD_ANGLE),
-      endY - ARROW_HEAD_LENGTH * Math.sin(angle + ARROW_HEAD_ANGLE),
-    );
-    context.stroke();
-  }
-
+  context.setLineDash([]);
+  context.beginPath();
+  context.moveTo(end.x, end.y);
+  context.lineTo(
+    end.x - ARROW_HEAD_LENGTH * Math.cos(angle - ARROW_HEAD_ANGLE),
+    end.y - ARROW_HEAD_LENGTH * Math.sin(angle - ARROW_HEAD_ANGLE),
+  );
+  context.moveTo(end.x, end.y);
+  context.lineTo(
+    end.x - ARROW_HEAD_LENGTH * Math.cos(angle + ARROW_HEAD_ANGLE),
+    end.y - ARROW_HEAD_LENGTH * Math.sin(angle + ARROW_HEAD_ANGLE),
+  );
+  context.stroke();
   context.restore();
 }

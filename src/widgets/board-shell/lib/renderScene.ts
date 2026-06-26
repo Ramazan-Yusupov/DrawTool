@@ -1,6 +1,8 @@
 import { getElementBounds, renderElement } from "@/entities/element";
 import { getVisibleBounds, worldToScreen } from "@/entities/viewport";
 import { sceneStore } from "@/entities/scene";
+import { textEditorStore } from "@/features/edit-text/model/textEditorStore";
+import { renderSelection } from "./renderSelection";
 import type { Viewport } from "@/entities/viewport";
 import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
 
@@ -52,20 +54,22 @@ function renderWorldOrigin(
 export function renderScene({ context, viewport, size }: RenderSceneParams) {
   const visibleBounds = getVisibleBounds(viewport, size);
   const { elements } = sceneStore.get();
+  const editingTextId = textEditorStore.get().elementId;
 
   renderWorldOrigin(context, viewport, size);
 
   context.save();
-
   context.translate(-viewport.x * viewport.zoom, -viewport.y * viewport.zoom);
-
   context.scale(viewport.zoom, viewport.zoom);
 
   elements.forEach((element) => {
-    if (isVisible(getElementBounds(element), visibleBounds)) {
+    const isEditedText = element.type === "text" && element.id === editingTextId;
+
+    if (!isEditedText && isVisible(getElementBounds(element), visibleBounds)) {
       renderElement(context, element);
     }
   });
 
   context.restore();
+  renderSelection(context, viewport);
 }

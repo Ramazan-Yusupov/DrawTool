@@ -4,6 +4,7 @@ import { renderDiamond } from "./renderDiamond";
 import { renderEllipse } from "./renderEllipse";
 import { renderLine } from "./renderLine";
 import { renderRectangle } from "./renderRectangle";
+import { renderText } from "./renderText";
 
 export function renderElement(
   context: CanvasRenderingContext2D,
@@ -24,6 +25,9 @@ export function renderElement(
       return;
     case "arrow":
       renderArrow(context, element);
+      return;
+    case "text":
+      renderText(context, element);
       return;
   }
 }

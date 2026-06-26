@@ -3,7 +3,7 @@ import { screenToWorld, viewportStore } from "@/entities/viewport";
 import { getCanvasPointerPosition } from "@/shared/lib/dom/getCanvasPointerPosition";
 
 export function getWorldPointerPosition(
-  event: ReactPointerEvent<HTMLCanvasElement>,
+  event: ReactPointerEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>,
 ) {
   const screenPoint = getCanvasPointerPosition(
     event.nativeEvent,

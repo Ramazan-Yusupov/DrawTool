@@ -1,7 +1,7 @@
 import type { ElementStyle } from "./types";
 
 export const DEFAULT_ELEMENT_STYLE: ElementStyle = {
-  strokeColor: "#1e293b",
+  strokeColor: "#e5e7eb",
   backgroundColor: "transparent",
   strokeWidth: 2,
   strokeStyle: "solid",

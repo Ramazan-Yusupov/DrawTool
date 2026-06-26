@@ -41,6 +41,13 @@ export const sceneStore = {
     });
   },
 
+  updateAll(updater: (element: BoardElement) => BoardElement) {
+    setScene({
+      elements: scene.elements.map(updater),
+      version: scene.version + 1,
+    });
+  },
+
   removeById(elementId: string) {
     setScene({
       elements: scene.elements.filter((element) => element.id !== elementId),

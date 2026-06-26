@@ -13,7 +13,7 @@ export function Toolbar() {
   return (
     <nav
       aria-label="Инструменты доски"
-      className="absolute left-4 top-4 z-20 flex max-w-[calc(100vw-2rem)] flex-wrap gap-1 rounded-lg border border-border bg-surface p-1 shadow-panel"
+      className="absolute left-1/2 top-4 z-20 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 gap-1 rounded-xl border border-border bg-surface p-1.5 shadow-panel"
     >
       {TOOL_ITEMS.map((item) => (
         <ToolButton

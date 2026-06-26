@@ -5,4 +5,4 @@ export type ShapeToolId =
   | "line"
   | "arrow";
 
-export type ToolId = "selection" | ShapeToolId;
+export type ToolId = "selection" | "text" | ShapeToolId;

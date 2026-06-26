@@ -7,4 +7,5 @@ export const TOOL_LABELS: Record<ToolId, string> = {
   diamond: "Ромб",
   line: "Линия",
   arrow: "Стрелка",
+  text: "Текст",
 };

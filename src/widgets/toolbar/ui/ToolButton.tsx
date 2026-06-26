@@ -7,18 +7,25 @@ type ToolButtonProps = {
 };
 
 export function ToolButton({ isActive, item, onClick }: ToolButtonProps) {
+  const Icon = item.icon;
+
   return (
     <button
       aria-label={`${item.label}. Клавиша ${item.shortcut}`}
       aria-pressed={isActive}
-      className={`grid size-10 place-items-center rounded-md text-lg ${
-        isActive ? "bg-accent text-white" : "text-text hover:bg-surface-muted"
+      className={`relative grid size-10 place-items-center rounded-lg transition-colors ${
+        isActive
+          ? "bg-accent text-white"
+          : "text-text hover:bg-surface-muted"
       }`}
       onClick={onClick}
       title={`${item.label} (${item.shortcut})`}
       type="button"
     >
-      {item.icon}
+      <Icon aria-hidden size={19} strokeWidth={2} />
+      <span className="absolute bottom-0.5 right-1 text-[9px] leading-none opacity-70">
+        {item.shortcut}
+      </span>
     </button>
   );
 }

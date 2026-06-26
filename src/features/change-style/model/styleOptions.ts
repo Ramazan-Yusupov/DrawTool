@@ -1,6 +1,7 @@
 import type { ColorOption } from "@/shared/types";
 
 export const STROKE_COLORS: readonly ColorOption[] = [
+  { label: "Светлый", value: "#e5e7eb" },
   { label: "Тёмный", value: "#1e293b" },
   { label: "Синий", value: "#2563eb" },
   { label: "Зелёный", value: "#16a34a" },

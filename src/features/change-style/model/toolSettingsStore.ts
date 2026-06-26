@@ -1,4 +1,4 @@
-import type { ElementStyle } from "@/entities/element";
+import type { ArrowRouting, ElementStyle } from "@/entities/element";
 import type { ToolId } from "@/entities/tool";
 import { CANVAS_CONFIG } from "@/shared/config";
 import { clamp } from "@/shared/lib";
@@ -8,9 +8,7 @@ import type { ToolSettings } from "./types";
 type SettingsListener = () => void;
 
 const defaultSettings = createToolSettings();
-
 let settingsByTool: Partial<Record<ToolId, ToolSettings>> = {};
-
 const listeners = new Set<SettingsListener>();
 
 function notifyListeners() {
@@ -49,18 +47,12 @@ export const toolSettingsStore = {
   patchStyle(toolId: ToolId, patch: Partial<ElementStyle>) {
     updateSettings(toolId, (settings) => ({
       ...settings,
-      style: {
-        ...settings.style,
-        ...patch,
-      },
+      style: { ...settings.style, ...patch },
     }));
   },
 
   setSnapToGrid(toolId: ToolId, snapToGrid: boolean) {
-    updateSettings(toolId, (settings) => ({
-      ...settings,
-      snapToGrid,
-    }));
+    updateSettings(toolId, (settings) => ({ ...settings, snapToGrid }));
   },
 
   setSnapSize(toolId: ToolId, snapSize: number) {
@@ -70,15 +62,23 @@ export const toolSettingsStore = {
     }));
   },
 
+  setArrowRouting(toolId: ToolId, arrowRouting: ArrowRouting) {
+    updateSettings(toolId, (settings) => ({ ...settings, arrowRouting }));
+  },
+
+  setTextOptions(
+    toolId: ToolId,
+    patch: Pick<ToolSettings, "fontSize" | "fontFamily" | "textAlign">,
+  ) {
+    updateSettings(toolId, (settings) => ({ ...settings, ...patch }));
+  },
+
   reset(toolId: ToolId) {
     updateSettings(toolId, () => createToolSettings());
   },
 
   subscribe(listener: SettingsListener) {
     listeners.add(listener);
-
-    return () => {
-      listeners.delete(listener);
-    };
+    return () => listeners.delete(listener);
   },
 };

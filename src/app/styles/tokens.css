@@ -1,4 +1,31 @@
 :root {
+  color-scheme: dark;
+
+  --app-color-canvas: #111827;
+  --app-color-surface: #1f2937;
+  --app-color-surface-muted: #273449;
+
+  --app-color-text: #f8fafc;
+  --app-color-text-muted: #94a3b8;
+
+  --app-color-border: #334155;
+  --app-color-accent: #60a5fa;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --app-shadow-panel: 0 8px 24px rgb(0 0 0 / 30%);
+
+  --z-canvas: 0;
+  --z-overlay: 10;
+  --z-panel: 20;
+  --z-modal: 30;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
   --app-color-canvas: #f8fafc;
   --app-color-surface: #ffffff;
   --app-color-surface-muted: #f1f5f9;
@@ -9,26 +36,5 @@
   --app-color-border: #dbe2ea;
   --app-color-accent: #2563eb;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-
   --app-shadow-panel: 0 8px 24px rgb(15 23 42 / 12%);
-
-  --z-canvas: 0;
-  --z-overlay: 10;
-  --z-panel: 20;
-  --z-modal: 30;
-}
-
-:root[data-theme="dark"] {
-  --app-color-canvas: #111827;
-  --app-color-surface: #1f2937;
-  --app-color-surface-muted: #273449;
-
-  --app-color-text: #f8fafc;
-  --app-color-text-muted: #94a3b8;
-
-  --app-color-border: #334155;
-  --app-color-accent: #60a5fa;
 }

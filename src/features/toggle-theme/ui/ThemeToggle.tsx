@@ -1,1 +1,25 @@
-export {};
+import { Moon, Sun } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { themeStore } from "../model/themeStore";
+import { toggleTheme } from "../model/toggleTheme";
+
+export function ThemeToggle() {
+  const theme = useSyncExternalStore(
+    themeStore.subscribe,
+    themeStore.get,
+    themeStore.get,
+  );
+  const isDark = theme === "dark";
+
+  return (
+    <button
+      aria-label={isDark ? "Включить светлую тему" : "Включить тёмную тему"}
+      className="absolute right-4 top-4 z-30 grid size-10 place-items-center rounded-lg border border-border bg-surface text-text shadow-panel transition-colors hover:bg-surface-muted"
+      onClick={toggleTheme}
+      title={isDark ? "Светлая тема" : "Тёмная тема"}
+      type="button"
+    >
+      {isDark ? <Sun aria-hidden size={18} /> : <Moon aria-hidden size={18} />}
+    </button>
+  );
+}

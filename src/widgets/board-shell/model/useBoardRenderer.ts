@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import { sceneStore } from "@/entities/scene";
 import { viewportStore } from "@/entities/viewport";
+import { selectionStore } from "@/entities/selection";
+import { textEditorStore } from "@/features/edit-text/model/textEditorStore";
+import { themeStore } from "@/features/toggle-theme";
 import { clearCanvas } from "@/shared/lib/canvas/clearCanvas";
 import { prepareCanvas } from "@/shared/lib/canvas/prepareCanvas";
 import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
@@ -61,6 +64,9 @@ export function useBoardRenderer(
   useEffect(() => {
     const unsubscribeViewport = viewportStore.subscribe(scheduleRender);
     const unsubscribeScene = sceneStore.subscribe(scheduleRender);
+    const unsubscribeSelection = selectionStore.subscribe(scheduleRender);
+    const unsubscribeTextEditor = textEditorStore.subscribe(scheduleRender);
+    const unsubscribeTheme = themeStore.subscribe(scheduleRender);
     const unsubscribeSnapIndicator =
       snapIndicatorStore.subscribe(scheduleRender);
 
@@ -69,6 +75,9 @@ export function useBoardRenderer(
     return () => {
       unsubscribeViewport();
       unsubscribeScene();
+      unsubscribeSelection();
+      unsubscribeTextEditor();
+      unsubscribeTheme();
       unsubscribeSnapIndicator();
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);

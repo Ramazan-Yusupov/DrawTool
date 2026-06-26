@@ -27,11 +27,12 @@ const TOOL_BY_SHORTCUT: Partial<Record<string, ToolId>> = {
   e: "ellipse",
   l: "line",
   r: "rectangle",
+  t: "text",
   v: "selection",
 };
 
 function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
-  return toolId !== "selection";
+  return ["rectangle", "ellipse", "diamond", "line", "arrow"].includes(toolId);
 }
 
 function getConstraint(toolId: ShapeToolId) {
@@ -128,6 +129,7 @@ export function useDrawShape() {
       startPoint,
       style: settings.style,
       toolId: activeTool,
+      arrowRouting: settings.arrowRouting,
     });
 
     drawingRef.current = {

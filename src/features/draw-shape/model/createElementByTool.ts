@@ -7,12 +7,14 @@ type CreateElementByToolParams = {
   startPoint: Point;
   style: ElementStyle;
   toolId: ShapeToolId;
+  arrowRouting?: "straight" | "elbow";
 };
 
 export function createElementByTool({
   startPoint,
   style,
   toolId,
+  arrowRouting,
 }: CreateElementByToolParams): BoardElement {
   return createElement(toolId, {
     x: startPoint.x,
@@ -20,5 +22,6 @@ export function createElementByTool({
     width: 0,
     height: 0,
     style,
+    routing: arrowRouting,
   });
 }
