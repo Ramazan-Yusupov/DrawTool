@@ -1,10 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { toolStore } from "@/entities/tool";
 import { textEditorStore } from "@/features/edit-text";
-import {
-  EditingLockButton,
-  editingLockStore,
-} from "@/features/lock-editing";
+import { EditingLockButton, editingLockStore } from "@/features/lock-editing";
 import { TOOL_ITEMS } from "../model/toolItems";
 import { MoreToolsMenu } from "./MoreToolsMenu";
 import { ToolButton } from "./ToolButton";
@@ -33,7 +30,7 @@ export function Toolbar() {
   return (
     <nav
       aria-label="Инструменты доски"
-      className={`drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel lg:ms-40 sm:justify-center max-lg:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-lg:top-auto max-lg:w-[calc(100dvw-1rem)] max-lg:max-w-none max-lg:overflow-x-auto max-lg:overscroll-contain ${
+      className={`drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel min-[1100px]:ms-40 sm:justify-center max-[1100px]:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-[1100px]:top-auto max-[1100px]:w-[calc(100dvw-1rem)] max-[1100px]:max-w-none max-[1100px]:overflow-x-auto max-[1100px]:overscroll-contain ${
         textEditor.elementId ? "max-lg:hidden" : ""
       }`}
     >
