@@ -1,4 +1,6 @@
-import { worldToScreen } from "@/entities/viewport";
+import { getElementBounds, renderElement } from "@/entities/element";
+import { getVisibleBounds, worldToScreen } from "@/entities/viewport";
+import { sceneStore } from "@/entities/scene";
 import type { Viewport } from "@/entities/viewport";
 import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
 
@@ -8,11 +10,26 @@ type RenderSceneParams = {
   size: CanvasSize;
 };
 
-export function renderScene({ context, viewport, size }: RenderSceneParams) {
+function isVisible(
+  elementBounds: ReturnType<typeof getElementBounds>,
+  visibleBounds: ReturnType<typeof getVisibleBounds>,
+) {
+  return !(
+    elementBounds.x > visibleBounds.x + visibleBounds.width ||
+    elementBounds.x + elementBounds.width < visibleBounds.x ||
+    elementBounds.y > visibleBounds.y + visibleBounds.height ||
+    elementBounds.y + elementBounds.height < visibleBounds.y
+  );
+}
+
+function renderWorldOrigin(
+  context: CanvasRenderingContext2D,
+  viewport: Viewport,
+  size: CanvasSize,
+) {
   const origin = worldToScreen({ x: 0, y: 0 }, viewport);
 
   context.save();
-
   context.strokeStyle = "rgb(37 99 235 / 45%)";
   context.lineWidth = 1;
 
@@ -29,5 +46,26 @@ export function renderScene({ context, viewport, size }: RenderSceneParams) {
   }
 
   context.stroke();
+  context.restore();
+}
+
+export function renderScene({ context, viewport, size }: RenderSceneParams) {
+  const visibleBounds = getVisibleBounds(viewport, size);
+  const { elements } = sceneStore.get();
+
+  renderWorldOrigin(context, viewport, size);
+
+  context.save();
+
+  context.translate(-viewport.x * viewport.zoom, -viewport.y * viewport.zoom);
+
+  context.scale(viewport.zoom, viewport.zoom);
+
+  elements.forEach((element) => {
+    if (isVisible(getElementBounds(element), visibleBounds)) {
+      renderElement(context, element);
+    }
+  });
+
   context.restore();
 }

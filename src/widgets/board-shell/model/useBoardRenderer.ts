@@ -6,6 +6,7 @@ import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
 import { renderGrid } from "../lib/renderGrid";
 import { renderScene } from "../lib/renderScene";
 import { useCanvasSize } from "./useCanvasSize";
+import { sceneStore } from "@/entities/scene";
 
 export function useBoardRenderer(
   canvasRef: React.RefObject<HTMLCanvasElement | null>,
@@ -55,12 +56,14 @@ export function useBoardRenderer(
   });
 
   useEffect(() => {
-    const unsubscribe = viewportStore.subscribe(scheduleRender);
+    const unsubscribeViewport = viewportStore.subscribe(scheduleRender);
+    const unsubscribeScene = sceneStore.subscribe(scheduleRender);
 
     scheduleRender();
 
     return () => {
-      unsubscribe();
+      unsubscribeViewport();
+      unsubscribeScene();
 
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);

@@ -4,7 +4,7 @@ export function BoardPage() {
   return (
     <main
       aria-label="Рабочая область DrawTool"
-      className="h-dvh w-dvw bg-(--color-canvas)"
+      className="h-dvh w-dvw bg-canvas"
     >
       <BoardShell />
     </main>
