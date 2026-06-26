@@ -1,12 +1,18 @@
 import type { ToolbarItem } from "../model/toolItems";
 
 type ToolButtonProps = {
+  disabled?: boolean;
   isActive: boolean;
   item: ToolbarItem;
   onClick: () => void;
 };
 
-export function ToolButton({ isActive, item, onClick }: ToolButtonProps) {
+export function ToolButton({
+  disabled = false,
+  isActive,
+  item,
+  onClick,
+}: ToolButtonProps) {
   const Icon = item.icon;
 
   return (
@@ -17,7 +23,12 @@ export function ToolButton({ isActive, item, onClick }: ToolButtonProps) {
         isActive
           ? "bg-accent text-white"
           : "text-text hover:bg-control"
+      } ${
+        disabled
+          ? "cursor-not-allowed opacity-40 hover:bg-transparent"
+          : ""
       }`}
+      disabled={disabled}
       onClick={onClick}
       title={`${item.label} (${item.shortcut})`}
       type="button"

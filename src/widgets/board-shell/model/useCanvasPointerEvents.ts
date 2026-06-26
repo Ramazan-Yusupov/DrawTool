@@ -12,8 +12,14 @@ type PanState = {
 export function useCanvasPointerEvents() {
   const panStateRef = useRef<PanState | null>(null);
 
-  function onPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (event.button !== 1) {
+  function onPointerDown(
+    event: React.PointerEvent<HTMLCanvasElement>,
+    allowPrimaryButton = false,
+  ) {
+    const isMiddleButton = event.button === 1;
+    const isPrimaryButton = allowPrimaryButton && event.button === 0;
+
+    if (!isMiddleButton && !isPrimaryButton) {
       return;
     }
 

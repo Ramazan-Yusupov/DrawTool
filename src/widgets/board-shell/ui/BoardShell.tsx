@@ -4,6 +4,7 @@ import { toolStore } from "@/entities/tool";
 import { TOOL_SETTINGS_CAPABILITIES } from "@/features/change-style";
 import { TextEditorOverlay } from "@/features/edit-text";
 import { GenerateDialog } from "@/features/generate";
+import { editingLockStore } from "@/features/lock-editing";
 import { ProjectsSidebar } from "@/features/projects";
 import { SceneStorageControls } from "@/features/save-scene";
 import { ShortcutsDialog } from "@/features/shortcuts-help";
@@ -14,7 +15,12 @@ import { Toolbar } from "@/widgets/toolbar";
 import { BoardCanvas } from "./BoardCanvas";
 import { useBoardRenderer } from "../model/useBoardRenderer";
 
-const UTILITY_TOOLS_WITHOUT_PROPERTIES = new Set(["eraser", "laser", "lasso"]);
+const UTILITY_TOOLS_WITHOUT_PROPERTIES = new Set([
+  "pan",
+  "eraser",
+  "laser",
+  "lasso",
+]);
 
 export function BoardShell() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -33,11 +39,18 @@ export function BoardShell() {
     selectionStore.get,
   );
 
+  const { isLocked } = useSyncExternalStore(
+    editingLockStore.subscribe,
+    editingLockStore.get,
+    editingLockStore.get,
+  );
+
   const hasSelectedElements = selection.elementIds.length > 0;
   const toolCapabilities = TOOL_SETTINGS_CAPABILITIES[activeTool];
   const toolHasSettings = Object.values(toolCapabilities).some(Boolean);
 
   const shouldShowProperties =
+    !isLocked &&
     !UTILITY_TOOLS_WITHOUT_PROPERTIES.has(activeTool) &&
     (hasSelectedElements || (activeTool !== "selection" && toolHasSettings));
 

@@ -12,6 +12,7 @@ import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
 import { viewportStore } from "@/entities/viewport";
+import { editingLockStore } from "@/features/lock-editing";
 import { textEditorStore } from "../model/textEditorStore";
 
 function cloneTextElement(element: TextElement): TextElement {
@@ -122,6 +123,16 @@ export function TextEditorOverlay() {
     }
   }
 
+  function restoreNextToolAfterEditing() {
+    if (editingLockStore.get().isLocked) {
+      selectionStore.clear();
+      toolStore.set("pan");
+      return;
+    }
+
+    toolStore.set("selection");
+  }
+
   function commit() {
     if (isFinishingRef.current) {
       return;
@@ -137,7 +148,7 @@ export function TextEditorOverlay() {
       historyStore.cancel();
       selectionStore.clear();
       textEditorStore.close();
-      toolStore.set("selection");
+      restoreNextToolAfterEditing();
       return;
     }
 
@@ -154,7 +165,7 @@ export function TextEditorOverlay() {
 
       historyStore.commit();
       textEditorStore.close();
-      toolStore.set("selection");
+      restoreNextToolAfterEditing();
       return;
     }
 
@@ -189,7 +200,7 @@ export function TextEditorOverlay() {
      */
     selectionStore.setElementIds([currentElement.id]);
 
-    toolStore.set("selection");
+    restoreNextToolAfterEditing();
   }
 
   function cancel() {
@@ -214,7 +225,7 @@ export function TextEditorOverlay() {
 
     historyStore.cancel();
     textEditorStore.close();
-    toolStore.set("selection");
+    restoreNextToolAfterEditing();
   }
 
   return (

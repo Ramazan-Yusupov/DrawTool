@@ -12,6 +12,7 @@ export type ShapeToolId =
   | "embed";
 
 export type ToolId =
+  | "pan"
   | "selection"
   | "text"
   | "freedraw"

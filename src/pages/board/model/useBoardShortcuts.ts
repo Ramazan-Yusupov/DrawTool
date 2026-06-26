@@ -4,6 +4,7 @@ import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
 import { deleteSelectedElements } from "@/features/delete-elements";
+import { editingLockStore } from "@/features/lock-editing";
 
 function isTypingTarget(target: EventTarget | null) {
   return (
@@ -21,6 +22,35 @@ export function useBoardShortcuts() {
 
       const modifierPressed = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
+
+      if (modifierPressed && event.shiftKey && key === "l") {
+        event.preventDefault();
+
+        if (editingLockStore.get().isLocked) {
+          editingLockStore.unlock();
+          toolStore.set("selection");
+        } else {
+          selectionStore.clear();
+          toolStore.set("pan");
+          editingLockStore.lock();
+        }
+
+        return;
+      }
+
+      /*
+       * В режиме блокировки не позволяем удалить, продублировать,
+       * отменить или повторить изменения через клавиатуру.
+       * Панорамирование и масштаб остаются доступны отдельно.
+       */
+      if (editingLockStore.get().isLocked) {
+        if (event.key === "Escape") {
+          selectionStore.clear();
+          toolStore.set("pan");
+        }
+
+        return;
+      }
 
       if (modifierPressed && key === "z") {
         event.preventDefault();
@@ -41,11 +71,14 @@ export function useBoardShortcuts() {
       if (modifierPressed && key === "d") {
         const selectedElements = sceneStore
           .get()
-          .elements.filter((element) => selectionStore.get().elementIds.includes(element.id));
+          .elements.filter((element) =>
+            selectionStore.get().elementIds.includes(element.id),
+          );
 
         if (selectedElements.length > 0) {
           event.preventDefault();
           historyStore.begin();
+
           const copies = selectedElements.map((element) => {
             const copy = JSON.parse(JSON.stringify(element)) as typeof element;
             copy.id = `${element.id}-copy-${Date.now()}`;
@@ -53,15 +86,22 @@ export function useBoardShortcuts() {
             copy.y += 20;
             copy.updatedAt = Date.now();
             copy.createdAt = Date.now();
+
             if (copy.type === "freedraw") {
-              copy.points = copy.points.map((point) => ({ x: point.x + 20, y: point.y + 20 }));
+              copy.points = copy.points.map((point) => ({
+                x: point.x + 20,
+                y: point.y + 20,
+              }));
             }
+
             return copy;
           });
+
           sceneStore.setElements([...sceneStore.get().elements, ...copies]);
           selectionStore.setElementIds(copies.map((element) => element.id));
           historyStore.commit();
         }
+
         return;
       }
 
@@ -78,6 +118,9 @@ export function useBoardShortcuts() {
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 }

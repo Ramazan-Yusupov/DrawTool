@@ -1,6 +1,7 @@
 import type { ToolId } from "./types";
 
 export const TOOL_LABELS: Record<ToolId, string> = {
+  pan: "Перемещение холста",
   selection: "Выбор",
   rectangle: "Прямоугольник",
   ellipse: "Эллипс",

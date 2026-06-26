@@ -21,6 +21,15 @@ const SHAPE_CAPABILITIES: ToolStyleCapabilities = {
 };
 
 export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> = {
+  pan: {
+    stroke: false,
+    fill: false,
+    corner: false,
+    opacity: false,
+    snap: false,
+    text: false,
+    arrowRouting: false,
+  },
   selection: {
     stroke: false,
     fill: false,

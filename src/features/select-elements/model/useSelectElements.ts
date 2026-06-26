@@ -13,6 +13,7 @@ import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text";
+import { editingLockStore } from "@/features/lock-editing";
 import { getWorldPointerPosition } from "@/features/draw-shape/lib/getWorldPointerPosition";
 import { useMoveElements } from "@/features/move-elements";
 import {
@@ -65,7 +66,7 @@ export function useSelectElements() {
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
-    if (event.button !== 0) {
+    if (editingLockStore.get().isLocked || event.button !== 0) {
       return;
     }
 
@@ -235,6 +236,10 @@ export function useSelectElements() {
   }
 
   function onDoubleClick(event: ReactMouseEvent<HTMLCanvasElement>) {
+    if (editingLockStore.get().isLocked) {
+      return;
+    }
+
     const hitElement = findTopElement(getWorldPointerPosition(event));
     if (hitElement?.type === "text") {
       selectionStore.setElementIds([hitElement.id]);

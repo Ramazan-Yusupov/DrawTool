@@ -6,6 +6,7 @@ import { textEditorStore, useTextTool } from "@/features/edit-text";
 import { useEraser } from "@/features/erase-elements";
 import { useLaserPointer } from "@/features/laser-pointer";
 import { useLassoSelect } from "@/features/lasso-select";
+import { editingLockStore } from "@/features/lock-editing";
 import { useSelectElements } from "@/features/select-elements";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
@@ -21,6 +22,12 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     toolStore.get,
   );
 
+  const { isLocked } = useSyncExternalStore(
+    editingLockStore.subscribe,
+    editingLockStore.get,
+    editingLockStore.get,
+  );
+
   const panEvents = useCanvasPointerEvents();
   const drawingEvents = useDrawShape();
   const freeDrawEvents = useFreeDraw();
@@ -32,8 +39,11 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
 
   useCanvasWheel(canvasRef);
 
-  const cursorClass =
-    activeTool === "selection"
+  const isPanOnly = isLocked || activeTool === "pan";
+
+  const cursorClass = isPanOnly
+    ? "cursor-grab active:cursor-grabbing"
+    : activeTool === "selection"
       ? "cursor-default"
       : activeTool === "eraser"
         ? "cursor-cell"
@@ -64,7 +74,9 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerDown(event);
     }
 
-    return drawingEvents.onPointerDown(event);
+    if (activeTool !== "pan") {
+      return drawingEvents.onPointerDown(event);
+    }
   }
 
   function onToolPointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -88,7 +100,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerMove(event);
     }
 
-    if (activeTool !== "text") {
+    if (activeTool !== "text" && activeTool !== "pan") {
       return drawingEvents.onPointerMove(event);
     }
   }
@@ -114,7 +126,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerUp(event);
     }
 
-    if (activeTool !== "text") {
+    if (activeTool !== "text" && activeTool !== "pan") {
       return drawingEvents.onPointerUp(event);
     }
   }
@@ -140,7 +152,9 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerCancel(event);
     }
 
-    return drawingEvents.onPointerCancel(event);
+    if (activeTool !== "pan") {
+      return drawingEvents.onPointerCancel(event);
+    }
   }
 
   return (
@@ -149,30 +163,46 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       aria-label="Интерактивная доска"
       className={`size-full touch-none ${cursorClass}`}
       onDoubleClick={(event) => {
-        if (activeTool === "selection") {
+        if (!isPanOnly && activeTool === "selection") {
           selectionEvents.onDoubleClick(event);
         }
       }}
       onPointerCancel={(event) => {
         panEvents.onPointerUp(event);
-        onToolPointerCancel(event);
+
+        if (!isPanOnly) {
+          onToolPointerCancel(event);
+        }
       }}
       onPointerDown={(event) => {
+        /*
+         * Первый клик за пределами textarea подтверждает текст через blur.
+         * Canvas в этот момент не должен начинать другой инструмент.
+         */
         if (textEditorStore.get().elementId) {
           return;
         }
 
-        panEvents.onPointerDown(event);
-        onToolPointerDown(event);
+        panEvents.onPointerDown(event, isPanOnly);
+
+        if (!isPanOnly) {
+          onToolPointerDown(event);
+        }
       }}
       onPointerLeave={drawingEvents.onPointerLeave}
       onPointerMove={(event) => {
         panEvents.onPointerMove(event);
-        onToolPointerMove(event);
+
+        if (!isPanOnly) {
+          onToolPointerMove(event);
+        }
       }}
       onPointerUp={(event) => {
         panEvents.onPointerUp(event);
-        onToolPointerUp(event);
+
+        if (!isPanOnly) {
+          onToolPointerUp(event);
+        }
       }}
     />
   );

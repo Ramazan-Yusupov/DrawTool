@@ -7,6 +7,7 @@ import { toolStore } from "@/entities/tool";
 import { attachFrameChildren, findContainingFrame, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolSettingsStore } from "@/features/change-style";
+import { editingLockStore } from "@/features/lock-editing";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
 import { getDrawingPoints } from "../lib/getDrawingPoints";
@@ -24,6 +25,7 @@ type DrawingState = {
 const MIN_ELEMENT_SIZE = 2;
 
 const TOOL_BY_SHORTCUT: Partial<Record<string, ToolId>> = {
+  m: "pan",
   a: "arrow",
   c: "cloud",
   d: "diamond",
@@ -99,6 +101,14 @@ export function useDrawShape() {
       const nextTool = TOOL_BY_SHORTCUT[event.key.toLowerCase()];
 
       if (nextTool) {
+        /*
+         * В режиме блокировки можно оставить только безопасный инструмент
+         * перемещения холста. Остальные инструменты не переключаются.
+         */
+        if (editingLockStore.get().isLocked && nextTool !== "pan") {
+          return;
+        }
+
         toolStore.set(nextTool);
       }
     }

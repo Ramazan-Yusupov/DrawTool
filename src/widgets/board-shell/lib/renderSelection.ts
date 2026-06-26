@@ -5,6 +5,7 @@ import {
 } from "@/entities/element";
 import { getSelectionBounds, getSelectedElements, selectionStore } from "@/entities/selection";
 import { sceneStore } from "@/entities/scene";
+import { editingLockStore } from "@/features/lock-editing";
 import {
   getElementResizeHandles,
   getElementRotationHandle,
@@ -85,6 +86,10 @@ export function renderSelection(
   context: CanvasRenderingContext2D,
   viewport: Viewport,
 ) {
+  if (editingLockStore.get().isLocked) {
+    return;
+  }
+
   const selection = selectionStore.get();
   const selectedElements = getSelectedElements(sceneStore.get().elements, selection);
   const bounds = getSelectionBounds(selectedElements);
