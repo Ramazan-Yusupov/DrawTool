@@ -81,7 +81,7 @@ export function ProjectsSidebar() {
 
       <aside
         aria-label="Проекты"
-        className="drawtool-projects-sidebar fixed inset-y-0 left-0 z-50 flex w-dvw max-w-full flex-col border-r border-border bg-panel shadow-panel sm:w-[22rem] lg:w-[20rem]"
+        className="drawtool-projects-sidebar fixed inset-y-0 left-0 z-50 flex w-dvw max-w-full flex-col border-r border-border bg-panel shadow-panel sm:w-88 lg:w-[20rem]"
       >
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border p-4">
           <div className="flex min-w-0 items-center gap-2">
@@ -136,7 +136,9 @@ export function ProjectsSidebar() {
                     <div className="flex min-w-0 items-center gap-1 px-2 py-1.5">
                       <button
                         className="min-w-0 flex-1 text-left"
-                        onClick={() => void projectStore.openProject(project.id)}
+                        onClick={() =>
+                          void projectStore.openProject(project.id)
+                        }
                         type="button"
                       >
                         {isEditing ? (
@@ -144,7 +146,9 @@ export function ProjectsSidebar() {
                             autoFocus
                             className="w-full rounded border border-accent bg-canvas px-2 py-1 text-xs text-text outline-none"
                             onBlur={() => void renameProject(project.id)}
-                            onChange={(event) => setEditingName(event.currentTarget.value)}
+                            onChange={(event) =>
+                              setEditingName(event.currentTarget.value)
+                            }
                             onKeyDown={(event) => {
                               if (event.key === "Enter") {
                                 event.preventDefault();
@@ -184,7 +188,11 @@ export function ProjectsSidebar() {
                           aria-label="Удалить проект"
                           className="grid size-8 place-items-center rounded-md text-text-muted hover:bg-red-500/20 hover:text-red-300"
                           onClick={() => {
-                            if (window.confirm(`Удалить проект «${project.name}»?`)) {
+                            if (
+                              window.confirm(
+                                `Удалить проект «${project.name}»?`,
+                              )
+                            ) {
                               void projectStore.deleteProject(project.id);
                             }
                           }}
@@ -207,7 +215,9 @@ export function ProjectsSidebar() {
               <input
                 autoFocus
                 className="w-full rounded-lg border border-border bg-control px-3 py-2 text-sm text-text outline-none focus:border-accent"
-                onChange={(event) => setNewProjectName(event.currentTarget.value)}
+                onChange={(event) =>
+                  setNewProjectName(event.currentTarget.value)
+                }
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
