@@ -6,7 +6,7 @@ export const CANVAS_CONFIG = {
 
   gridSize: 40,
 
-  defaultSnapSize: 10,
+  defaultSnapSize: 40,
   minSnapSize: 1,
   maxSnapSize: 200,
 

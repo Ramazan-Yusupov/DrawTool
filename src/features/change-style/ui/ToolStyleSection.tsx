@@ -91,7 +91,7 @@ export function ToolStyleSection({
           <RangeField
             label={`Прозрачность: ${Math.round(style.opacity * 100)}%`}
             max={100}
-            min={10}
+            min={40}
             onChange={(value) => onChange({ opacity: value / 100 })}
             step={5}
             value={Math.round(style.opacity * 100)}

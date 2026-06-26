@@ -22,7 +22,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   useCanvasWheel(canvasRef);
 
   const cursorClass =
-    activeTool === "rectangle" ? "cursor-crosshair" : "cursor-default";
+    activeTool === "selection" ? "cursor-default" : "cursor-crosshair";
 
   return (
     <canvas

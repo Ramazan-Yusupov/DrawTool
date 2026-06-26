@@ -1,6 +1,9 @@
 import type { Point } from "@/shared/types";
+import { constrainPointToAngle } from "@/shared/lib/math/constrainPointToAngle";
 import { constrainPointToSquare } from "@/shared/lib/math/constrainPointToSquare";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
+
+export type DrawingConstraint = "square" | "angle";
 
 type DrawingPoints = {
   startPoint: Point;
@@ -13,6 +16,7 @@ export function getDrawingPoints(
   isShiftPressed: boolean,
   snapToGrid: boolean,
   snapSize: number,
+  constraint: DrawingConstraint,
 ): DrawingPoints {
   const shouldSnap = isShiftPressed || snapToGrid;
 
@@ -33,6 +37,9 @@ export function getDrawingPoints(
 
   return {
     startPoint: adjustedStart,
-    endPoint: constrainPointToSquare(adjustedStart, adjustedEnd, snapSize),
+    endPoint:
+      constraint === "angle"
+        ? constrainPointToAngle(adjustedStart, adjustedEnd)
+        : constrainPointToSquare(adjustedStart, adjustedEnd, snapSize),
   };
 }

@@ -1,4 +1,9 @@
-export type ElementType = "rectangle";
+export type ElementType =
+  | "rectangle"
+  | "ellipse"
+  | "diamond"
+  | "line"
+  | "arrow";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 
@@ -32,4 +37,25 @@ export type RectangleElement = BaseElement & {
   type: "rectangle";
 };
 
-export type BoardElement = RectangleElement;
+export type EllipseElement = BaseElement & {
+  type: "ellipse";
+};
+
+export type DiamondElement = BaseElement & {
+  type: "diamond";
+};
+
+export type LineElement = BaseElement & {
+  type: "line";
+};
+
+export type ArrowElement = BaseElement & {
+  type: "arrow";
+};
+
+export type BoardElement =
+  | RectangleElement
+  | EllipseElement
+  | DiamondElement
+  | LineElement
+  | ArrowElement;

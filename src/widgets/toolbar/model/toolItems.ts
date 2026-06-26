@@ -20,4 +20,28 @@ export const TOOL_ITEMS: readonly ToolbarItem[] = [
     shortcut: "R",
     icon: "□",
   },
+  {
+    id: "ellipse",
+    label: "Эллипс",
+    shortcut: "E",
+    icon: "○",
+  },
+  {
+    id: "diamond",
+    label: "Ромб",
+    shortcut: "D",
+    icon: "◇",
+  },
+  {
+    id: "line",
+    label: "Линия",
+    shortcut: "L",
+    icon: "╱",
+  },
+  {
+    id: "arrow",
+    label: "Стрелка",
+    shortcut: "A",
+    icon: "➜",
+  },
 ];

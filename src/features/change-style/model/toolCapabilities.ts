@@ -25,4 +25,36 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
       opacity: true,
       snap: true,
     },
+
+    ellipse: {
+      stroke: true,
+      fill: true,
+      corner: false,
+      opacity: true,
+      snap: true,
+    },
+
+    diamond: {
+      stroke: true,
+      fill: true,
+      corner: false,
+      opacity: true,
+      snap: true,
+    },
+
+    line: {
+      stroke: true,
+      fill: false,
+      corner: false,
+      opacity: true,
+      snap: true,
+    },
+
+    arrow: {
+      stroke: true,
+      fill: false,
+      corner: false,
+      opacity: true,
+      snap: true,
+    },
   };

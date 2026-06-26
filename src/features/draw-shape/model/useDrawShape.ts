@@ -1,26 +1,52 @@
 import { useEffect, useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import {
-  createRectangle,
-  normalizeElement,
-  updateElement,
-} from "@/entities/element";
+import { normalizeElement, updateElement } from "@/entities/element";
+import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
 import { sceneStore } from "@/entities/scene";
+import { toolSettingsStore } from "@/features/change-style";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
-import { toolSettingsStore } from "@/features/change-style";
 import { getDrawingPoints } from "../lib/getDrawingPoints";
 import { getWorldPointerPosition } from "../lib/getWorldPointerPosition";
+import { createElementByTool } from "./createElementByTool";
 import { snapIndicatorStore } from "./snapIndicatorStore";
 
 type DrawingState = {
   elementId: string;
   pointerId: number;
   startPoint: Point;
+  toolId: ShapeToolId;
 };
 
 const MIN_ELEMENT_SIZE = 2;
+
+const TOOL_BY_SHORTCUT: Partial<Record<string, ToolId>> = {
+  a: "arrow",
+  d: "diamond",
+  e: "ellipse",
+  l: "line",
+  r: "rectangle",
+  v: "selection",
+};
+
+function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
+  return toolId !== "selection";
+}
+
+function getConstraint(toolId: ShapeToolId) {
+  return toolId === "line" || toolId === "arrow" ? "angle" : "square";
+}
+
+function isTooSmall(width: number, height: number, toolId: ShapeToolId) {
+  if (toolId === "line" || toolId === "arrow") {
+    return Math.hypot(width, height) < MIN_ELEMENT_SIZE;
+  }
+
+  return (
+    Math.abs(width) < MIN_ELEMENT_SIZE || Math.abs(height) < MIN_ELEMENT_SIZE
+  );
+}
 
 export function useDrawShape() {
   const drawingRef = useRef<DrawingState | null>(null);
@@ -36,12 +62,19 @@ export function useDrawShape() {
         return;
       }
 
-      if (event.key.toLowerCase() === "r") {
-        toolStore.set("rectangle");
+      if (event.key === "Escape") {
+        toolStore.set("selection");
+        return;
       }
 
-      if (event.key === "Escape" || event.key.toLowerCase() === "v") {
-        toolStore.set("selection");
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+
+      const nextTool = TOOL_BY_SHORTCUT[event.key.toLowerCase()];
+
+      if (nextTool) {
+        toolStore.set(nextTool);
       }
     }
 
@@ -53,25 +86,34 @@ export function useDrawShape() {
   }, []);
 
   function updateIdleIndicator(event: ReactPointerEvent<HTMLCanvasElement>) {
-    const settings = toolSettingsStore.get("rectangle");
+    const activeTool = toolStore.get();
 
-    if (toolStore.get() !== "rectangle" || !settings.snapToGrid) {
+    if (!isShapeTool(activeTool)) {
+      snapIndicatorStore.clear();
+      return;
+    }
+
+    const settings = toolSettingsStore.get(activeTool);
+
+    if (!settings.snapToGrid) {
       snapIndicatorStore.clear();
       return;
     }
 
     const point = getWorldPointerPosition(event);
-
     snapIndicatorStore.set(snapPointToGrid(point, settings.snapSize));
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
-    if (event.button !== 0 || toolStore.get() !== "rectangle") {
+    const activeTool = toolStore.get();
+
+    if (event.button !== 0 || !isShapeTool(activeTool)) {
       return;
     }
 
     const rawStartPoint = getWorldPointerPosition(event);
-    const settings = toolSettingsStore.get("rectangle");
+    const settings = toolSettingsStore.get(activeTool);
+    const constraint = getConstraint(activeTool);
 
     const { startPoint } = getDrawingPoints(
       rawStartPoint,
@@ -79,20 +121,20 @@ export function useDrawShape() {
       event.shiftKey,
       settings.snapToGrid,
       settings.snapSize,
+      constraint,
     );
 
-    const element = createRectangle({
-      x: startPoint.x,
-      y: startPoint.y,
-      width: 0,
-      height: 0,
+    const element = createElementByTool({
+      startPoint,
       style: settings.style,
+      toolId: activeTool,
     });
 
     drawingRef.current = {
       elementId: element.id,
       pointerId: event.pointerId,
       startPoint,
+      toolId: activeTool,
     };
 
     sceneStore.add(element);
@@ -108,7 +150,7 @@ export function useDrawShape() {
     }
 
     const currentPoint = getWorldPointerPosition(event);
-    const settings = toolSettingsStore.get("rectangle");
+    const settings = toolSettingsStore.get(drawing.toolId);
 
     const points = getDrawingPoints(
       drawing.startPoint,
@@ -116,6 +158,7 @@ export function useDrawShape() {
       event.shiftKey,
       settings.snapToGrid,
       settings.snapSize,
+      getConstraint(drawing.toolId),
     );
 
     sceneStore.updateById(drawing.elementId, (element) =>
@@ -149,13 +192,9 @@ export function useDrawShape() {
     snapIndicatorStore.clear();
 
     if (element) {
-      const isTooSmall =
-        Math.abs(element.width) < MIN_ELEMENT_SIZE ||
-        Math.abs(element.height) < MIN_ELEMENT_SIZE;
-
-      if (isTooSmall) {
+      if (isTooSmall(element.width, element.height, drawing.toolId)) {
         sceneStore.removeById(element.id);
-      } else {
+      } else if (drawing.toolId !== "line" && drawing.toolId !== "arrow") {
         sceneStore.updateById(element.id, normalizeElement);
       }
     }

@@ -1,1 +1,8 @@
-export type ToolId = "selection" | "rectangle";
+export type ShapeToolId =
+  | "rectangle"
+  | "ellipse"
+  | "diamond"
+  | "line"
+  | "arrow";
+
+export type ToolId = "selection" | ShapeToolId;
