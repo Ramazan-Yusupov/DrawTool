@@ -519,7 +519,7 @@ export function PropertiesPanel() {
                 </button>
 
                 <button
-                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-red-500/15 text-xs text-red-300 transition-colors hover:bg-red-500/25"
+                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-red-500/20 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/30 hover:text-red-700 active:scale-[0.98] active:bg-red-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
                   onClick={deleteSelection}
                   title="Удалить выбранные объекты"
                   type="button"
