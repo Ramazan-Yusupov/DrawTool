@@ -1,8 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { Lock, Unlock } from "lucide-react";
-import { selectionStore } from "@/entities/selection";
-import { toolStore } from "@/entities/tool";
 import { editingLockStore } from "../model/editingLockStore";
+import { toggleEditingLock } from "../model/toggleEditingLock";
 
 export function EditingLockButton() {
   const { isLocked } = useSyncExternalStore(
@@ -10,27 +9,6 @@ export function EditingLockButton() {
     editingLockStore.get,
     editingLockStore.get,
   );
-
-  function toggleEditingLock() {
-    if (!isLocked) {
-      /*
-       * Blur подтверждает открытый TextEditorOverlay до включения lock.
-       * После этого выбранные элементы снимаются, а холст становится
-       * безопасным для перемещения.
-       */
-      if (document.activeElement instanceof HTMLTextAreaElement) {
-        document.activeElement.blur();
-      }
-
-      selectionStore.clear();
-      toolStore.set("pan");
-      editingLockStore.lock();
-      return;
-    }
-
-    editingLockStore.unlock();
-    toolStore.set("selection");
-  }
 
   const label = isLocked
     ? "Разблокировать редактирование"

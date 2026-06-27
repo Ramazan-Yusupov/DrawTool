@@ -22,7 +22,10 @@ export type ToolbarItem = {
   icon: LucideIcon;
   id: ToolId;
   label: string;
+  /** Short label visible on the icon, mirroring Excalidraw's numeric toolbar. */
   shortcut: string;
+  /** Full shortcut shown in the tooltip and announced to assistive technology. */
+  shortcutHint: string;
   group?: "core" | "actions";
 };
 
@@ -30,70 +33,80 @@ export const TOOL_ITEMS: readonly ToolbarItem[] = [
   {
     id: "pan",
     label: "Перемещение холста",
-    shortcut: "M",
+    shortcut: "H",
+    shortcutHint: "H или удерживать Space",
     icon: Hand,
     group: "core",
   },
   {
     id: "selection",
     label: "Выбор",
-    shortcut: "V",
+    shortcut: "1",
+    shortcutHint: "V или 1",
     icon: MousePointer2,
     group: "core",
   },
   {
     id: "rectangle",
     label: "Прямоугольник",
-    shortcut: "R",
+    shortcut: "2",
+    shortcutHint: "R или 2",
     icon: Square,
     group: "core",
   },
   {
     id: "diamond",
     label: "Ромб",
-    shortcut: "D",
+    shortcut: "3",
+    shortcutHint: "D или 3",
     icon: Diamond,
     group: "core",
   },
   {
     id: "ellipse",
     label: "Эллипс",
-    shortcut: "E",
+    shortcut: "4",
+    shortcutHint: "O или 4",
     icon: Circle,
     group: "core",
   },
   {
     id: "arrow",
     label: "Стрелка",
-    shortcut: "A",
+    shortcut: "5",
+    shortcutHint: "A или 5",
     icon: ArrowRight,
     group: "core",
   },
   {
     id: "line",
     label: "Линия",
-    shortcut: "L",
+    shortcut: "6",
+    shortcutHint: "P или 6",
     icon: Minus,
     group: "core",
   },
   {
     id: "freedraw",
     label: "Карандаш",
-    shortcut: "P",
+    shortcut: "7",
+    shortcutHint: "X или 7",
     icon: Pencil,
     group: "core",
   },
   {
     id: "text",
     label: "Текст",
-    shortcut: "T",
+    shortcut: "8",
+    shortcutHint: "T или 8",
     icon: Type,
     group: "core",
   },
   {
     id: "eraser",
     label: "Ластик",
-    shortcut: "X",
+    shortcut: "0",
+    shortcutHint: "E или 0",
     icon: Eraser,
     group: "actions",
   },
@@ -104,36 +117,42 @@ export const MORE_SHAPE_ITEMS: readonly ToolbarItem[] = [
     id: "frame",
     label: "Фреймовый инструмент",
     shortcut: "F",
+    shortcutHint: "F",
     icon: Frame,
   },
   {
     id: "embed",
     label: "Встроенная страница",
     shortcut: "B",
+    shortcutHint: "B",
     icon: Square,
   },
   {
     id: "triangle",
     label: "Треугольник",
     shortcut: "G",
+    shortcutHint: "G",
     icon: Triangle,
   },
   {
     id: "hexagon",
     label: "Шестиугольник",
-    shortcut: "H",
+    shortcut: "U",
+    shortcutHint: "U",
     icon: Hexagon,
   },
   {
     id: "star",
     label: "Звезда",
     shortcut: "S",
+    shortcutHint: "S",
     icon: Star,
   },
   {
     id: "cloud",
     label: "Облако",
     shortcut: "C",
+    shortcutHint: "C",
     icon: Cloud,
   },
 ];

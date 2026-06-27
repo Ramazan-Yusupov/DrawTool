@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { normalizeElement, updateElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
@@ -7,7 +7,7 @@ import { toolStore } from "@/entities/tool";
 import { attachFrameChildren, findContainingFrame, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolSettingsStore } from "@/features/change-style";
-import { editingLockStore } from "@/features/lock-editing";
+import { toolLockStore } from "@/features/tool-lock";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
 import { getDrawingPoints } from "../lib/getDrawingPoints";
@@ -23,27 +23,6 @@ type DrawingState = {
 };
 
 const MIN_ELEMENT_SIZE = 2;
-
-const TOOL_BY_SHORTCUT: Partial<Record<string, ToolId>> = {
-  m: "pan",
-  a: "arrow",
-  c: "cloud",
-  d: "diamond",
-  e: "ellipse",
-  g: "triangle",
-  f: "frame",
-  h: "hexagon",
-  l: "line",
-  p: "freedraw",
-  r: "rectangle",
-  s: "star",
-  t: "text",
-  v: "selection",
-  b: "embed",
-  k: "laser",
-  q: "lasso",
-  x: "eraser",
-};
 
 function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
   return [
@@ -77,48 +56,6 @@ function isTooSmall(width: number, height: number, toolId: ShapeToolId) {
 
 export function useDrawShape() {
   const drawingRef = useRef<DrawingState | null>(null);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      const target = event.target;
-
-      if (
-        target instanceof HTMLElement &&
-        target.matches("input, textarea, select, [contenteditable='true']")
-      ) {
-        return;
-      }
-
-      if (event.key === "Escape") {
-        toolStore.set("selection");
-        return;
-      }
-
-      if (event.ctrlKey || event.metaKey || event.altKey) {
-        return;
-      }
-
-      const nextTool = TOOL_BY_SHORTCUT[event.key.toLowerCase()];
-
-      if (nextTool) {
-        /*
-         * В режиме блокировки можно оставить только безопасный инструмент
-         * перемещения холста. Остальные инструменты не переключаются.
-         */
-        if (editingLockStore.get().isLocked && nextTool !== "pan") {
-          return;
-        }
-
-        toolStore.set(nextTool);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
 
   function updateIdleIndicator(event: ReactPointerEvent<HTMLCanvasElement>) {
     const activeTool = toolStore.get();
@@ -264,7 +201,9 @@ export function useDrawShape() {
          * можно было сразу передвинуть, изменить или повернуть.
          */
         selectionStore.setElementIds([element.id]);
-        toolStore.set("selection");
+        if (!toolLockStore.get()) {
+          toolStore.set("selection");
+        }
       }
     }
 

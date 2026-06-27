@@ -13,6 +13,7 @@ import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
 import { viewportStore } from "@/entities/viewport";
 import { editingLockStore } from "@/features/lock-editing";
+import { toolLockStore } from "@/features/tool-lock";
 import { textEditorStore } from "../model/textEditorStore";
 
 function cloneTextElement(element: TextElement): TextElement {
@@ -130,7 +131,9 @@ export function TextEditorOverlay() {
       return;
     }
 
-    toolStore.set("selection");
+    if (!toolLockStore.get()) {
+      toolStore.set("selection");
+    }
   }
 
   function commit() {

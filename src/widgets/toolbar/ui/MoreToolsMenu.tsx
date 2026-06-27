@@ -177,7 +177,7 @@ export function MoreToolsMenu() {
                     )}
 
                     <span className="flex-1">{item.label}</span>
-                    <kbd className="text-xs text-text-muted">
+                    <kbd className="text-xs text-text-muted" title={item.shortcutHint}>
                       {item.shortcut}
                     </kbd>
                   </button>
@@ -207,7 +207,7 @@ export function MoreToolsMenu() {
               >
                 <LassoSelect size={17} />
                 <span className="flex-1">Выделение лассо</span>
-                <kbd className="text-xs text-text-muted">Q</kbd>
+                <kbd className="text-xs text-text-muted">L</kbd>
               </button>
             </div>
 
@@ -271,7 +271,7 @@ export function MoreToolsMenu() {
                       toolStore.set(item.id);
                       setIsOpen(false);
                     }}
-                    title={`${item.label} (${item.shortcut})`}
+                    title={`${item.label} (${item.shortcutHint})`}
                     type="button"
                   >
                     <Icon size={16} />

@@ -17,7 +17,7 @@ export function ToolButton({
 
   return (
     <button
-      aria-label={`${item.label}. Клавиша ${item.shortcut}`}
+      aria-label={`${item.label}. Клавиши ${item.shortcutHint}`}
       aria-pressed={isActive}
       className={`relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors max-lg:size-11 ${
         isActive
@@ -30,7 +30,7 @@ export function ToolButton({
       }`}
       disabled={disabled}
       onClick={onClick}
-      title={`${item.label} (${item.shortcut})`}
+      title={`${item.label} (${item.shortcutHint})`}
       type="button"
     >
       <Icon aria-hidden size={19} strokeWidth={2} />

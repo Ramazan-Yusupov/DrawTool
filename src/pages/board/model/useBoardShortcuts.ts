@@ -1,107 +1,265 @@
 import { useEffect } from "react";
+import { updateElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
+import type { ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
+import { viewportStore, zoomAtPoint } from "@/entities/viewport";
 import { deleteSelectedElements } from "@/features/delete-elements";
+import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
+import { toggleEditingLock } from "@/features/lock-editing/model/toggleEditingLock";
+import { saveScene } from "@/features/save-scene";
+import { shortcutsHelpStore } from "@/features/shortcuts-help";
+import { getToolFromShortcut } from "@/features/shortcuts-help/model/shortcutDefinitions";
+import { toggleTheme } from "@/features/toggle-theme";
+import { toolLockStore } from "@/features/tool-lock";
 
-function isTypingTarget(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    target.matches("input, textarea, select, [contenteditable='true']")
+function isEditingTextOrDialog(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest(
+      "input, textarea, select, [contenteditable='true'], [role='dialog'], [aria-modal='true']",
+    ),
   );
+}
+
+function duplicateSelectedElements() {
+  const selectedElements = sceneStore
+    .get()
+    .elements.filter((element) =>
+      selectionStore.get().elementIds.includes(element.id),
+    );
+
+  if (selectedElements.length === 0) {
+    return false;
+  }
+
+  historyStore.begin();
+
+  const copies = selectedElements.map((element) => {
+    const copy = JSON.parse(JSON.stringify(element)) as typeof element;
+    copy.id = `${element.id}-copy-${Date.now()}`;
+    copy.x += 20;
+    copy.y += 20;
+    copy.updatedAt = Date.now();
+    copy.createdAt = Date.now();
+
+    if (copy.type === "freedraw") {
+      copy.points = copy.points.map((point) => ({
+        x: point.x + 20,
+        y: point.y + 20,
+      }));
+    }
+
+    return copy;
+  });
+
+  sceneStore.setElements([...sceneStore.get().elements, ...copies]);
+  selectionStore.setElementIds(copies.map((element) => element.id));
+  historyStore.commit();
+  return true;
+}
+
+function nudgeSelection(deltaX: number, deltaY: number) {
+  const selectedIds = new Set(selectionStore.get().elementIds);
+
+  if (selectedIds.size === 0) {
+    return false;
+  }
+
+  historyStore.begin();
+  sceneStore.setElements(
+    sceneStore.get().elements.map((element) => {
+      if (!selectedIds.has(element.id)) {
+        return element;
+      }
+
+      if (element.type === "freedraw") {
+        return updateElement(element, {
+          x: element.x + deltaX,
+          y: element.y + deltaY,
+          points: element.points.map((point) => ({
+            x: point.x + deltaX,
+            y: point.y + deltaY,
+          })),
+        });
+      }
+
+      return updateElement(element, {
+        x: element.x + deltaX,
+        y: element.y + deltaY,
+      });
+    }),
+  );
+  historyStore.commit();
+  return true;
+}
+
+function zoomFromViewportCenter(multiplier: number) {
+  const viewport = viewportStore.get();
+  const center = {
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
+  };
+
+  viewportStore.set(zoomAtPoint(viewport, center, viewport.zoom * multiplier));
+}
+
+function tryStartTextEditing() {
+  const selectedIds = selectionStore.get().elementIds;
+
+  if (selectedIds.length !== 1) {
+    return false;
+  }
+
+  const element = sceneStore
+    .get()
+    .elements.find((item) => item.id === selectedIds[0]);
+
+  if (!element || element.type !== "text") {
+    return false;
+  }
+
+  historyStore.begin();
+  textEditorStore.open(element.id);
+  return true;
 }
 
 export function useBoardShortcuts() {
   useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (isTypingTarget(event.target)) {
+    let spacePanRestoreTool: ToolId | null = null;
+
+    function restoreSpacePan() {
+      if (!spacePanRestoreTool) {
         return;
       }
 
+      const toolToRestore = spacePanRestoreTool;
+      spacePanRestoreTool = null;
+
+      if (!editingLockStore.get().isLocked) {
+        toolStore.set(toolToRestore);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
       const modifierPressed = event.ctrlKey || event.metaKey;
       const key = event.key.toLowerCase();
 
-      if (modifierPressed && event.shiftKey && key === "l") {
-        event.preventDefault();
-
-        if (editingLockStore.get().isLocked) {
-          editingLockStore.unlock();
-          toolStore.set("selection");
-        } else {
-          selectionStore.clear();
-          toolStore.set("pan");
-          editingLockStore.lock();
-        }
-
+      /*
+       * Space must retain its normal behavior inside text fields. Other
+       * commands are also suspended while any modal dialog is open.
+       */
+      if (isEditingTextOrDialog(event.target)) {
         return;
       }
 
-      /*
-       * В режиме блокировки не позволяем удалить, продублировать,
-       * отменить или повторить изменения через клавиатуру.
-       * Панорамирование и масштаб остаются доступны отдельно.
-       */
-      if (editingLockStore.get().isLocked) {
-        if (event.key === "Escape") {
-          selectionStore.clear();
+      if (
+        event.code === "Space" &&
+        !modifierPressed &&
+        !event.altKey &&
+        !event.repeat
+      ) {
+        event.preventDefault();
+
+        const activeTool = toolStore.get();
+        if (activeTool !== "pan") {
+          spacePanRestoreTool = activeTool;
           toolStore.set("pan");
         }
+        return;
+      }
 
+      if (modifierPressed && event.shiftKey && key === "l") {
+        event.preventDefault();
+        toggleEditingLock();
         return;
       }
 
       if (modifierPressed && key === "z") {
         event.preventDefault();
-        if (event.shiftKey) {
-          historyStore.redo();
-        } else {
-          historyStore.undo();
+        if (!editingLockStore.get().isLocked) {
+          if (event.shiftKey) {
+            historyStore.redo();
+          } else {
+            historyStore.undo();
+          }
         }
         return;
       }
 
       if (modifierPressed && key === "y") {
         event.preventDefault();
-        historyStore.redo();
+        if (!editingLockStore.get().isLocked) {
+          historyStore.redo();
+        }
+        return;
+      }
+
+      if (modifierPressed && event.shiftKey && key === "d") {
+        event.preventDefault();
+        toggleTheme();
         return;
       }
 
       if (modifierPressed && key === "d") {
-        const selectedElements = sceneStore
-          .get()
-          .elements.filter((element) =>
-            selectionStore.get().elementIds.includes(element.id),
-          );
-
-        if (selectedElements.length > 0) {
-          event.preventDefault();
-          historyStore.begin();
-
-          const copies = selectedElements.map((element) => {
-            const copy = JSON.parse(JSON.stringify(element)) as typeof element;
-            copy.id = `${element.id}-copy-${Date.now()}`;
-            copy.x += 20;
-            copy.y += 20;
-            copy.updatedAt = Date.now();
-            copy.createdAt = Date.now();
-
-            if (copy.type === "freedraw") {
-              copy.points = copy.points.map((point) => ({
-                x: point.x + 20,
-                y: point.y + 20,
-              }));
-            }
-
-            return copy;
-          });
-
-          sceneStore.setElements([...sceneStore.get().elements, ...copies]);
-          selectionStore.setElementIds(copies.map((element) => element.id));
-          historyStore.commit();
+        event.preventDefault();
+        if (!editingLockStore.get().isLocked) {
+          duplicateSelectedElements();
         }
+        return;
+      }
 
+      if (modifierPressed && key === "a") {
+        event.preventDefault();
+        if (!editingLockStore.get().isLocked) {
+          selectionStore.setElementIds(
+            sceneStore.get().elements.map((element) => element.id),
+          );
+        }
+        return;
+      }
+
+      if (modifierPressed && key === "s") {
+        event.preventDefault();
+        void saveScene();
+        return;
+      }
+
+      if (modifierPressed && key === "0") {
+        event.preventDefault();
+        viewportStore.reset();
+        return;
+      }
+
+      if (modifierPressed && (key === "+" || key === "=")) {
+        event.preventDefault();
+        zoomFromViewportCenter(1.1);
+        return;
+      }
+
+      if (modifierPressed && key === "-") {
+        event.preventDefault();
+        zoomFromViewportCenter(1 / 1.1);
+        return;
+      }
+
+      if (key === "?") {
+        event.preventDefault();
+        shortcutsHelpStore.toggle();
+        return;
+      }
+
+      if (editingLockStore.get().isLocked) {
+        if (event.key === "Escape") {
+          selectionStore.clear();
+          toolStore.set("pan");
+        }
         return;
       }
 
@@ -114,13 +272,73 @@ export function useBoardShortcuts() {
       if (event.key === "Escape") {
         selectionStore.clear();
         toolStore.set("selection");
+        return;
+      }
+
+      if (event.key === "Enter" && tryStartTextEditing()) {
+        event.preventDefault();
+        return;
+      }
+
+      if (!modifierPressed && !event.altKey) {
+        const amount = event.shiftKey ? 10 : 1;
+        const nudgeByKey: Partial<Record<string, readonly [number, number]>> = {
+          ArrowDown: [0, amount],
+          ArrowLeft: [-amount, 0],
+          ArrowRight: [amount, 0],
+          ArrowUp: [0, -amount],
+        };
+        const nudge = nudgeByKey[event.key];
+
+        if (nudge && nudgeSelection(nudge[0], nudge[1])) {
+          event.preventDefault();
+          return;
+        }
+      }
+
+      if (!modifierPressed && !event.altKey && key === "q") {
+        event.preventDefault();
+        toolLockStore.toggle();
+        return;
+      }
+
+      if (modifierPressed || event.altKey) {
+        return;
+      }
+
+      const nextTool = getToolFromShortcut(key);
+      if (!nextTool) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (editingLockStore.get().isLocked && nextTool !== "pan") {
+        return;
+      }
+
+      if (spacePanRestoreTool) {
+        spacePanRestoreTool = nextTool;
+        return;
+      }
+
+      toolStore.set(nextTool);
+    }
+
+    function handleKeyUp(event: KeyboardEvent) {
+      if (event.code === "Space") {
+        restoreSpacePan();
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", restoreSpacePan);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", restoreSpacePan);
     };
   }, []);
 }

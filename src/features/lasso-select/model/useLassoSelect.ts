@@ -4,6 +4,7 @@ import { getElementCenter } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
+import { toolLockStore } from "@/features/tool-lock";
 import { getWorldPointerPosition } from "@/features/draw-shape/lib/getWorldPointerPosition";
 import type { Point } from "@/shared/types";
 import { isPointInPolygon } from "../lib/isPointInPolygon";
@@ -60,8 +61,10 @@ export function useLassoSelect() {
     interactionRef.current = null;
     lassoStore.clear();
 
-    // Лассо — одноразовый инструмент: после завершения возвращаем курсор.
-    toolStore.set("selection");
+    // Лассо возвращается к курсору, если пользователь не закрепил инструмент.
+    if (!toolLockStore.get()) {
+      toolStore.set("selection");
+    }
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
