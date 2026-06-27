@@ -7,7 +7,10 @@ import {
 import { selectionStore } from "@/entities/selection";
 import { createId } from "@/shared/lib";
 import { readLocalStorage, writeLocalStorage } from "@/shared/lib/storage/localStorage";
-import { loadSceneFromLocalStorage } from "@/features/save-scene/api/localSceneRepository";
+import {
+  clearLocalScene,
+  loadSceneFromLocalStorage,
+} from "@/features/save-scene/api/localSceneRepository";
 import {
   getProjectById,
   getProjects,
@@ -110,6 +113,7 @@ export const projectStore = {
         const legacyElements = loadSceneFromLocalStorage() ?? [];
         const firstProject = createProjectRecord("Мой первый проект", legacyElements);
         await putProject(firstProject);
+        clearLocalScene();
         projects = await getProjects();
       }
 

@@ -9,6 +9,7 @@ import type { ElementStyle, StrokeStyle } from "@/entities/element";
 import { ColorPalette, RangeField, SegmentedControl } from "@/shared/ui";
 import type { ToolStyleCapabilities } from "../model/toolCapabilities";
 import { FILL_COLORS, STROKE_COLORS } from "../model/styleOptions";
+import { StyleControl } from "./StyleControl";
 
 type ToolStyleSectionProps = {
   style: ElementStyle;
@@ -56,28 +57,30 @@ export function ToolStyleSection({
   return (
     <div className="space-y-5 scrollbar-none">
       {capabilities.stroke && (
-        <section className="flex flex-col gap-3">
-          <ColorPalette
-            label="Цвет контура"
-            onChange={(strokeColor) => onChange({ strokeColor })}
-            options={STROKE_COLORS}
-            value={style.strokeColor}
-          />
+        <StyleControl label="Контур">
+          <div className="flex flex-col gap-3">
+            <ColorPalette
+              label="Цвет контура"
+              onChange={(strokeColor) => onChange({ strokeColor })}
+              options={STROKE_COLORS}
+              value={style.strokeColor}
+            />
 
-          <SegmentedControl
-            items={STROKE_WIDTHS}
-            label="Толщина линии"
-            onChange={(value) => onChange({ strokeWidth: Number(value) })}
-            value={String(style.strokeWidth) as "1" | "2" | "4"}
-          />
+            <SegmentedControl
+              items={STROKE_WIDTHS}
+              label="Толщина линии"
+              onChange={(value) => onChange({ strokeWidth: Number(value) })}
+              value={String(style.strokeWidth) as "1" | "2" | "4"}
+            />
 
-          <SegmentedControl<StrokeStyle>
-            items={STROKE_STYLES}
-            label="Стиль линии"
-            onChange={(strokeStyle) => onChange({ strokeStyle })}
-            value={style.strokeStyle}
-          />
-        </section>
+            <SegmentedControl<StrokeStyle>
+              items={STROKE_STYLES}
+              label="Стиль линии"
+              onChange={(strokeStyle) => onChange({ strokeStyle })}
+              value={style.strokeStyle}
+            />
+          </div>
+        </StyleControl>
       )}
 
       {capabilities.fill && (

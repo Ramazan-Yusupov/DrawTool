@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { normalizeElement, updateElement } from "@/entities/element";
+import { updateElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
@@ -12,7 +12,8 @@ import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
 import type { Point } from "@/shared/types";
 import { getDrawingPoints } from "../lib/getDrawingPoints";
 import { getWorldPointerPosition } from "../lib/getWorldPointerPosition";
-import { createElementByTool } from "./createElementByTool";
+import { getShapePreview } from "../lib/getShapePreview";
+import { drawShape } from "./drawShape";
 import { snapIndicatorStore } from "./snapIndicatorStore";
 
 type DrawingState = {
@@ -98,12 +99,13 @@ export function useDrawShape() {
 
     historyStore.begin();
 
-    const element = createElementByTool({
+    const element = getShapePreview(
+      activeTool,
       startPoint,
-      style: settings.style,
-      toolId: activeTool,
-      arrowRouting: settings.arrowRouting,
-    });
+      startPoint,
+      settings.style,
+      settings.arrowRouting,
+    );
 
     drawingRef.current = {
       elementId: element.id,
@@ -137,12 +139,7 @@ export function useDrawShape() {
     );
 
     sceneStore.updateById(drawing.elementId, (element) =>
-      updateElement(element, {
-        x: points.startPoint.x,
-        y: points.startPoint.y,
-        width: points.endPoint.x - points.startPoint.x,
-        height: points.endPoint.y - points.startPoint.y,
-      }),
+      drawShape(element, points.startPoint, points.endPoint),
     );
 
     if (event.shiftKey || settings.snapToGrid) {
@@ -170,10 +167,6 @@ export function useDrawShape() {
       if (isTooSmall(element.width, element.height, drawing.toolId)) {
         sceneStore.removeById(element.id);
       } else {
-        if (drawing.toolId !== "line" && drawing.toolId !== "arrow") {
-          sceneStore.updateById(element.id, normalizeElement);
-        }
-
         const normalizedElement = sceneStore
           .get()
           .elements.find((item) => item.id === element.id);

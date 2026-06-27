@@ -15,7 +15,7 @@ export function ThemeToggle() {
   return (
     <IconButton
       aria-label={isDark ? "Включить светлую тему" : "Включить тёмную тему"}
-      className="absolute right-4 top-4 z-30 grid size-10 place-items-center rounded-lg border border-border bg-panel text-text shadow-panel transition-colors hover:bg-control max-lg:right-[max(0.5rem,env(safe-area-inset-right))] max-lg:top-[max(0.5rem,env(safe-area-inset-top))] max-lg:size-11"
+      className="absolute right-4 top-4 z-30 grid size-14 place-items-center rounded-lg border border-border bg-panel text-text shadow-panel transition-colors hover:bg-control max-lg:right-[max(0.5rem,env(safe-area-inset-right))] max-sm:top-[max(0.5rem,env(safe-area-inset-top))]"
       onClick={toggleTheme}
       title={isDark ? "Светлая тема" : "Тёмная тема"}
       type="button"

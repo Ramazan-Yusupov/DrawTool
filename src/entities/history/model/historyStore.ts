@@ -1,5 +1,6 @@
-import type { BoardElement } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
+import { applyHistoryEntry } from "./applyHistoryEntry";
+import { createHistoryEntry } from "./createHistoryEntry";
 import type { HistorySnapshot, HistoryState } from "./types";
 
 type HistoryListener = () => void;
@@ -17,14 +18,8 @@ let cachedState: HistoryState = {
 
 const listeners = new Set<HistoryListener>();
 
-function cloneElements(elements: BoardElement[]) {
-  return JSON.parse(JSON.stringify(elements)) as BoardElement[];
-}
-
 function createSnapshot(): HistorySnapshot {
-  return {
-    elements: cloneElements(sceneStore.get().elements),
-  };
+  return createHistoryEntry(sceneStore.get().elements);
 }
 
 function snapshotsMatch(left: HistorySnapshot, right: HistorySnapshot) {
@@ -96,7 +91,7 @@ export const historyStore = {
     }
 
     future.push(createSnapshot());
-    sceneStore.setElements(previousSnapshot.elements);
+    applyHistoryEntry(previousSnapshot);
     notifyListeners();
 
     return true;
@@ -114,7 +109,7 @@ export const historyStore = {
     }
 
     past.push(createSnapshot());
-    sceneStore.setElements(nextSnapshot.elements);
+    applyHistoryEntry(nextSnapshot);
     notifyListeners();
 
     return true;

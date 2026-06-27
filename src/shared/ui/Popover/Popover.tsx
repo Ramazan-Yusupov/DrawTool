@@ -22,7 +22,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
         {...props}
         ref={ref}
         className={cn(
-          "rounded-xl border border-border bg-panel p-2 shadow-panel",
+          "rounded-xl border border-border bg-panel z-50 p-2 shadow-panel",
           className,
         )}
       >

@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { viewportStore } from "@/entities/viewport";
 import { getCanvasPointerPosition } from "@/shared/lib/dom/getCanvasPointerPosition";
+import { rafThrottle } from "@/shared/lib/performance/rafThrottle";
 import type { Point } from "@/shared/types";
 
 type PanState = {
@@ -9,8 +10,41 @@ type PanState = {
   startViewport: ReturnType<typeof viewportStore.get>;
 };
 
+type RafPanUpdater = ReturnType<typeof rafThrottle<[Point]>>;
+
+function applyPanPoint(panState: PanState, currentPoint: Point) {
+  const deltaX = currentPoint.x - panState.startPoint.x;
+  const deltaY = currentPoint.y - panState.startPoint.y;
+
+  viewportStore.set({
+    ...panState.startViewport,
+    x: panState.startViewport.x - deltaX / panState.startViewport.zoom,
+    y: panState.startViewport.y - deltaY / panState.startViewport.zoom,
+  });
+}
+
 export function useCanvasPointerEvents() {
   const panStateRef = useRef<PanState | null>(null);
+  const updatePanRef = useRef<RafPanUpdater | null>(null);
+
+  useEffect(() => {
+    const updatePan = rafThrottle((currentPoint: Point) => {
+      const panState = panStateRef.current;
+
+      if (!panState) {
+        return;
+      }
+
+      applyPanPoint(panState, currentPoint);
+    });
+
+    updatePanRef.current = updatePan;
+
+    return () => {
+      updatePan.cancel();
+      updatePanRef.current = null;
+    };
+  }, []);
 
   function onPointerDown(
     event: React.PointerEvent<HTMLCanvasElement>,
@@ -44,19 +78,9 @@ export function useCanvasPointerEvents() {
       return;
     }
 
-    const currentPoint = getCanvasPointerPosition(
-      event.nativeEvent,
-      event.currentTarget,
+    updatePanRef.current?.(
+      getCanvasPointerPosition(event.nativeEvent, event.currentTarget),
     );
-
-    const deltaX = currentPoint.x - panState.startPoint.x;
-    const deltaY = currentPoint.y - panState.startPoint.y;
-
-    viewportStore.set({
-      ...panState.startViewport,
-      x: panState.startViewport.x - deltaX / panState.startViewport.zoom,
-      y: panState.startViewport.y - deltaY / panState.startViewport.zoom,
-    });
   }
 
   function onPointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -66,6 +90,11 @@ export function useCanvasPointerEvents() {
       return;
     }
 
+    updatePanRef.current?.cancel();
+    applyPanPoint(
+      panState,
+      getCanvasPointerPosition(event.nativeEvent, event.currentTarget),
+    );
     panStateRef.current = null;
 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {

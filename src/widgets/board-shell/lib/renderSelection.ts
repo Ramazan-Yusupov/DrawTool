@@ -124,14 +124,8 @@ export function renderSelection(
     }
   }
 
-  if (selection.selectionBox) {
-    const { x, y, width, height } = selection.selectionBox;
-    context.fillStyle = "rgb(129 140 248 / 10%)";
-    context.strokeStyle = SELECTION_COLOR;
-    context.setLineDash([4 / viewport.zoom, 3 / viewport.zoom]);
-    context.fillRect(x, y, width, height);
-    context.strokeRect(x, y, width, height);
-  }
+  // Area-selection feedback is rendered by SelectionFrame as a DOM overlay.
+  // Keeping it outside the canvas makes it stay crisp at every viewport scale.
 
   context.restore();
 }

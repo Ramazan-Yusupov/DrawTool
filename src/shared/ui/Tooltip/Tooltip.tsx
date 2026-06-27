@@ -16,8 +16,8 @@ const SIDE_CLASS_NAMES = {
 } as const;
 
 /**
- * Optional CSS-only tooltip primitive for future controls.
- * Existing title attributes are intentionally untouched in this refactor.
+ * CSS-only tooltip primitive used by compact board controls.
+ * Native title attributes remain available for keyboard and touch fallbacks.
  */
 export function Tooltip({
   children,

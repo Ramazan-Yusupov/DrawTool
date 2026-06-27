@@ -1,5 +1,5 @@
 import type { Point } from "@/shared/types";
-import { rotatePoint } from "@/shared/lib";
+import { distance, isPointInRect, rotatePoint } from "@/shared/lib";
 import { getArrowPathPoints } from "./getArrowPathPoints";
 import { getElementBounds } from "./getElementBounds";
 import { getElementCenter } from "./getElementCenter";
@@ -14,7 +14,7 @@ function distanceToSegment(point: Point, start: Point, end: Point) {
   const lengthSquared = deltaX * deltaX + deltaY * deltaY;
 
   if (lengthSquared === 0) {
-    return Math.hypot(point.x - start.x, point.y - start.y);
+    return distance(point, start);
   }
 
   const projection = Math.max(
@@ -29,7 +29,7 @@ function distanceToSegment(point: Point, start: Point, end: Point) {
   const closestX = start.x + projection * deltaX;
   const closestY = start.y + projection * deltaY;
 
-  return Math.hypot(point.x - closestX, point.y - closestY);
+  return distance(point, { x: closestX, y: closestY });
 }
 
 function isPointNearPath(point: Point, points: Point[], tolerance: number) {
@@ -68,7 +68,7 @@ export function hitTestElement(element: BoardElement, point: Point) {
 
   if (element.type === "freedraw") {
     return element.points.length <= 1
-      ? Math.hypot(localPoint.x - element.x, localPoint.y - element.y) <= tolerance
+      ? distance(localPoint, { x: element.x, y: element.y }) <= tolerance
       : isPointNearPath(localPoint, element.points, tolerance);
   }
 
@@ -92,10 +92,10 @@ export function hitTestElement(element: BoardElement, point: Point) {
     return normalizedX + normalizedY <= 1.15;
   }
 
-  return (
-    localPoint.x >= bounds.x - tolerance &&
-    localPoint.x <= bounds.x + bounds.width + tolerance &&
-    localPoint.y >= bounds.y - tolerance &&
-    localPoint.y <= bounds.y + bounds.height + tolerance
-  );
+  return isPointInRect(localPoint, {
+    x: bounds.x - tolerance,
+    y: bounds.y - tolerance,
+    width: bounds.width + tolerance * 2,
+    height: bounds.height + tolerance * 2,
+  });
 }

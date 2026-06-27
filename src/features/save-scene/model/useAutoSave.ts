@@ -1,21 +1,40 @@
 import { useEffect } from "react";
 import { sceneStore } from "@/entities/scene";
+import {
+  cancelIdleCallback,
+  debounce,
+  scheduleIdleCallback,
+} from "@/shared/lib";
+import { saveSceneToLocalStorage } from "../api/localSceneRepository";
 import { saveScene } from "./saveScene";
 
-/** Persists the active IndexedDB project shortly after every scene change. */
+/** Persists the active project and a local recovery copy after scene changes. */
 export function useAutoSave() {
   useEffect(() => {
-    let timeoutId: number | undefined;
+    let pendingSaveHandle: number | null = null;
 
-    const unsubscribe = sceneStore.subscribe(() => {
-      window.clearTimeout(timeoutId);
-      timeoutId = window.setTimeout(() => {
+    const persist = debounce(() => {
+      saveSceneToLocalStorage(sceneStore.get().elements);
+
+      if (pendingSaveHandle !== null) {
+        cancelIdleCallback(pendingSaveHandle);
+      }
+
+      pendingSaveHandle = scheduleIdleCallback(() => {
+        pendingSaveHandle = null;
         void saveScene();
-      }, 240);
-    });
+      }, 800);
+    }, 240);
+
+    const unsubscribe = sceneStore.subscribe(persist);
 
     return () => {
-      window.clearTimeout(timeoutId);
+      persist.flush();
+
+      if (pendingSaveHandle !== null) {
+        cancelIdleCallback(pendingSaveHandle);
+      }
+
       unsubscribe();
     };
   }, []);

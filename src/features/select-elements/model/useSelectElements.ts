@@ -20,12 +20,14 @@ import { useMoveElements } from "@/features/move-elements";
 import {
   findResizeHandleAtPoint,
   getElementRotationHandle,
+  getResizeCursor,
   useResizeElements,
 } from "@/features/resize-elements";
 import { viewportStore } from "@/entities/viewport";
 import { normalizeAngleDelta } from "@/shared/lib";
 import type { Point, Rect } from "@/shared/types";
-import { getElementsInSelectionBox } from "../lib/getElementsInSelectionBox";
+import { selectByArea } from "./selectByArea";
+import { selectElement } from "./selectElement";
 
 type SelectionInteraction =
   | { mode: "area"; pointerId: number; startPoint: Point; append: boolean }
@@ -64,6 +66,41 @@ export function useSelectElements() {
     return [...sceneStore.get().elements]
       .reverse()
       .find((element) => hitTestElement(element, point));
+  }
+
+  function updateSelectionCursor(
+    event: ReactPointerEvent<HTMLCanvasElement>,
+    point: Point,
+  ) {
+    const selection = selectionStore.get();
+    const selectedElement =
+      selection.elementIds.length === 1
+        ? sceneStore
+            .get()
+            .elements.find((element) => element.id === selection.elementIds[0])
+        : undefined;
+
+    if (!selectedElement) {
+      event.currentTarget.style.cursor = "";
+      return;
+    }
+
+    const zoom = viewportStore.get().zoom;
+    const rotationHandle = getElementRotationHandle(selectedElement, 30 / zoom);
+
+    if (
+      Math.hypot(
+        point.x - rotationHandle.point.x,
+        point.y - rotationHandle.point.y,
+      ) <=
+      11 / zoom
+    ) {
+      event.currentTarget.style.cursor = "crosshair";
+      return;
+    }
+
+    const handle = findResizeHandleAtPoint(selectedElement, point, 10 / zoom);
+    event.currentTarget.style.cursor = handle ? (getResizeCursor(handle) ?? "") : "";
   }
 
   function onPointerDown(event: ReactPointerEvent<HTMLCanvasElement>) {
@@ -121,15 +158,12 @@ export function useSelectElements() {
 
     if (hitElement) {
       const isAlreadySelected = selection.elementIds.includes(hitElement.id);
-      const elementIds = event.shiftKey
-        ? selection.elementIds.includes(hitElement.id)
-          ? selection.elementIds.filter((id) => id !== hitElement.id)
-          : [...selection.elementIds, hitElement.id]
-        : isAlreadySelected
-          ? selection.elementIds
-          : [hitElement.id];
 
-      selectionStore.setElementIds(elementIds);
+      if (event.shiftKey || !isAlreadySelected) {
+        selectElement(hitElement.id, event.shiftKey);
+      }
+
+      const elementIds = selectionStore.get().elementIds;
 
       if (!event.shiftKey && elementIds.length > 0) {
         historyStore.begin();
@@ -157,11 +191,12 @@ export function useSelectElements() {
 
   function onPointerMove(event: ReactPointerEvent<HTMLCanvasElement>) {
     const interaction = interactionRef.current;
+    const point = getWorldPointerPosition(event);
+
     if (!interaction || interaction.pointerId !== event.pointerId) {
+      updateSelectionCursor(event, point);
       return;
     }
-
-    const point = getWorldPointerPosition(event);
 
     if (interaction.mode === "rotate") {
       const pointerAngle = getPointerAngle(point, interaction.center);
@@ -212,15 +247,7 @@ export function useSelectElements() {
     if (interaction.mode === "area") {
       const selectionBox = selectionStore.get().selectionBox;
       if (selectionBox) {
-        const ids = getElementsInSelectionBox(
-          sceneStore.get().elements,
-          selectionBox,
-        ).map((element) => element.id);
-        selectionStore.setElementIds(
-          interaction.append
-            ? [...selectionStore.get().elementIds, ...ids]
-            : ids,
-        );
+        selectByArea(selectionBox, interaction.append);
       }
     }
 

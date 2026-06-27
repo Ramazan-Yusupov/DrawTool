@@ -1,6 +1,7 @@
 import type { BoardElement } from "@/entities/element";
+import { APP_CONFIG } from "@/shared/config";
 
-export const MAX_PROJECTS = 20;
+export const MAX_PROJECTS = APP_CONFIG.projectLimit;
 
 export type DrawToolProject = {
   id: string;

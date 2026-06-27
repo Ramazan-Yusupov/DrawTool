@@ -1,5 +1,4 @@
-import { BoardPage } from "@/pages/board";
+import { withProviders } from "@/app/providers";
+import { AppRouter } from "@/app/routes";
 
-export function App() {
-  return <BoardPage />;
-}
+export const App = withProviders(AppRouter);

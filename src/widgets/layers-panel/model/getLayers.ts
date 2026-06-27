@@ -10,7 +10,7 @@ const LAYER_LABELS: Record<BoardElement["type"], string> = {
   arrow: "Стрелка", cloud: "Облако", code: "Код", diamond: "Ромб", ellipse: "Эллипс", embed: "Встроенная страница", frame: "Фрейм", freedraw: "Карандаш", hexagon: "Шестиугольник", line: "Линия", rectangle: "Прямоугольник", star: "Звезда", text: "Текст", triangle: "Треугольник",
 };
 
-/** Returns topmost-first layer rows for a future layer navigation panel. */
+/** Returns topmost-first layer rows for the active layer navigation panel. */
 export function getLayers(elements: BoardElement[]): BoardLayer[] {
   return elements.map((element, index) => ({
     element,

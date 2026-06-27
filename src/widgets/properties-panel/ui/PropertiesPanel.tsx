@@ -10,6 +10,7 @@ import {
   MoveDown,
   MoveUp,
   Route,
+  RotateCw,
   SendToBack,
   Settings2,
   SlidersHorizontal,
@@ -17,7 +18,11 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/shared/lib";
-import { getTextSize, updateElement } from "@/entities/element";
+import {
+  getElementRotation,
+  getTextSize,
+  updateElement,
+} from "@/entities/element";
 import type {
   ArrowRouting,
   BoardElement,
@@ -25,22 +30,28 @@ import type {
   TextAlign,
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { duplicateSelectedElements } from "@/features/duplicate-elements";
+import { useDuplicateElements } from "@/features/duplicate-elements";
 import {
   canChangeElementsLayer,
   reorderElementsByLayer,
   type LayerAction,
 } from "@/features/change-layer";
 import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
-import { getSelectedElements, selectionStore } from "@/entities/selection";
-import { TOOL_LABELS, toolStore } from "@/entities/tool";
+import { TOOL_LABELS } from "@/entities/tool";
 import {
   ToolStyleSection,
   TOOL_SETTINGS_CAPABILITIES,
   toolSettingsStore,
 } from "@/features/change-style";
 import { Button, IconButton, NumberField, SegmentedControl } from "@/shared/ui";
+import { useChangeStyle } from "@/features/change-style/model/useChangeStyle";
+import { useDeleteElements } from "@/features/delete-elements";
+import {
+  degreesToRadians,
+  setSelectedElementRotation,
+} from "@/features/rotate-elements";
 import { EmbedSection } from "./EmbedSection";
+import { usePropertiesPanel } from "../model/usePropertiesPanel";
 
 const ARROW_ROUTING_ITEMS = [
   {
@@ -103,32 +114,15 @@ export function PropertiesPanel() {
     };
   }, []);
 
-  const activeTool = useSyncExternalStore(
-    toolStore.subscribe,
-    toolStore.get,
-    toolStore.get,
-  );
-
-  const scene = useSyncExternalStore(
-    sceneStore.subscribe,
-    sceneStore.get,
-    sceneStore.get,
-  );
-
-  const selection = useSyncExternalStore(
-    selectionStore.subscribe,
-    selectionStore.get,
-    selectionStore.get,
-  );
-
-  const selectedElements = getSelectedElements(scene.elements, selection);
+  const { activeTool, primaryElement, scene, selectedElements } =
+    usePropertiesPanel();
+  const changeSelectedStyle = useChangeStyle();
+  const deleteSelection = useDeleteElements();
+  const duplicateSelection = useDuplicateElements();
 
   const selectedElementIds = new Set(
     selectedElements.map((element) => element.id),
   );
-
-  const primaryElement =
-    selectedElements.length === 1 ? selectedElements[0] : null;
 
   const settingsTool = primaryElement?.type ?? activeTool;
 
@@ -185,20 +179,7 @@ export function PropertiesPanel() {
       return;
     }
 
-    const selectedIds = new Set(selectedElements.map((element) => element.id));
-
-    mutateScene(() => {
-      sceneStore.updateAll((element) =>
-        selectedIds.has(element.id)
-          ? updateElement(element, {
-              style: {
-                ...element.style,
-                ...patch,
-              },
-            })
-          : element,
-      );
-    });
+    changeSelectedStyle(patch);
   }
 
   function changeEmbedUrl(url: string) {
@@ -272,21 +253,6 @@ export function PropertiesPanel() {
       fontFamily: toolSettings.fontFamily,
       textAlign: patch.textAlign ?? toolSettings.textAlign,
     });
-  }
-
-  function deleteSelection() {
-    if (selectedElements.length === 0) {
-      return;
-    }
-
-    mutateScene(() => {
-      sceneStore.removeMany(selectedElements.map((element) => element.id));
-      selectionStore.clear();
-    });
-  }
-
-  function duplicateSelection() {
-    duplicateSelectedElements();
   }
 
   function changeLayer(action: LayerAction) {
@@ -464,6 +430,29 @@ export function PropertiesPanel() {
 
           {primaryElement?.type === "embed" && (
             <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
+          )}
+
+          {primaryElement && (
+            <section className="space-y-3 border-t border-border pt-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-text">
+                <RotateCw size={17} />
+                Поворот
+              </div>
+
+              <NumberField
+                label="Угол"
+                max={360}
+                min={-360}
+                onChange={(degrees) =>
+                  setSelectedElementRotation(degreesToRadians(degrees))
+                }
+                step={1}
+                suffix="°"
+                value={Math.round(
+                  (getElementRotation(primaryElement) * 180) / Math.PI,
+                )}
+              />
+            </section>
           )}
 
           {selectedElements.length > 0 && (
