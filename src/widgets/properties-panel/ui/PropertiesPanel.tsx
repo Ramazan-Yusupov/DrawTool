@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -25,6 +25,11 @@ import type {
   TextAlign,
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
+import {
+  canChangeElementsLayer,
+  reorderElementsByLayer,
+  type LayerAction,
+} from "@/features/change-layer";
 import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
 import { getSelectedElements, selectionStore } from "@/entities/selection";
 import { TOOL_LABELS, toolStore } from "@/entities/tool";
@@ -77,8 +82,6 @@ type StyleTarget = {
   type: BoardElement["type"] | "tool";
 };
 
-type LayerAction = "back" | "backward" | "forward" | "front";
-
 function cloneForDuplicate(element: BoardElement): BoardElement {
   const copy = JSON.parse(JSON.stringify(element)) as BoardElement;
   const now = Date.now();
@@ -98,52 +101,6 @@ function cloneForDuplicate(element: BoardElement): BoardElement {
   }
 
   return copy;
-}
-
-function reorderElements(
-  elements: BoardElement[],
-  selectedIds: Set<string>,
-  action: LayerAction,
-) {
-  const next = [...elements];
-
-  if (action === "front") {
-    return [
-      ...next.filter((element) => !selectedIds.has(element.id)),
-      ...next.filter((element) => selectedIds.has(element.id)),
-    ];
-  }
-
-  if (action === "back") {
-    return [
-      ...next.filter((element) => selectedIds.has(element.id)),
-      ...next.filter((element) => !selectedIds.has(element.id)),
-    ];
-  }
-
-  if (action === "forward") {
-    for (let index = next.length - 2; index >= 0; index -= 1) {
-      if (
-        selectedIds.has(next[index].id) &&
-        !selectedIds.has(next[index + 1].id)
-      ) {
-        [next[index], next[index + 1]] = [next[index + 1], next[index]];
-      }
-    }
-
-    return next;
-  }
-
-  for (let index = 1; index < next.length; index += 1) {
-    if (
-      selectedIds.has(next[index].id) &&
-      !selectedIds.has(next[index - 1].id)
-    ) {
-      [next[index], next[index - 1]] = [next[index - 1], next[index]];
-    }
-  }
-
-  return next;
 }
 
 export function PropertiesPanel() {
@@ -186,20 +143,19 @@ export function PropertiesPanel() {
 
   const selectedElements = getSelectedElements(scene.elements, selection);
 
+  const selectedElementIds = new Set(
+    selectedElements.map((element) => element.id),
+  );
+
   const primaryElement =
     selectedElements.length === 1 ? selectedElements[0] : null;
 
   const settingsTool = primaryElement?.type ?? activeTool;
 
-  const getSettings = useCallback(
-    () => toolSettingsStore.get(settingsTool),
-    [settingsTool],
-  );
-
   const toolSettings = useSyncExternalStore(
     toolSettingsStore.subscribe,
-    getSettings,
-    getSettings,
+    () => toolSettingsStore.get(settingsTool),
+    () => toolSettingsStore.get(settingsTool),
   );
 
   const targetType = settingsTool;
@@ -215,6 +171,27 @@ export function PropertiesPanel() {
     : selectedElements.length > 1
       ? `Выбрано: ${selectedElements.length}`
       : `Инструмент: ${TOOL_LABELS[activeTool]}`;
+
+  const canSendToBack = canChangeElementsLayer(
+    scene.elements,
+    selectedElementIds,
+    "back",
+  );
+  const canMoveBackward = canChangeElementsLayer(
+    scene.elements,
+    selectedElementIds,
+    "backward",
+  );
+  const canMoveForward = canChangeElementsLayer(
+    scene.elements,
+    selectedElementIds,
+    "forward",
+  );
+  const canBringToFront = canChangeElementsLayer(
+    scene.elements,
+    selectedElementIds,
+    "front",
+  );
 
   function mutateScene(action: () => void) {
     historyStore.begin();
@@ -343,17 +320,33 @@ export function PropertiesPanel() {
   }
 
   function changeLayer(action: LayerAction) {
-    if (selectedElements.length === 0) {
+    if (selectedElementIds.size === 0) {
       return;
     }
 
-    const selectedIds = new Set(selectedElements.map((element) => element.id));
+    const nextElements = reorderElementsByLayer(
+      scene.elements,
+      selectedElementIds,
+      action,
+    );
+
+    // Do not create an empty history entry when the selected object is already
+    // at the requested edge of its stacking context.
+    if (nextElements === scene.elements) {
+      return;
+    }
 
     mutateScene(() => {
-      sceneStore.setElements(
-        reorderElements(sceneStore.get().elements, selectedIds, action),
-      );
+      sceneStore.setElements(nextElements);
     });
+  }
+
+  function getLayerButtonClass(isAvailable: boolean) {
+    return `grid h-9 place-items-center rounded-md transition-colors ${
+      isAvailable
+        ? "bg-control text-text hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+        : "cursor-not-allowed bg-control/60 text-text-muted/50"
+    }`;
   }
 
   return (
@@ -529,12 +522,17 @@ export function PropertiesPanel() {
                 </button>
               </div>
 
+              <p className="m-0 pt-1 text-xs font-medium text-text-muted">
+                Порядок слоёв
+              </p>
+
               <div className="grid grid-cols-4 gap-1">
                 <button
                   aria-label="На задний слой"
-                  className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
+                  className={getLayerButtonClass(canSendToBack)}
+                  disabled={!canSendToBack}
                   onClick={() => changeLayer("back")}
-                  title="На задний слой"
+                  title="Поместить под все объекты этого слоя"
                   type="button"
                 >
                   <SendToBack size={16} />
@@ -542,9 +540,10 @@ export function PropertiesPanel() {
 
                 <button
                   aria-label="Ниже на один слой"
-                  className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
+                  className={getLayerButtonClass(canMoveBackward)}
+                  disabled={!canMoveBackward}
                   onClick={() => changeLayer("backward")}
-                  title="Ниже на один слой"
+                  title="Переместить на один слой ниже"
                   type="button"
                 >
                   <MoveDown size={16} />
@@ -552,9 +551,10 @@ export function PropertiesPanel() {
 
                 <button
                   aria-label="Выше на один слой"
-                  className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
+                  className={getLayerButtonClass(canMoveForward)}
+                  disabled={!canMoveForward}
                   onClick={() => changeLayer("forward")}
-                  title="Выше на один слой"
+                  title="Переместить на один слой выше"
                   type="button"
                 >
                   <MoveUp size={16} />
@@ -562,9 +562,10 @@ export function PropertiesPanel() {
 
                 <button
                   aria-label="На передний слой"
-                  className="grid h-9 place-items-center rounded-md bg-control text-text hover:bg-surface-muted"
+                  className={getLayerButtonClass(canBringToFront)}
+                  disabled={!canBringToFront}
                   onClick={() => changeLayer("front")}
-                  title="На передний слой"
+                  title="Поместить поверх всех объектов этого слоя"
                   type="button"
                 >
                   <BringToFront size={16} />
