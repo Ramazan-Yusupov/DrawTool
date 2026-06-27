@@ -7,7 +7,7 @@ type CreateElementByToolParams = {
   startPoint: Point;
   style: ElementStyle;
   toolId: ShapeToolId;
-  arrowRouting?: "straight" | "elbow";
+  arrowRouting?: "straight" | "elbow" | "curve";
 };
 
 export function createElementByTool({

@@ -4,16 +4,21 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import {
+  createArrowBinding,
+  findArrowBindingTarget,
+  getArrowBindingAnchor,
   getElementCenter,
   getElementRotation,
   hitTestElement,
   updateElement,
 } from "@/entities/element";
+import type { ElementBinding } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
+import { arrowBindingIndicatorStore } from "@/features/arrow-binding";
 import { ROTATION_SNAP_ANGLE, snapRotationAngle } from "@/features/rotate-elements";
 import { getWorldPointerPosition } from "@/features/draw-shape/lib/getWorldPointerPosition";
 import { useMoveElements } from "@/features/move-elements";
@@ -29,10 +34,18 @@ import type { Point, Rect } from "@/shared/types";
 import { selectByArea } from "./selectByArea";
 import { selectElement } from "./selectElement";
 
+const ARROW_BINDING_RADIUS = 18;
+
 type SelectionInteraction =
   | { mode: "area"; pointerId: number; startPoint: Point; append: boolean }
   | { mode: "move"; pointerId: number }
-  | { mode: "resize"; pointerId: number }
+  | {
+      mode: "resize";
+      pointerId: number;
+      arrowEndpoint?: "start" | "end";
+      arrowId?: string;
+      binding?: ElementBinding;
+    }
   | {
       mode: "rotate";
       pointerId: number;
@@ -66,6 +79,24 @@ export function useSelectElements() {
     return [...sceneStore.get().elements]
       .reverse()
       .find((element) => hitTestElement(element, point));
+  }
+
+  function getArrowEndpointBinding(point: Point, arrowId: string) {
+    const target = findArrowBindingTarget(
+      sceneStore.get().elements,
+      point,
+      arrowId,
+      ARROW_BINDING_RADIUS / viewportStore.get().zoom,
+    );
+
+    if (!target) {
+      return undefined;
+    }
+
+    const binding = createArrowBinding(target, point);
+    const anchorPoint = getArrowBindingAnchor(target, binding, point);
+
+    return { anchorPoint, binding, targetId: target.id };
   }
 
   function updateSelectionCursor(
@@ -150,7 +181,14 @@ export function useSelectElements() {
       historyStore.begin();
       event.currentTarget.setPointerCapture(event.pointerId);
       resize.startResize(selectedElement.id, handle, point);
-      interactionRef.current = { mode: "resize", pointerId: event.pointerId };
+      arrowBindingIndicatorStore.clear();
+      interactionRef.current = {
+        mode: "resize",
+        pointerId: event.pointerId,
+        ...(selectedElement.type === "arrow" && (handle === "start" || handle === "end")
+          ? { arrowEndpoint: handle, arrowId: selectedElement.id }
+          : {}),
+      };
       return;
     }
 
@@ -224,7 +262,25 @@ export function useSelectElements() {
     }
 
     if (interaction.mode === "resize") {
-      resize.updateResize(point, {
+      let resizePoint = point;
+
+      if (interaction.arrowEndpoint && interaction.arrowId) {
+        const candidate = getArrowEndpointBinding(point, interaction.arrowId);
+
+        if (candidate) {
+          resizePoint = candidate.anchorPoint;
+          interaction.binding = candidate.binding;
+          arrowBindingIndicatorStore.set({
+            targetId: candidate.targetId,
+            anchorPoint: candidate.anchorPoint,
+          });
+        } else {
+          interaction.binding = undefined;
+          arrowBindingIndicatorStore.clear();
+        }
+      }
+
+      resize.updateResize(resizePoint, {
         snapToGrid: event.ctrlKey || event.metaKey,
         keepAspectRatio: event.shiftKey,
         resizeFromCenter: event.altKey,
@@ -257,8 +313,26 @@ export function useSelectElements() {
       }
     }
 
+    if (
+      interaction.mode === "resize" &&
+      interaction.arrowEndpoint &&
+      interaction.arrowId &&
+      interaction.binding
+    ) {
+      sceneStore.updateById(interaction.arrowId, (element) =>
+        element.type === "arrow"
+          ? updateElement(element, {
+              ...(interaction.arrowEndpoint === "start"
+                ? { startBinding: interaction.binding }
+                : { endBinding: interaction.binding }),
+            })
+          : element,
+      );
+    }
+
     const finishedMove = move.finishMove();
     const finishedResize = resize.finishResize();
+    arrowBindingIndicatorStore.clear();
 
     if (
       finishedMove ||

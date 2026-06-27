@@ -1,11 +1,20 @@
 import { useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { hitTestElement, updateElement } from "@/entities/element";
+import {
+  createArrowBinding,
+  findArrowBindingTarget,
+  getArrowBindingAnchor,
+  hitTestElement,
+  updateElement,
+} from "@/entities/element";
+import type { ElementBinding } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
 import { attachFrameChildren, findContainingFrame, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
+import { viewportStore } from "@/entities/viewport";
+import { arrowBindingIndicatorStore } from "@/features/arrow-binding";
 import { toolSettingsStore } from "@/features/change-style";
 import { toolLockStore } from "@/features/tool-lock";
 import { snapPointToGrid } from "@/shared/lib/math/snapPointToGrid";
@@ -20,10 +29,13 @@ type DrawingState = {
   elementId: string;
   pointerId: number;
   startPoint: Point;
+  startBinding?: ElementBinding;
+  endBinding?: ElementBinding;
   toolId: ShapeToolId;
 };
 
 const MIN_ELEMENT_SIZE = 2;
+const ARROW_BINDING_RADIUS = 18;
 
 const CLICK_DEFAULT_SIZES: Partial<Record<ShapeToolId, { width: number; height: number }>> = {
   sticky: { width: 220, height: 160 },
@@ -35,6 +47,24 @@ function getElementAtPoint(point: Point, excludedId: string) {
   return [...sceneStore.get().elements]
     .reverse()
     .find((candidate) => candidate.id !== excludedId && hitTestElement(candidate, point));
+}
+
+function getArrowBindingAtPoint(point: Point, excludedElementId?: string) {
+  const target = findArrowBindingTarget(
+    sceneStore.get().elements,
+    point,
+    excludedElementId,
+    ARROW_BINDING_RADIUS / viewportStore.get().zoom,
+  );
+
+  if (!target) {
+    return undefined;
+  }
+
+  const binding = createArrowBinding(target, point);
+  const anchorPoint = getArrowBindingAnchor(target, binding, point);
+
+  return { anchorPoint, binding, targetId: target.id };
 }
 
 function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
@@ -79,6 +109,7 @@ export function useDrawShape() {
 
     if (!isShapeTool(activeTool)) {
       snapIndicatorStore.clear();
+      arrowBindingIndicatorStore.clear();
       return;
     }
 
@@ -104,7 +135,7 @@ export function useDrawShape() {
     const settings = toolSettingsStore.get(activeTool);
     const constraint = getConstraint(activeTool);
 
-    const { startPoint } = getDrawingPoints(
+    let { startPoint } = getDrawingPoints(
       rawStartPoint,
       rawStartPoint,
       event.shiftKey,
@@ -112,21 +143,41 @@ export function useDrawShape() {
       settings.snapSize,
       constraint,
     );
+    let startBinding: ElementBinding | undefined;
+
+    if (activeTool === "arrow") {
+      const candidate = getArrowBindingAtPoint(startPoint);
+      if (candidate) {
+        startPoint = candidate.anchorPoint;
+        startBinding = candidate.binding;
+        arrowBindingIndicatorStore.set({
+          targetId: candidate.targetId,
+          anchorPoint: candidate.anchorPoint,
+        });
+      } else {
+        arrowBindingIndicatorStore.clear();
+      }
+    }
 
     historyStore.begin();
 
-    const element = getShapePreview(
+    const preview = getShapePreview(
       activeTool,
       startPoint,
       startPoint,
       settings.style,
       settings.arrowRouting,
     );
+    const element =
+      preview.type === "arrow" && startBinding
+        ? updateElement(preview, { startBinding })
+        : preview;
 
     drawingRef.current = {
       elementId: element.id,
       pointerId: event.pointerId,
       startPoint,
+      startBinding,
       toolId: activeTool,
     };
 
@@ -154,12 +205,30 @@ export function useDrawShape() {
       getConstraint(drawing.toolId),
     );
 
+    let endPoint = points.endPoint;
+
+    if (drawing.toolId === "arrow") {
+      const candidate = getArrowBindingAtPoint(currentPoint, drawing.elementId);
+
+      if (candidate) {
+        endPoint = candidate.anchorPoint;
+        drawing.endBinding = candidate.binding;
+        arrowBindingIndicatorStore.set({
+          targetId: candidate.targetId,
+          anchorPoint: candidate.anchorPoint,
+        });
+      } else {
+        drawing.endBinding = undefined;
+        arrowBindingIndicatorStore.clear();
+      }
+    }
+
     sceneStore.updateById(drawing.elementId, (element) =>
-      drawShape(element, points.startPoint, points.endPoint),
+      drawShape(element, points.startPoint, endPoint),
     );
 
     if (event.shiftKey || settings.snapToGrid) {
-      snapIndicatorStore.set(points.endPoint);
+      snapIndicatorStore.set(endPoint);
     } else {
       snapIndicatorStore.clear();
     }
@@ -178,6 +247,7 @@ export function useDrawShape() {
 
     drawingRef.current = null;
     snapIndicatorStore.clear();
+    arrowBindingIndicatorStore.clear();
 
     if (element) {
       if (isTooSmall(element.width, element.height, drawing.toolId)) {
@@ -202,21 +272,14 @@ export function useDrawShape() {
 
       if (normalizedElement) {
         if (normalizedElement.type === "arrow") {
-          const startTarget = getElementAtPoint(drawing.startPoint, normalizedElement.id);
-          const endTarget = getElementAtPoint(
-            { x: normalizedElement.x + normalizedElement.width, y: normalizedElement.y + normalizedElement.height },
-            normalizedElement.id,
+          sceneStore.updateById(normalizedElement.id, (current) =>
+            current.type === "arrow"
+              ? updateElement(current, {
+                  startBinding: drawing.startBinding,
+                  endBinding: drawing.endBinding,
+                })
+              : current,
           );
-          if (startTarget || endTarget) {
-            sceneStore.updateById(normalizedElement.id, (current) =>
-              current.type === "arrow"
-                ? updateElement(current, {
-                    startBinding: startTarget ? { elementId: startTarget.id, focus: 0 } : undefined,
-                    endBinding: endTarget ? { elementId: endTarget.id, focus: 0 } : undefined,
-                  })
-                : current,
-            );
-          }
         }
 
         if (normalizedElement.type === "callout") {
@@ -230,11 +293,11 @@ export function useDrawShape() {
           }
         }
 
-        if (normalizedElement?.type === "frame") {
+        if (normalizedElement.type === "frame") {
           sceneStore.setElements(
             attachFrameChildren(sceneStore.get().elements, normalizedElement.id),
           );
-        } else if (normalizedElement) {
+        } else {
           const parentFrame = findContainingFrame(
             normalizedElement,
             sceneStore.get().elements,
@@ -268,7 +331,10 @@ export function useDrawShape() {
 
   return {
     onPointerDown,
-    onPointerLeave: snapIndicatorStore.clear,
+    onPointerLeave: () => {
+      snapIndicatorStore.clear();
+      arrowBindingIndicatorStore.clear();
+    },
     onPointerMove,
     onPointerUp: finishDrawing,
     onPointerCancel: finishDrawing,

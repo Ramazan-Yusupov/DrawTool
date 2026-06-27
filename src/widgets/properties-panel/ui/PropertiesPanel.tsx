@@ -12,6 +12,7 @@ import {
   MoveDown,
   MoveUp,
   Route,
+  Spline,
   RotateCw,
   SendToBack,
   Settings2,
@@ -71,6 +72,12 @@ const ARROW_ROUTING_ITEMS = [
     label: "Сгибающаяся стрелка",
     value: "elbow",
     icon: Route,
+    iconOnly: true,
+  },
+  {
+    label: "Плавная сгибающаяся стрелка",
+    value: "curve",
+    icon: Spline,
     iconOnly: true,
   },
 ] as const;

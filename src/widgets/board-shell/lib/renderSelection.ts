@@ -1,4 +1,5 @@
 import {
+  getArrowCurveControlPoint,
   getElementBounds,
   getElementCenter,
   getElementRotation,
@@ -56,6 +57,36 @@ function drawRotationHandle(
   context.stroke();
 }
 
+function drawCurveControlGuide(
+  context: CanvasRenderingContext2D,
+  element: Parameters<typeof getElementResizeHandles>[0],
+  viewport: Viewport,
+) {
+  if (element.type !== "arrow" || element.routing !== "curve") {
+    return;
+  }
+
+  const center = getElementCenter(element);
+  const angle = getElementRotation(element);
+  const midpoint = rotatePoint(
+    {
+      x: element.x + element.width / 2,
+      y: element.y + element.height / 2,
+    },
+    center,
+    angle,
+  );
+  const control = rotatePoint(getArrowCurveControlPoint(element), center, angle);
+
+  context.save();
+  context.setLineDash([4 / viewport.zoom, 4 / viewport.zoom]);
+  context.beginPath();
+  context.moveTo(midpoint.x, midpoint.y);
+  context.lineTo(control.x, control.y);
+  context.stroke();
+  context.restore();
+}
+
 function drawRotatedSelectionOutline(
   context: CanvasRenderingContext2D,
   element: Parameters<typeof getElementResizeHandles>[0],
@@ -108,6 +139,7 @@ export function renderSelection(
       const element = selectedElements[0];
       drawRotatedSelectionOutline(context, element, viewport);
       context.setLineDash([]);
+      drawCurveControlGuide(context, element, viewport);
       getElementResizeHandles(element).forEach(({ point }) =>
         drawHandle(context, point.x, point.y),
       );

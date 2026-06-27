@@ -1,24 +1,49 @@
 import { getLineDash } from "@/shared/lib/canvas/getLineDash";
-import { getArrowPathPoints } from "../lib/getArrowPathPoints";
+import {
+  getArrowCurveControlPoint,
+  getArrowPathPoints,
+} from "../lib/getArrowPathPoints";
 import type { ArrowElement } from "../model/types";
 
 const ARROW_HEAD_LENGTH = 12;
 const ARROW_HEAD_ANGLE = Math.PI / 7;
+
+function getArrowHeadAngle(element: ArrowElement) {
+  const end = {
+    x: element.x + element.width,
+    y: element.y + element.height,
+  };
+
+  if (element.routing === "curve") {
+    const control = getArrowCurveControlPoint(element);
+    return Math.atan2(end.y - control.y, end.x - control.x);
+  }
+
+  const points = getArrowPathPoints(element);
+  const previousPoint = points.at(-2);
+
+  return previousPoint
+    ? Math.atan2(end.y - previousPoint.y, end.x - previousPoint.x)
+    : 0;
+}
 
 export function renderArrow(
   context: CanvasRenderingContext2D,
   element: ArrowElement,
 ) {
   const { style } = element;
+  const start = { x: element.x, y: element.y };
+  const end = {
+    x: element.x + element.width,
+    y: element.y + element.height,
+  };
   const points = getArrowPathPoints(element);
-  const end = points.at(-1);
-  const previousPoint = points.at(-2);
 
-  if (!end || !previousPoint) {
+  if (points.length < 2) {
     return;
   }
 
-  const angle = Math.atan2(end.y - previousPoint.y, end.x - previousPoint.x);
+  const angle = getArrowHeadAngle(element);
 
   context.save();
   context.globalAlpha = style.opacity;
@@ -29,8 +54,15 @@ export function renderArrow(
   context.setLineDash(getLineDash(style.strokeStyle, style.strokeWidth));
 
   context.beginPath();
-  context.moveTo(points[0].x, points[0].y);
-  points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+  context.moveTo(start.x, start.y);
+
+  if (element.routing === "curve") {
+    const control = getArrowCurveControlPoint(element);
+    context.quadraticCurveTo(control.x, control.y, end.x, end.y);
+  } else {
+    points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+  }
+
   context.stroke();
 
   context.setLineDash([]);

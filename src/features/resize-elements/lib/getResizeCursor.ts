@@ -17,6 +17,7 @@ export function getResizeCursor(handle: ResizeHandle) {
     case "start":
     case "end":
     case "elbow":
+    case "curve":
       return "grab";
   }
 }

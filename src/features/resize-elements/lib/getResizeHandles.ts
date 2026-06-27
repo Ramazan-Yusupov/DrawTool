@@ -1,4 +1,5 @@
 import {
+  getArrowCurveControlPoint,
   getArrowPathPoints,
   getElementBounds,
   getElementCenter,
@@ -69,6 +70,13 @@ export function getElementResizeHandles(
       const bendPoint = getArrowBendHandle(element);
       if (bendPoint) {
         result.push({ handle: "elbow", point: toWorldPoint(element, bendPoint) });
+      }
+
+      if (element.routing === "curve") {
+        result.push({
+          handle: "curve",
+          point: toWorldPoint(element, getArrowCurveControlPoint(element)),
+        });
       }
     }
 

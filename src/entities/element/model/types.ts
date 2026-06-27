@@ -26,7 +26,7 @@ export type ElementType =
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type FillStyle = "transparent" | "solid";
 export type CornerStyle = "sharp" | "rounded";
-export type ArrowRouting = "straight" | "elbow";
+export type ArrowRouting = "straight" | "elbow" | "curve";
 export type ElbowAxis = "horizontal" | "vertical";
 export type TextAlign = "left" | "center" | "right";
 
@@ -43,8 +43,13 @@ export type ElementStyle = {
 /** Connection metadata for an endpoint attached to another board element. */
 export type ElementBinding = {
   elementId: string;
-  /** Reserved normalized anchor focus. Existing scenes can safely omit it. */
+  /**
+   * Angle of the attached anchor around the target centre. Existing scenes
+   * may safely omit the fixed-anchor flag and keep the previous auto mode.
+   */
   focus: number;
+  /** New bindings retain the exact side of the target selected by the user. */
+  anchor?: "auto" | "fixed";
 };
 
 export type BaseElement = {
@@ -79,6 +84,8 @@ export type ArrowElement = BaseElement & {
   routing: ArrowRouting;
   elbowAxis: ElbowAxis;
   elbowOffset: number;
+  /** Signed normal offset for the smooth quadratic Bézier route. */
+  curveOffset: number;
   startBinding?: ElementBinding;
   endBinding?: ElementBinding;
 };

@@ -116,6 +116,7 @@ export function createArrow(params: ArrowCreateParams): ArrowElement {
     routing: params.routing ?? "elbow",
     elbowAxis: "horizontal",
     elbowOffset: 0.5,
+    curveOffset: 0.22,
   };
 }
 

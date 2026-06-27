@@ -16,6 +16,10 @@ import { renderSnapIndicator, snapIndicatorStore } from "@/features/draw-shape";
 import { renderLaserPointer, laserPointerStore } from "@/features/laser-pointer";
 import { renderLasso, lassoStore } from "@/features/lasso-select";
 import {
+  arrowBindingIndicatorStore,
+  renderArrowBindingIndicator,
+} from "@/features/arrow-binding";
+import {
   alignmentGuidesStore,
   renderAlignmentGuides,
 } from "@/features/move-elements";
@@ -49,6 +53,7 @@ export function useBoardRenderer(
 
     renderGrid({ context, viewport, size });
     renderScene({ context, viewport, size });
+    renderArrowBindingIndicator(context);
     renderAlignmentGuides(context, viewport);
     renderLasso(context, viewport);
     renderLaserPointer(context, viewport);
@@ -84,6 +89,8 @@ export function useBoardRenderer(
     const unsubscribeLasso = lassoStore.subscribe(scheduleRender);
     const unsubscribeAlignmentGuides =
       alignmentGuidesStore.subscribe(scheduleRender);
+    const unsubscribeArrowBinding =
+      arrowBindingIndicatorStore.subscribe(scheduleRender);
 
     scheduleRender();
 
@@ -98,6 +105,7 @@ export function useBoardRenderer(
       unsubscribeLaser();
       unsubscribeLasso();
       unsubscribeAlignmentGuides();
+      unsubscribeArrowBinding();
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }

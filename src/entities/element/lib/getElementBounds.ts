@@ -1,8 +1,24 @@
 import type { Rect } from "@/shared/types";
 import type { BoardElement } from "../model/types";
 import { getTextElementSize } from "./getTextSize";
+import { getArrowPathPoints } from "./getArrowPathPoints";
 
 export function getElementBounds(element: BoardElement): Rect {
+  if (element.type === "arrow") {
+    const points = getArrowPathPoints(element);
+    const xValues = points.map((point) => point.x);
+    const yValues = points.map((point) => point.y);
+    const x = Math.min(...xValues);
+    const y = Math.min(...yValues);
+
+    return {
+      x,
+      y,
+      width: Math.max(...xValues) - x,
+      height: Math.max(...yValues) - y,
+    };
+  }
+
   if (element.type === "text") {
     const size = getTextElementSize(element);
 

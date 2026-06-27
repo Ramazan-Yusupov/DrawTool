@@ -12,6 +12,19 @@ export function deserializeScene(source: string): BoardElement[] {
   return parsed.elements.map((element) => ({
     ...element,
     angle: typeof element.angle === "number" ? element.angle : 0,
+    ...(element.type === "arrow"
+      ? {
+          routing:
+            element.routing === "straight" || element.routing === "curve"
+              ? element.routing
+              : "elbow",
+          elbowAxis: element.elbowAxis ?? "horizontal",
+          elbowOffset:
+            typeof element.elbowOffset === "number" ? element.elbowOffset : 0.5,
+          curveOffset:
+            typeof element.curveOffset === "number" ? element.curveOffset : 0.22,
+        }
+      : {}),
     style: { ...element.style },
   }));
 }

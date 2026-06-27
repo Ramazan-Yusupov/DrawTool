@@ -1,5 +1,5 @@
 import { getElementBounds } from "../lib/getElementBounds";
-import { getRelationAnchor } from "../lib/syncElementRelations";
+import { getRelationAnchor } from "../lib/getRelationAnchor";
 import { TEXT_ELEMENT_PADDING, TEXT_LINE_HEIGHT_RATIO } from "../lib/getTextSize";
 import type { CalloutElement } from "../model/types";
 import { drawRoundedRectPath } from "./drawRoundedRectPath";

@@ -26,11 +26,23 @@ export {
 export { updateElement } from "./model/updateElement";
 export { cloneElement } from "./model/cloneElement";
 
-export { getArrowPathPoints } from "./lib/getArrowPathPoints";
+export {
+  getArrowCurveControlPoint,
+  getArrowCurveOffset,
+  getArrowPathPoints,
+  getQuadraticBezierPoint,
+} from "./lib/getArrowPathPoints";
+export {
+  createArrowBinding,
+  findArrowBindingTarget,
+  getArrowBindingAnchor,
+  isArrowBindingTarget,
+} from "./lib/arrowBinding";
 export { getElementBounds } from "./lib/getElementBounds";
 export { getElementCenter } from "./lib/getElementCenter";
 export { getElementRotation } from "./lib/getElementRotation";
-export { getRelationAnchor, syncElementRelations } from "./lib/syncElementRelations";
+export { getRelationAnchor } from "./lib/getRelationAnchor";
+export { syncElementRelations } from "./lib/syncElementRelations";
 export {
   getTextContentSize,
   getTextSize,

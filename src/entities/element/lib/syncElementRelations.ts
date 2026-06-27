@@ -1,38 +1,13 @@
 import type { Point } from "@/shared/types";
-import { getElementBounds } from "./getElementBounds";
+import { getArrowBindingAnchor } from "./arrowBinding";
+import { getElementCenter } from "./getElementCenter";
+import { getRelationAnchor } from "./getRelationAnchor";
 import type { ArrowElement, BoardElement, CalloutElement, ElementBinding } from "../model/types";
 
 const EPSILON = 0.01;
 
 function equal(a: number, b: number) {
   return Math.abs(a - b) < EPSILON;
-}
-
-function getCenter(element: BoardElement): Point {
-  const bounds = getElementBounds(element);
-  return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
-}
-
-/**
- * Finds the point where a ray from a target's center towards another point
- * exits the target's visual bounds. It works consistently for shapes, text,
- * images and containers and keeps connector endpoints on a useful edge.
- */
-export function getRelationAnchor(element: BoardElement, toward: Point): Point {
-  const bounds = getElementBounds(element);
-  const center = getCenter(element);
-  const dx = toward.x - center.x;
-  const dy = toward.y - center.y;
-
-  if (Math.abs(dx) < EPSILON && Math.abs(dy) < EPSILON) {
-    return { x: center.x + bounds.width / 2, y: center.y };
-  }
-
-  const scaleX = Math.abs(dx) / Math.max(bounds.width / 2, 1);
-  const scaleY = Math.abs(dy) / Math.max(bounds.height / 2, 1);
-  const scale = 1 / Math.max(scaleX, scaleY, EPSILON);
-
-  return { x: center.x + dx * scale, y: center.y + dy * scale };
 }
 
 function getBoundTarget(binding: ElementBinding | undefined, byId: Map<string, BoardElement>) {
@@ -45,9 +20,15 @@ function syncArrow(arrow: ArrowElement, byId: Map<string, BoardElement>): ArrowE
   const startTarget = getBoundTarget(arrow.startBinding, byId);
   const endTarget = getBoundTarget(arrow.endBinding, byId);
 
-  const start = startTarget ? getRelationAnchor(startTarget, rawEnd) : rawStart;
-  const end = endTarget ? getRelationAnchor(endTarget, start) : rawEnd;
-  const refinedStart = startTarget ? getRelationAnchor(startTarget, end) : start;
+  const start = startTarget && arrow.startBinding
+    ? getArrowBindingAnchor(startTarget, arrow.startBinding, rawEnd)
+    : rawStart;
+  const end = endTarget && arrow.endBinding
+    ? getArrowBindingAnchor(endTarget, arrow.endBinding, start)
+    : rawEnd;
+  const refinedStart = startTarget && arrow.startBinding
+    ? getArrowBindingAnchor(startTarget, arrow.startBinding, end)
+    : start;
 
   if (
     equal(refinedStart.x, arrow.x) &&
@@ -79,7 +60,7 @@ function syncCallout(callout: CalloutElement, byId: Map<string, BoardElement>): 
       : callout;
   }
 
-  const targetPoint = getRelationAnchor(target, getCenter(callout));
+  const targetPoint = getRelationAnchor(target, getElementCenter(callout));
   const connectionPoint = getCalloutConnectionPoint(callout, targetPoint);
   // Avoid a dead assignment while retaining the useful connection calc for the
   // renderer's geometric contract. The card itself remains freely movable.

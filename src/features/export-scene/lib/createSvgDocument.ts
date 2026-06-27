@@ -1,4 +1,8 @@
-import { getArrowPathPoints, getElementBounds } from "@/entities/element";
+import {
+  getArrowCurveControlPoint,
+  getArrowPathPoints,
+  getElementBounds,
+} from "@/entities/element";
 import type { BoardElement } from "@/entities/element";
 
 function escapeXml(value: string) {
@@ -35,8 +39,13 @@ function elementToSvg(element: BoardElement) {
       markup += textSvg(`${distance} px`, x + width / 2 - 20, y + height / 2 - 8, 12, style.strokeColor);
     }
   } else if (element.type === "arrow") {
-    const points = getArrowPathPoints(element).map((point) => `${point.x},${point.y}`).join(" ");
-    markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
+    if (element.routing === "curve") {
+      const control = getArrowCurveControlPoint(element);
+      markup = `<path d="M ${element.x} ${element.y} Q ${control.x} ${control.y} ${element.x + element.width} ${element.y + element.height}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
+    } else {
+      const points = getArrowPathPoints(element).map((point) => `${point.x},${point.y}`).join(" ");
+      markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
+    }
   } else if (element.type === "text") {
     markup = textSvg(element.text, x + 6, y + 4, element.fontSize, style.strokeColor);
   } else if (element.type === "sticky") {

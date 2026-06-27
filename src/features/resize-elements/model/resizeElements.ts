@@ -1,4 +1,5 @@
 import {
+  getArrowCurveOffset,
   getElementBounds,
   getElementCenter,
   getElementRotation,
@@ -172,6 +173,26 @@ export function resizeElement(
     sceneStore.updateById(element.id, (current) =>
       current.type === "arrow"
         ? updateElement(current, { elbowOffset: clamp(nextOffset, 0.05, 0.95) })
+        : current,
+    );
+    return;
+  }
+
+  if (element.type === "arrow" && handle === "curve") {
+    const center = getElementCenter(element);
+    const localPoint = rotatePoint(
+      modifiers.snapToGrid
+        ? snapPointToGrid(currentPoint, CANVAS_CONFIG.defaultSnapSize)
+        : currentPoint,
+      center,
+      -getElementRotation(element),
+    );
+
+    sceneStore.updateById(element.id, (current) =>
+      current.type === "arrow"
+        ? updateElement(current, {
+            curveOffset: clamp(getArrowCurveOffset(element, localPoint), -1.5, 1.5),
+          })
         : current,
     );
     return;
