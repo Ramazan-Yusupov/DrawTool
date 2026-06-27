@@ -5,7 +5,7 @@ import { shortcutsHelpStore } from "../model/shortcutsHelpStore";
 
 const SHORTCUT_GROUPS = [
   {
-    title: "Основные инструменты · Excalidraw",
+    title: "Основные инструменты",
     rows: [
       ["V / 1", "Выбор"],
       ["R / 2", "Прямоугольник"],
@@ -46,7 +46,10 @@ const SHORTCUT_GROUPS = [
       ["Shift + Arrow", "Сдвинуть выбранное на 10 px"],
       ["Enter", "Редактировать выбранный текст"],
       ["Shift + click", "Добавить объект к выделению"],
-      ["Ctrl / Cmd + Shift + L", "Заблокировать / разблокировать редактирование"],
+      [
+        "Ctrl / Cmd + Shift + L",
+        "Заблокировать / разблокировать редактирование",
+      ],
       ["Escape", "Снять выделение и включить курсор"],
     ],
   },
@@ -70,6 +73,12 @@ const SHORTCUT_GROUPS = [
       ["Ctrl / Cmd при переносе", "Выравнивание по объектам"],
       ["Ctrl / Cmd при resize", "Привязка к сетке"],
       ["Alt при resize", "Изменение размера от центра"],
+      [
+        "Shift или Ctrl / Cmd + drag кружка",
+        "Поворот с шагом 15°: 0°, 15°, 30°, 60°, 90°…",
+      ],
+      ["[ / ]", "Повернуть выбранный объект на −15° / +15°"],
+      ["Shift + [ / ]", "Повернуть выбранный объект на −90° / +90°"],
     ],
   },
 ] as const;
@@ -88,10 +97,9 @@ export function ShortcutsDialog() {
       title="Горячие клавиши"
     >
       <div className="space-y-5">
-        <p className="m-0 flex items-center gap-2 text-sm text-text-muted">
+        <p className="m-0 my-2 flex items-center gap-2 text-sm text-text-muted">
           <Keyboard className="text-accent" size={17} />
-          Раскладка основных инструментов повторяет Excalidraw; команды DrawTool
-          добавлены без конфликтов.
+          Раскладка основных инструментов.
         </p>
 
         {SHORTCUT_GROUPS.map((group) => (

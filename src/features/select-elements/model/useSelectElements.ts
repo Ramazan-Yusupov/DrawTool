@@ -14,6 +14,7 @@ import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
+import { ROTATION_SNAP_ANGLE, snapRotationAngle } from "@/features/rotate-elements";
 import { getWorldPointerPosition } from "@/features/draw-shape/lib/getWorldPointerPosition";
 import { useMoveElements } from "@/features/move-elements";
 import {
@@ -87,6 +88,7 @@ export function useSelectElements() {
         11 / zoom;
 
       if (isRotationHandle) {
+        event.preventDefault();
         historyStore.begin();
         event.currentTarget.setPointerCapture(event.pointerId);
         const center = getElementCenter(selectedElement);
@@ -167,9 +169,14 @@ export function useSelectElements() {
       interaction.previousPointerAngle = pointerAngle;
       interaction.accumulatedAngle += delta;
 
+      const nextAngle = interaction.initialAngle + interaction.accumulatedAngle;
+      const shouldSnapRotation = event.shiftKey || event.ctrlKey || event.metaKey;
+
       sceneStore.updateById(interaction.elementId, (element) =>
         updateElement(element, {
-          angle: interaction.initialAngle + interaction.accumulatedAngle,
+          angle: shouldSnapRotation
+            ? snapRotationAngle(nextAngle, ROTATION_SNAP_ANGLE)
+            : nextAngle,
         }),
       );
       return;

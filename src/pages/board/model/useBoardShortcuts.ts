@@ -9,6 +9,11 @@ import { viewportStore, zoomAtPoint } from "@/entities/viewport";
 import { deleteSelectedElements } from "@/features/delete-elements";
 import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
+import {
+  ROTATION_LARGE_STEP_ANGLE,
+  ROTATION_SNAP_ANGLE,
+  rotateSelectedElementBy,
+} from "@/features/rotate-elements";
 import { toggleEditingLock } from "@/features/lock-editing/model/toggleEditingLock";
 import { saveScene } from "@/features/save-scene";
 import { shortcutsHelpStore } from "@/features/shortcuts-help";
@@ -278,6 +283,20 @@ export function useBoardShortcuts() {
       if (event.key === "Enter" && tryStartTextEditing()) {
         event.preventDefault();
         return;
+      }
+
+      const rotationDirection =
+        event.code === "BracketLeft" ? -1 : event.code === "BracketRight" ? 1 : 0;
+
+      if (!modifierPressed && !event.altKey && rotationDirection !== 0) {
+        const rotationStep = event.shiftKey
+          ? ROTATION_LARGE_STEP_ANGLE
+          : ROTATION_SNAP_ANGLE;
+
+        if (rotateSelectedElementBy(rotationDirection * rotationStep)) {
+          event.preventDefault();
+          return;
+        }
       }
 
       if (!modifierPressed && !event.altKey) {
