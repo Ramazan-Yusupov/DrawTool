@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { toolStore } from "@/entities/tool";
 import { generateStore } from "@/features/generate";
-import { MORE_SHAPE_ITEMS } from "../model/toolItems";
 import { Button, IconButton, Popover } from "@/shared/ui";
+import { MORE_SHAPE_ITEMS } from "../model/toolItems";
 
 type MenuPosition = {
   bottom?: number;
@@ -23,7 +23,7 @@ type MenuPosition = {
   width: number;
 };
 
-const MOBILE_BREAKPOINT = 1023;
+const TOOLBAR_BOTTOM_BREAKPOINT = 1100;
 const VIEWPORT_GUTTER = 8;
 const MENU_GAP = 8;
 const DESKTOP_MENU_WIDTH = 288;
@@ -47,9 +47,12 @@ export function MoreToolsMenu() {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const isMobile = viewportWidth <= MOBILE_BREAKPOINT;
+    // Должно совпадать с breakpoint toolbar:
+    // max-[1100px] — toolbar находится снизу.
+    const isBottomToolbar = viewportWidth <= TOOLBAR_BOTTOM_BREAKPOINT;
+
     const width = Math.min(
-      isMobile ? MOBILE_MENU_WIDTH : DESKTOP_MENU_WIDTH,
+      isBottomToolbar ? MOBILE_MENU_WIDTH : DESKTOP_MENU_WIDTH,
       viewportWidth - VIEWPORT_GUTTER * 2,
     );
 
@@ -58,12 +61,8 @@ export function MoreToolsMenu() {
       Math.min(rect.right - width, viewportWidth - width - VIEWPORT_GUTTER),
     );
 
-    if (isMobile) {
-      /*
-       * Нижний toolbar находится внизу.
-       * Поэтому menu получает bottom, а не top:
-       * оно всегда открывается вверх над кнопкой "...".
-       */
+    if (isBottomToolbar) {
+      // Нижний toolbar: меню раскрывается вверх.
       setMenuPosition({
         bottom: Math.max(VIEWPORT_GUTTER, viewportHeight - rect.top + MENU_GAP),
         left,
@@ -74,6 +73,7 @@ export function MoreToolsMenu() {
       return;
     }
 
+    // Верхний toolbar: меню раскрывается вниз.
     setMenuPosition({
       left,
       maxHeight: Math.max(
@@ -107,7 +107,11 @@ export function MoreToolsMenu() {
     }
 
     function onPointerDown(event: PointerEvent) {
-      const target = event.target as Node;
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
 
       const clickedButton = buttonRef.current?.contains(target);
       const clickedMenu = menuRef.current?.contains(target);
@@ -123,11 +127,11 @@ export function MoreToolsMenu() {
       }
     }
 
-    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [isOpen]);
@@ -150,139 +154,144 @@ export function MoreToolsMenu() {
       {isOpen &&
         menuPosition &&
         createPortal(
-          <Popover
-            ref={menuRef}
-            isOpen={isOpen}
-            aria-label="Дополнительные инструменты"
-            className="fixed z-60 overflow-y-auto overscroll-contain"
-            role="menu"
-            style={menuPosition}
-          >
-            <div className="space-y-1">
-              {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
-                const Icon = item.icon;
+          <div ref={menuRef}>
+            <Popover
+              aria-label="Дополнительные инструменты"
+              className="fixed z-60 overflow-y-auto overscroll-contain"
+              isOpen={isOpen}
+              role="menu"
+              style={menuPosition}
+            >
+              <div className="space-y-1">
+                {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
+                  const Icon = item.icon;
 
-                return (
-                  <Button
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                    key={item.id}
-                    onClick={() => {
-                      toolStore.set(item.id);
-                      setIsOpen(false);
-                    }}
-                    type="button"
-                  >
-                    {item.id === "embed" ? (
-                      <Globe2 size={17} />
-                    ) : (
-                      <Icon size={17} />
-                    )}
+                  return (
+                    <Button
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                      key={item.id}
+                      onClick={() => {
+                        toolStore.set(item.id);
+                        setIsOpen(false);
+                      }}
+                      type="button"
+                    >
+                      {item.id === "embed" ? (
+                        <Globe2 size={17} />
+                      ) : (
+                        <Icon size={17} />
+                      )}
 
-                    <span className="flex-1">{item.label}</span>
-                    <kbd className="text-xs text-text-muted" title={item.shortcutHint}>
-                      {item.shortcut}
-                    </kbd>
-                  </Button>
-                );
-              })}
+                      <span className="flex-1">{item.label}</span>
 
-              <Button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                onClick={() => {
-                  toolStore.set("laser");
-                  setIsOpen(false);
-                }}
-                type="button"
-              >
-                <Crosshair size={17} />
-                <span className="flex-1">Лазерная указка</span>
-                <kbd className="text-xs text-text-muted">K</kbd>
-              </Button>
+                      <kbd
+                        className="text-xs text-text-muted"
+                        title={item.shortcutHint}
+                      >
+                        {item.shortcut}
+                      </kbd>
+                    </Button>
+                  );
+                })}
 
-              <Button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                onClick={() => {
-                  toolStore.set("lasso");
-                  setIsOpen(false);
-                }}
-                type="button"
-              >
-                <LassoSelect size={17} />
-                <span className="flex-1">Выделение лассо</span>
-                <kbd className="text-xs text-text-muted">L</kbd>
-              </Button>
-            </div>
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => {
+                    toolStore.set("laser");
+                    setIsOpen(false);
+                  }}
+                  type="button"
+                >
+                  <Crosshair size={17} />
+                  <span className="flex-1">Лазерная указка</span>
+                  <kbd className="text-xs text-text-muted">K</kbd>
+                </Button>
 
-            <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
-              Generate
-            </p>
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => {
+                    toolStore.set("lasso");
+                    setIsOpen(false);
+                  }}
+                  type="button"
+                >
+                  <LassoSelect size={17} />
+                  <span className="flex-1">Выделение лассо</span>
+                  <kbd className="text-xs text-text-muted">L</kbd>
+                </Button>
+              </div>
 
-            <div className="space-y-1">
-              <Button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                onClick={() => {
-                  generateStore.open("diagram");
-                  setIsOpen(false);
-                }}
-                type="button"
-              >
-                <Sparkles size={17} />
-                <span className="flex-1">Текст в диаграмму</span>
-                <Bot className="text-accent" size={15} />
-              </Button>
+              <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+                Generate
+              </p>
 
-              <Button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                onClick={() => {
-                  generateStore.open("mermaid");
-                  setIsOpen(false);
-                }}
-                type="button"
-              >
-                <Network size={17} />
-                <span className="flex-1">Mermaid в DrawTool</span>
-              </Button>
+              <div className="space-y-1">
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => {
+                    generateStore.open("diagram");
+                    setIsOpen(false);
+                  }}
+                  type="button"
+                >
+                  <Sparkles size={17} />
+                  <span className="flex-1">Текст в диаграмму</span>
+                  <Bot className="text-accent" size={15} />
+                </Button>
 
-              <Button
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
-                onClick={() => {
-                  generateStore.open("code");
-                  setIsOpen(false);
-                }}
-                type="button"
-              >
-                <Braces size={17} />
-                <span className="flex-1">Каркас для кода</span>
-                <Bot className="text-accent" size={15} />
-              </Button>
-            </div>
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => {
+                    generateStore.open("mermaid");
+                    setIsOpen(false);
+                  }}
+                  type="button"
+                >
+                  <Network size={17} />
+                  <span className="flex-1">Mermaid в DrawTool</span>
+                </Button>
 
-            <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
-              Другие фигуры
-            </p>
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => {
+                    generateStore.open("code");
+                    setIsOpen(false);
+                  }}
+                  type="button"
+                >
+                  <Braces size={17} />
+                  <span className="flex-1">Каркас для кода</span>
+                  <Bot className="text-accent" size={15} />
+                </Button>
+              </div>
 
-            <div className="grid grid-cols-2 gap-1">
-              {MORE_SHAPE_ITEMS.slice(2).map((item) => {
-                const Icon = item.icon;
+              <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+                Другие фигуры
+              </p>
 
-                return (
-                  <Button
-                    className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-text hover:bg-control"
-                    key={item.id}
-                    onClick={() => {
-                      toolStore.set(item.id);
-                      setIsOpen(false);
-                    }}
-                    title={`${item.label} (${item.shortcutHint})`}
-                    type="button"
-                  >
-                    <Icon size={16} />
-                    <span className="truncate">{item.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
-          </Popover>,
+              <div className="grid grid-cols-2 gap-1">
+                {MORE_SHAPE_ITEMS.slice(2).map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <Button
+                      className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-text hover:bg-control"
+                      key={item.id}
+                      onClick={() => {
+                        toolStore.set(item.id);
+                        setIsOpen(false);
+                      }}
+                      title={`${item.label} (${item.shortcutHint})`}
+                      type="button"
+                    >
+                      <Icon size={16} />
+                      <span className="truncate">{item.label}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </Popover>
+          </div>,
           document.body,
         )}
     </div>
