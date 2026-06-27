@@ -1,5 +1,7 @@
 import { Palette } from "lucide-react";
 import type { ColorOption } from "@/shared/types";
+import { cn } from "@/shared/lib";
+import { Button } from "../Button/Button";
 
 type ColorPaletteProps = {
   label: string;
@@ -43,21 +45,15 @@ export function ColorPalette({
           const isActive = option.value === value;
 
           return (
-            <button
+            <Button
               aria-label={option.label}
               aria-pressed={isActive}
-              className={`
-                aspect-square w-full min-w-0 rounded-md border
-                transition-transform hover:scale-105
-                focus-visible:outline-none focus-visible:ring-2
-                focus-visible:ring-accent focus-visible:ring-offset-2
-                focus-visible:ring-offset-panel
-                ${
-                  isActive
-                    ? "border-accent ring-2 ring-accent ring-offset-2 ring-offset-panel"
-                    : "border-border"
-                }
-              `}
+              className={cn(
+                "aspect-square w-full min-w-0 rounded-md border transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
+                isActive
+                  ? "border-accent ring-2 ring-accent ring-offset-2 ring-offset-panel"
+                  : "border-border",
+              )}
               key={option.value}
               onClick={() => onChange(option.value)}
               style={

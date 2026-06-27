@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { projectStore } from "../model/projectStore";
 import { MAX_PROJECTS } from "../model/types";
+import { Button, IconButton } from "@/shared/ui";
+import { cn } from "@/shared/lib";
 
 function formatDate(timestamp: number) {
   return new Intl.DateTimeFormat("ru-RU", {
@@ -72,7 +74,7 @@ export function ProjectsSidebar() {
 
   return (
     <>
-      <button
+      <Button
         aria-label="Закрыть список проектов"
         className="fixed inset-0 z-40 bg-black/35 backdrop-blur-[1px] lg:bg-transparent lg:backdrop-blur-none"
         onClick={() => projectStore.closeSidebar()}
@@ -94,29 +96,32 @@ export function ProjectsSidebar() {
             </div>
           </div>
 
-          <button
+          <IconButton
             aria-label="Закрыть проекты"
             className="grid size-10 place-items-center rounded-lg text-text-muted transition-colors hover:bg-control hover:text-text"
             onClick={() => projectStore.closeSidebar()}
             type="button"
           >
             <X size={18} />
-          </button>
+          </IconButton>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
-          <button
+          <Button
             className="mb-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-medium text-text hover:bg-control"
             onClick={() => setIsRootOpen((open) => !open)}
             type="button"
           >
             <ChevronDown
-              className={`transition-transform ${isRootOpen ? "rotate-0" : "-rotate-90"}`}
+              className={cn(
+                "transition-transform",
+                isRootOpen ? "rotate-0" : "-rotate-90",
+              )}
               size={16}
             />
             <FolderTree size={16} />
             <span className="truncate">Мои проекты</span>
-          </button>
+          </Button>
 
           {isRootOpen && (
             <div className="space-y-1 border-l border-border pl-3">
@@ -126,15 +131,16 @@ export function ProjectsSidebar() {
 
                 return (
                   <div
-                    className={`group rounded-lg border transition-colors ${
+                    className={cn(
+                      "group rounded-lg border transition-colors",
                       isActive
                         ? "border-accent/70 bg-control-active/25"
-                        : "border-transparent hover:border-border hover:bg-control"
-                    }`}
+                        : "border-transparent hover:border-border hover:bg-control",
+                    )}
                     key={project.id}
                   >
                     <div className="flex min-w-0 items-center gap-1 px-2 py-1.5">
-                      <button
+                      <Button
                         className="min-w-0 flex-1 text-left"
                         onClick={() =>
                           void projectStore.openProject(project.id)
@@ -170,10 +176,10 @@ export function ProjectsSidebar() {
                             </p>
                           </>
                         )}
-                      </button>
+                      </Button>
 
                       <div className="flex shrink-0 items-center opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                        <button
+                        <IconButton
                           aria-label="Переименовать проект"
                           className="grid size-8 place-items-center rounded-md text-text-muted hover:bg-surface-muted hover:text-text"
                           onClick={() => {
@@ -183,8 +189,8 @@ export function ProjectsSidebar() {
                           type="button"
                         >
                           <PencilLine size={14} />
-                        </button>
-                        <button
+                        </IconButton>
+                        <IconButton
                           aria-label="Удалить проект"
                           className="grid size-8 place-items-center rounded-md text-text-muted hover:bg-red-500/20 hover:text-red-300"
                           onClick={() => {
@@ -199,7 +205,7 @@ export function ProjectsSidebar() {
                           type="button"
                         >
                           <Trash2 size={14} />
-                        </button>
+                        </IconButton>
                       </div>
                     </div>
                   </div>
@@ -232,14 +238,14 @@ export function ProjectsSidebar() {
                 value={newProjectName}
               />
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <Button
                   className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white hover:brightness-110"
                   onClick={() => void createProject()}
                   type="button"
                 >
                   Создать
-                </button>
-                <button
+                </Button>
+                <Button
                   className="rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                   onClick={() => {
                     setIsCreating(false);
@@ -248,11 +254,11 @@ export function ProjectsSidebar() {
                   type="button"
                 >
                   Отмена
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <button
+            <Button
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-sm font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={projectsState.projects.length >= MAX_PROJECTS}
               onClick={() => setIsCreating(true)}
@@ -260,7 +266,7 @@ export function ProjectsSidebar() {
             >
               <FilePlus2 size={17} />
               Новый проект
-            </button>
+            </Button>
           )}
 
           {message && (

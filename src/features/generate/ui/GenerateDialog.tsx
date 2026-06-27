@@ -11,7 +11,7 @@ import { historyStore } from "@/entities/history";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { viewportStore } from "@/entities/viewport";
-import { Modal } from "@/shared/ui";
+import { Button, Modal } from "@/shared/ui";
 import { generateStore } from "../model/generateStore";
 
 type Edge = { from: string; to: string };
@@ -214,14 +214,14 @@ export function GenerateDialog() {
           placeholder={copy.placeholder}
           value={source}
         />
-        <button
+        <Button
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:brightness-110"
           onClick={generate}
           type="button"
         >
           {mode === "code" ? <Bot size={17} /> : <WandSparkles size={17} />}
           Создать на доске
-        </button>
+        </Button>
       </div>
     </Modal>
   );

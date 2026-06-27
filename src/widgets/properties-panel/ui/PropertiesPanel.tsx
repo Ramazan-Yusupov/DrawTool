@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { createId } from "@/shared/lib";
+import { cn, createId } from "@/shared/lib";
 import { getTextSize, updateElement } from "@/entities/element";
 import type {
   ArrowRouting,
@@ -38,7 +38,7 @@ import {
   TOOL_SETTINGS_CAPABILITIES,
   toolSettingsStore,
 } from "@/features/change-style";
-import { NumberField, SegmentedControl } from "@/shared/ui";
+import { Button, IconButton, NumberField, SegmentedControl } from "@/shared/ui";
 import { EmbedSection } from "./EmbedSection";
 
 const ARROW_ROUTING_ITEMS = [
@@ -342,17 +342,18 @@ export function PropertiesPanel() {
   }
 
   function getLayerButtonClass(isAvailable: boolean) {
-    return `grid h-9 place-items-center rounded-md transition-colors ${
+    return cn(
+      "grid h-9 place-items-center rounded-md transition-colors",
       isAvailable
         ? "bg-control text-text hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-        : "cursor-not-allowed bg-control/60 text-text-muted/50"
-    }`;
+        : "cursor-not-allowed bg-control/60 text-text-muted/50",
+    );
   }
 
   return (
     <>
       {!isCompactPanelOpen && (
-        <button
+        <IconButton
           aria-label="Открыть настройки"
           className="absolute right-[max(0.5rem,env(safe-area-inset-right))] top-17 z-30 grid size-11 place-items-center rounded-xl border border-border bg-panel text-text shadow-panel transition-colors hover:bg-control lg:hidden"
           onClick={() => setIsCompactPanelOpen(true)}
@@ -360,11 +361,11 @@ export function PropertiesPanel() {
           type="button"
         >
           <Settings2 aria-hidden size={19} />
-        </button>
+        </IconButton>
       )}
 
       {isCompactPanelOpen && (
-        <button
+        <Button
           aria-label="Закрыть настройки"
           className="absolute inset-0 z-30 bg-black/30 backdrop-blur-[1px] lg:hidden"
           onClick={() => setIsCompactPanelOpen(false)}
@@ -373,9 +374,10 @@ export function PropertiesPanel() {
       )}
 
       <aside
-        className={`fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 max-h-[min(72dvh,34rem)] overflow-y-auto rounded-2xl border border-border bg-panel p-3 shadow-panel scrollbar-none ${
-          isCompactPanelOpen ? "max-lg:block" : "max-lg:hidden"
-        } lg:absolute lg:right-4 lg:top-20 lg:z-20 lg:block lg:max-h-[calc(100dvh-13rem)] lg:w-[18rem] lg:rounded-xl`}
+        className={cn(
+          "fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 max-h-[min(72dvh,34rem)] overflow-y-auto rounded-2xl border border-border bg-panel p-3 shadow-panel scrollbar-none lg:absolute lg:right-4 lg:top-20 lg:z-20 lg:block lg:max-h-[calc(100dvh-13rem)] lg:w-[18rem] lg:rounded-xl",
+          isCompactPanelOpen ? "max-lg:block" : "max-lg:hidden",
+        )}
       >
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <SlidersHorizontal className="text-accent" size={17} />
@@ -390,14 +392,14 @@ export function PropertiesPanel() {
             </p>
           </div>
 
-          <button
+          <IconButton
             aria-label="Закрыть настройки"
             className="grid size-10 place-items-center rounded-lg text-text-muted transition-colors hover:bg-control hover:text-text lg:hidden"
             onClick={() => setIsCompactPanelOpen(false)}
             type="button"
           >
             <X aria-hidden size={19} />
-          </button>
+          </IconButton>
         </div>
 
         <div className="space-y-5">
@@ -432,7 +434,7 @@ export function PropertiesPanel() {
 
               {primaryElement?.type === "arrow" &&
                 primaryElement.routing === "elbow" && (
-                  <button
+                  <Button
                     className="mt-2 w-full rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
                     onClick={() =>
                       mutateScene(() => {
@@ -451,7 +453,7 @@ export function PropertiesPanel() {
                     type="button"
                   >
                     Поменять направление сгиба
-                  </button>
+                  </Button>
                 )}
             </section>
           )}
@@ -501,7 +503,7 @@ export function PropertiesPanel() {
               </p>
 
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <Button
                   className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted"
                   onClick={duplicateSelection}
                   title="Дублировать выбранные объекты"
@@ -509,9 +511,9 @@ export function PropertiesPanel() {
                 >
                   <Copy aria-hidden size={15} />
                   Копия
-                </button>
+                </Button>
 
-                <button
+                <Button
                   className="flex h-9 items-center justify-center gap-2 rounded-md bg-red-500/20 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/30 hover:text-red-700 active:scale-[0.98] active:bg-red-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
                   onClick={deleteSelection}
                   title="Удалить выбранные объекты"
@@ -519,7 +521,7 @@ export function PropertiesPanel() {
                 >
                   <Trash2 aria-hidden size={15} />
                   Удалить
-                </button>
+                </Button>
               </div>
 
               <p className="m-0 pt-1 text-xs font-medium text-text-muted">
@@ -527,7 +529,7 @@ export function PropertiesPanel() {
               </p>
 
               <div className="grid grid-cols-4 gap-1">
-                <button
+                <IconButton
                   aria-label="На задний слой"
                   className={getLayerButtonClass(canSendToBack)}
                   disabled={!canSendToBack}
@@ -536,9 +538,9 @@ export function PropertiesPanel() {
                   type="button"
                 >
                   <SendToBack size={16} />
-                </button>
+                </IconButton>
 
-                <button
+                <IconButton
                   aria-label="Ниже на один слой"
                   className={getLayerButtonClass(canMoveBackward)}
                   disabled={!canMoveBackward}
@@ -547,9 +549,9 @@ export function PropertiesPanel() {
                   type="button"
                 >
                   <MoveDown size={16} />
-                </button>
+                </IconButton>
 
-                <button
+                <IconButton
                   aria-label="Выше на один слой"
                   className={getLayerButtonClass(canMoveForward)}
                   disabled={!canMoveForward}
@@ -558,9 +560,9 @@ export function PropertiesPanel() {
                   type="button"
                 >
                   <MoveUp size={16} />
-                </button>
+                </IconButton>
 
-                <button
+                <IconButton
                   aria-label="На передний слой"
                   className={getLayerButtonClass(canBringToFront)}
                   disabled={!canBringToFront}
@@ -569,7 +571,7 @@ export function PropertiesPanel() {
                   type="button"
                 >
                   <BringToFront size={16} />
-                </button>
+                </IconButton>
               </div>
             </section>
           )}

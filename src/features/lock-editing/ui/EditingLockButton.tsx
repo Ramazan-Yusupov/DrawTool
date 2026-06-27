@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react";
 import { Lock, Unlock } from "lucide-react";
 import { editingLockStore } from "../model/editingLockStore";
 import { toggleEditingLock } from "../model/toggleEditingLock";
+import { Button } from "@/shared/ui";
+import { cn } from "@/shared/lib";
 
 export function EditingLockButton() {
   const { isLocked } = useSyncExternalStore(
@@ -15,14 +17,13 @@ export function EditingLockButton() {
     : "Заблокировать редактирование";
 
   return (
-    <button
+    <Button
       aria-label={label}
       aria-pressed={isLocked}
-      className={`relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors max-lg:size-11 ${
-        isLocked
-          ? "bg-accent text-white"
-          : "text-text hover:bg-control"
-      }`}
+      className={cn(
+        "relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors max-lg:size-11",
+        isLocked ? "bg-accent text-white" : "text-text hover:bg-control",
+      )}
       onClick={toggleEditingLock}
       title={`${label} (Ctrl/Cmd + Shift + L)`}
       type="button"
@@ -35,6 +36,6 @@ export function EditingLockButton() {
       <span className="absolute bottom-0.5 right-1 text-[9px] leading-none opacity-70">
         ⇧L
       </span>
-    </button>
+    </Button>
   );
 }

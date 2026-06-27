@@ -1,4 +1,6 @@
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/shared/lib";
+import { Button } from "../Button/Button";
 
 type SegmentedItem<T extends string> = {
   label: string;
@@ -30,14 +32,16 @@ export function SegmentedControl<T extends string>({
           const Icon = item.icon;
 
           return (
-            <button
+            <Button
               aria-label={item.label}
               aria-pressed={isActive}
-              className={`flex min-h-9 items-center justify-center gap-1 rounded-md border border-transparent px-2 text-xs transition-colors ${
+              className={cn(
+                "flex min-h-9 items-center justify-center gap-1 rounded-md border border-transparent px-2 text-xs transition-colors",
                 isActive
                   ? "bg-control-active font-medium text-white shadow-sm"
-                  : "bg-control text-text hover:bg-surface-muted"
-              } ${item.iconOnly ? "px-1.5" : ""}`}
+                  : "bg-control text-text hover:bg-surface-muted",
+                item.iconOnly && "px-1.5",
+              )}
               key={item.value}
               onClick={() => onChange(item.value)}
               title={item.label}
@@ -46,7 +50,7 @@ export function SegmentedControl<T extends string>({
               {Icon && <Icon aria-hidden size={17} strokeWidth={2} />}
               {!item.iconOnly && <span>{item.label}</span>}
               {item.iconOnly && <span className="sr-only">{item.label}</span>}
-            </button>
+            </Button>
           );
         })}
       </div>

@@ -1,4 +1,6 @@
 import type { ToolbarItem } from "../model/toolItems";
+import { Button } from "@/shared/ui";
+import { cn } from "@/shared/lib";
 
 type ToolButtonProps = {
   disabled?: boolean;
@@ -16,18 +18,14 @@ export function ToolButton({
   const Icon = item.icon;
 
   return (
-    <button
+    <Button
       aria-label={`${item.label}. Клавиши ${item.shortcutHint}`}
       aria-pressed={isActive}
-      className={`relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors max-lg:size-11 ${
-        isActive
-          ? "bg-accent text-white"
-          : "text-text hover:bg-control"
-      } ${
-        disabled
-          ? "cursor-not-allowed opacity-40 hover:bg-transparent"
-          : ""
-      }`}
+      className={cn(
+        "relative grid size-10 shrink-0 place-items-center rounded-lg transition-colors max-lg:size-11",
+        isActive ? "bg-accent text-white" : "text-text hover:bg-control",
+        disabled && "cursor-not-allowed opacity-40 hover:bg-transparent",
+      )}
       disabled={disabled}
       onClick={onClick}
       title={`${item.label} (${item.shortcutHint})`}
@@ -37,6 +35,6 @@ export function ToolButton({
       <span className="absolute bottom-0.5 right-1 text-[9px] leading-none opacity-70">
         {item.shortcut}
       </span>
-    </button>
+    </Button>
   );
 }

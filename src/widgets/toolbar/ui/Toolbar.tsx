@@ -2,11 +2,15 @@ import { useSyncExternalStore } from "react";
 import { toolStore } from "@/entities/tool";
 import { textEditorStore } from "@/features/edit-text";
 import { EditingLockButton, editingLockStore } from "@/features/lock-editing";
+import { cn } from "@/shared/lib";
+import { Divider } from "@/shared/ui";
 import { TOOL_ITEMS } from "../model/toolItems";
 import { MoreToolsMenu } from "./MoreToolsMenu";
 import { ToolButton } from "./ToolButton";
 
 const GROUPS = ["core", "actions"] as const;
+const TOOLBAR_CLASS_NAME =
+  "drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel min-[1100px]:ms-40 sm:justify-center max-[1100px]:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-[1100px]:top-auto max-[1100px]:w-[calc(100dvw-1rem)] max-[1100px]:max-w-none max-[1100px]:overflow-x-auto max-[1100px]:overscroll-contain";
 
 export function Toolbar() {
   const activeTool = useSyncExternalStore(
@@ -30,9 +34,7 @@ export function Toolbar() {
   return (
     <nav
       aria-label="Инструменты доски"
-      className={`drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel min-[1100px]:ms-40 sm:justify-center max-[1100px]:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-[1100px]:top-auto max-[1100px]:w-[calc(100dvw-1rem)] max-[1100px]:max-w-none max-[1100px]:overflow-x-auto max-[1100px]:overscroll-contain ${
-        textEditor.elementId ? "max-lg:hidden" : ""
-      }`}
+      className={cn(TOOLBAR_CLASS_NAME, textEditor.elementId && "max-lg:hidden")}
     >
       {GROUPS.map((group, groupIndex) => {
         const items = TOOL_ITEMS.filter((item) => item.group === group);
@@ -43,9 +45,7 @@ export function Toolbar() {
 
         return (
           <div className="flex shrink-0 items-center gap-1" key={group}>
-            {groupIndex > 0 && (
-              <span className="mx-0.5 h-7 w-px shrink-0 bg-border" />
-            )}
+            {groupIndex > 0 && <Divider className="mx-0.5" orientation="vertical" />}
 
             {items.map((item) => (
               <ToolButton
@@ -60,11 +60,11 @@ export function Toolbar() {
         );
       })}
 
-      <span className="mx-0.5 h-7 w-px shrink-0 bg-border" />
+      <Divider className="mx-0.5" orientation="vertical" />
 
       <EditingLockButton />
 
-      <span className="mx-0.5 h-7 w-px shrink-0 bg-border" />
+      <Divider className="mx-0.5" orientation="vertical" />
 
       {!isLocked && <MoreToolsMenu />}
     </nav>

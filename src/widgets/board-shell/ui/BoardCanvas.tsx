@@ -10,6 +10,7 @@ import { editingLockStore } from "@/features/lock-editing";
 import { useSelectElements } from "@/features/select-elements";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
+import { cn } from "@/shared/lib";
 
 type BoardCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -161,7 +162,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     <canvas
       ref={canvasRef}
       aria-label="Интерактивная доска"
-      className={`size-full touch-none ${cursorClass}`}
+      className={cn("size-full touch-none", cursorClass)}
       onDoubleClick={(event) => {
         if (!isPanOnly && activeTool === "selection") {
           selectionEvents.onDoubleClick(event);

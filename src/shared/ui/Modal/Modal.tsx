@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
+import { IconButton } from "../IconButton/IconButton";
 
 type ModalProps = {
   children: ReactNode;
@@ -49,14 +50,14 @@ export function Modal({ children, isOpen, title, onClose }: ModalProps) {
         <header className="mb-5 flex items-center justify-between gap-4">
           <h2 className="m-0 text-base font-semibold">{title}</h2>
 
-          <button
+          <IconButton
             aria-label="Закрыть окно"
             className="grid size-8 place-items-center rounded-md text-text-muted hover:bg-surface-muted"
             onClick={onClose}
             type="button"
           >
             ×
-          </button>
+          </IconButton>
         </header>
 
         {children}

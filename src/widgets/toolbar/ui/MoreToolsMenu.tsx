@@ -13,6 +13,7 @@ import {
 import { toolStore } from "@/entities/tool";
 import { generateStore } from "@/features/generate";
 import { MORE_SHAPE_ITEMS } from "../model/toolItems";
+import { Button, IconButton, Popover } from "@/shared/ui";
 
 type MenuPosition = {
   bottom?: number;
@@ -133,7 +134,7 @@ export function MoreToolsMenu() {
 
   return (
     <div className="shrink-0">
-      <button
+      <IconButton
         ref={buttonRef}
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -144,15 +145,16 @@ export function MoreToolsMenu() {
         type="button"
       >
         <Ellipsis size={20} />
-      </button>
+      </IconButton>
 
       {isOpen &&
         menuPosition &&
         createPortal(
-          <div
+          <Popover
             ref={menuRef}
+            isOpen={isOpen}
             aria-label="Дополнительные инструменты"
-            className="fixed z-60 overflow-y-auto overscroll-contain rounded-xl border border-border bg-panel p-2 shadow-panel"
+            className="fixed z-60 overflow-y-auto overscroll-contain"
             role="menu"
             style={menuPosition}
           >
@@ -161,7 +163,7 @@ export function MoreToolsMenu() {
                 const Icon = item.icon;
 
                 return (
-                  <button
+                  <Button
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
                     key={item.id}
                     onClick={() => {
@@ -180,11 +182,11 @@ export function MoreToolsMenu() {
                     <kbd className="text-xs text-text-muted" title={item.shortcutHint}>
                       {item.shortcut}
                     </kbd>
-                  </button>
+                  </Button>
                 );
               })}
 
-              <button
+              <Button
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
                 onClick={() => {
                   toolStore.set("laser");
@@ -195,9 +197,9 @@ export function MoreToolsMenu() {
                 <Crosshair size={17} />
                 <span className="flex-1">Лазерная указка</span>
                 <kbd className="text-xs text-text-muted">K</kbd>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
                 onClick={() => {
                   toolStore.set("lasso");
@@ -208,7 +210,7 @@ export function MoreToolsMenu() {
                 <LassoSelect size={17} />
                 <span className="flex-1">Выделение лассо</span>
                 <kbd className="text-xs text-text-muted">L</kbd>
-              </button>
+              </Button>
             </div>
 
             <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
@@ -216,7 +218,7 @@ export function MoreToolsMenu() {
             </p>
 
             <div className="space-y-1">
-              <button
+              <Button
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
                 onClick={() => {
                   generateStore.open("diagram");
@@ -227,9 +229,9 @@ export function MoreToolsMenu() {
                 <Sparkles size={17} />
                 <span className="flex-1">Текст в диаграмму</span>
                 <Bot className="text-accent" size={15} />
-              </button>
+              </Button>
 
-              <button
+              <Button
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
                 onClick={() => {
                   generateStore.open("mermaid");
@@ -239,9 +241,9 @@ export function MoreToolsMenu() {
               >
                 <Network size={17} />
                 <span className="flex-1">Mermaid в DrawTool</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
                 onClick={() => {
                   generateStore.open("code");
@@ -252,7 +254,7 @@ export function MoreToolsMenu() {
                 <Braces size={17} />
                 <span className="flex-1">Каркас для кода</span>
                 <Bot className="text-accent" size={15} />
-              </button>
+              </Button>
             </div>
 
             <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
@@ -264,7 +266,7 @@ export function MoreToolsMenu() {
                 const Icon = item.icon;
 
                 return (
-                  <button
+                  <Button
                     className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-text hover:bg-control"
                     key={item.id}
                     onClick={() => {
@@ -276,11 +278,11 @@ export function MoreToolsMenu() {
                   >
                     <Icon size={16} />
                     <span className="truncate">{item.label}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
-          </div>,
+          </Popover>,
           document.body,
         )}
     </div>

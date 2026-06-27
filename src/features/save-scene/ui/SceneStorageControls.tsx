@@ -7,6 +7,7 @@ import {
   restoreSceneFromFile,
 } from "../model/saveSceneFile";
 import { saveScene } from "../model/saveScene";
+import { IconButton, Panel } from "@/shared/ui";
 
 export function SceneStorageControls() {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -35,8 +36,8 @@ export function SceneStorageControls() {
   }
 
   return (
-    <div className="absolute left-34 max-sm:left-2 sm:top-4 top-20 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:left-33  max-lg:gap-0.5">
-      <button
+    <Panel className="absolute left-34 max-sm:left-2 sm:top-4 top-20 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-lg:left-33  max-lg:gap-0.5">
+      <IconButton
         aria-label="Открыть проекты"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
         onClick={() => projectStore.toggleSidebar()}
@@ -44,9 +45,9 @@ export function SceneStorageControls() {
         type="button"
       >
         <FolderTree aria-hidden size={17} />
-      </button>
+      </IconButton>
 
-      <button
+      <IconButton
         aria-label="Сохранить активный проект"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
         onClick={() => {
@@ -58,9 +59,9 @@ export function SceneStorageControls() {
         type="button"
       >
         <Save aria-hidden size={17} />
-      </button>
+      </IconButton>
 
-      <button
+      <IconButton
         aria-label="Скачать файл сцены"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
         onClick={downloadSceneFile}
@@ -68,9 +69,9 @@ export function SceneStorageControls() {
         type="button"
       >
         <Download aria-hidden size={17} />
-      </button>
+      </IconButton>
 
-      <button
+      <IconButton
         aria-label="Импортировать JSON-проект"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
         onClick={() => inputRef.current?.click()}
@@ -78,9 +79,9 @@ export function SceneStorageControls() {
         type="button"
       >
         <FolderOpen aria-hidden size={17} />
-      </button>
+      </IconButton>
 
-      <button
+      <IconButton
         aria-label="Открыть горячие клавиши"
         className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
         onClick={() => shortcutsHelpStore.open()}
@@ -88,7 +89,7 @@ export function SceneStorageControls() {
         type="button"
       >
         <Keyboard aria-hidden size={17} />
-      </button>
+      </IconButton>
 
       <input
         accept="application/json,.json"
@@ -103,6 +104,6 @@ export function SceneStorageControls() {
           {message}
         </span>
       )}
-    </div>
+    </Panel>
   );
 }

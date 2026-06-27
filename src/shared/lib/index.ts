@@ -1,3 +1,4 @@
+export { cn, type ClassValue } from "./cn";
 export { createId } from "./createId";
 export { clamp } from "./math/clamp";
 export { normalizeAngleDelta } from "./math/normalizeAngleDelta";
