@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toolStore } from "@/entities/tool";
 import { generateStore } from "@/features/generate";
+import { ImageUploadMenuItem } from "@/features/add-image";
 import { Button, IconButton, Popover } from "@/shared/ui";
 import { MORE_SHAPE_ITEMS } from "../model/toolItems";
 
@@ -193,6 +194,8 @@ export function MoreToolsMenu() {
                     </Button>
                   );
                 })}
+
+                <ImageUploadMenuItem onImageAdded={() => setIsOpen(false)} />
 
                 <Button
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"

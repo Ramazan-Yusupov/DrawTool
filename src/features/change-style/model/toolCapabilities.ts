@@ -71,6 +71,15 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
     arrowRouting: false,
   },
   code: { ...SHAPE_CAPABILITIES, corner: true, snap: false },
+  image: {
+    stroke: false,
+    fill: false,
+    corner: false,
+    opacity: true,
+    snap: false,
+    text: false,
+    arrowRouting: false,
+  },
   lasso: {
     stroke: false,
     fill: false,

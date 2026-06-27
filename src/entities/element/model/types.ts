@@ -14,7 +14,8 @@ export type ElementType =
   | "text"
   | "frame"
   | "embed"
-  | "code";
+  | "code"
+  | "image";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type FillStyle = "transparent" | "solid";
@@ -88,6 +89,17 @@ export type CodeSketchElement = BaseElement & {
   language: string;
 };
 
+/** A portable image. The data URL keeps the asset available after save/export/import. */
+export type ImageElement = BaseElement & {
+  type: "image";
+  fileId: string;
+  src: string;
+  name: string;
+  mimeType: string;
+  originalWidth: number;
+  originalHeight: number;
+};
+
 export type TextElement = BaseElement & {
   type: "text";
   text: string;
@@ -110,7 +122,8 @@ export type BoardElement =
   | TextElement
   | FrameElement
   | EmbedElement
-  | CodeSketchElement;
+  | CodeSketchElement
+  | ImageElement;
 
 export type ElementEndpoints = {
   start: Point;

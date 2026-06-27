@@ -39,6 +39,9 @@ function elementToSvg(element: BoardElement) {
     const points = element.points.map((point) => `${point.x},${point.y}`).join(" ");
     return `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />`;
   }
+  if (element.type === "image") {
+    return `<image href="${escapeXml(element.src)}" x="${x}" y="${y}" width="${Math.abs(width)}" height="${Math.abs(height)}" opacity="${style.opacity}" preserveAspectRatio="none" />`;
+  }
   return `<rect x="${x}" y="${y}" width="${Math.abs(width)}" height="${Math.abs(height)}" rx="${style.cornerStyle === "rounded" ? 12 : 0}" ${common} />`;
 }
 

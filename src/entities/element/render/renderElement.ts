@@ -10,6 +10,7 @@ import { renderEmbed } from "./renderEmbed";
 import { renderFrame } from "./renderFrame";
 import { renderFreeDraw } from "./renderFreeDraw";
 import { renderHexagon } from "./renderHexagon";
+import { renderImageElement } from "./renderImageElement";
 import { renderLine } from "./renderLine";
 import { renderRectangle } from "./renderRectangle";
 import { renderStar } from "./renderStar";
@@ -50,6 +51,9 @@ function renderUnrotated(
       return;
     case "code":
       renderCodeSketch(context, element);
+      return;
+    case "image":
+      renderImageElement(context, element);
       return;
     case "line":
       renderLine(context, element);

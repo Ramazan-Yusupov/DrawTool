@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { RefObject } from "react";
 import { sceneStore } from "@/entities/scene";
+import { imageFileStore } from "@/entities/image-file";
 import { viewportStore } from "@/entities/viewport";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text/model/textEditorStore";
@@ -73,6 +74,7 @@ export function useBoardRenderer(
   useEffect(() => {
     const unsubscribeViewport = viewportStore.subscribe(scheduleRender);
     const unsubscribeScene = sceneStore.subscribe(scheduleRender);
+    const unsubscribeImages = imageFileStore.subscribe(scheduleRender);
     const unsubscribeSelection = selectionStore.subscribe(scheduleRender);
     const unsubscribeTextEditor = textEditorStore.subscribe(scheduleRender);
     const unsubscribeTheme = themeStore.subscribe(scheduleRender);
@@ -88,6 +90,7 @@ export function useBoardRenderer(
     return () => {
       unsubscribeViewport();
       unsubscribeScene();
+      unsubscribeImages();
       unsubscribeSelection();
       unsubscribeTextEditor();
       unsubscribeTheme();

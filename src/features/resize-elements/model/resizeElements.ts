@@ -189,7 +189,11 @@ export function resizeElement(
     handle,
     localStartPoint,
     localCurrentPoint,
-    modifiers,
+    {
+      ...modifiers,
+      // Raster and vector images retain their intrinsic proportions by default.
+      keepAspectRatio: modifiers.keepAspectRatio || element.type === "image",
+    },
   );
   const patch = modifiers.snapToGrid
     ? element.type === "line" || element.type === "arrow"

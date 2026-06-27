@@ -14,6 +14,7 @@ import type {
   FrameElement,
   FreeDrawElement,
   HexagonElement,
+  ImageElement,
   LineElement,
   RectangleElement,
   StarElement,
@@ -44,6 +45,15 @@ type ArrowCreateParams = BaseCreateParams & {
 
 type FreeDrawCreateParams = BaseCreateParams & {
   points?: Point[];
+};
+
+type ImageCreateParams = BaseCreateParams & {
+  fileId: string;
+  src: string;
+  name?: string;
+  mimeType?: string;
+  originalWidth: number;
+  originalHeight: number;
 };
 
 function createBase<T extends BoardElement>(
@@ -148,6 +158,18 @@ export function createFreeDraw(
   };
 }
 
+export function createImage(params: ImageCreateParams): ImageElement {
+  return {
+    ...createBase<ImageElement>("image", params),
+    fileId: params.fileId,
+    src: params.src,
+    name: params.name ?? "image",
+    mimeType: params.mimeType ?? "image/*",
+    originalWidth: params.originalWidth,
+    originalHeight: params.originalHeight,
+  };
+}
+
 export function createText(params: TextCreateParams): TextElement {
   return {
     ...createBase<TextElement>("text", params),
@@ -160,7 +182,7 @@ export function createText(params: TextCreateParams): TextElement {
 }
 
 export function createElement(
-  type: ElementType,
+  type: Exclude<ElementType, "image">,
   params: BaseCreateParams & TextCreateParams & ArrowCreateParams & FreeDrawCreateParams,
 ): BoardElement {
   switch (type) {

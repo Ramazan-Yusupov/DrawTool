@@ -20,4 +20,5 @@ export const TOOL_LABELS: Record<ToolId, string> = {
   laser: "Лазерная указка",
   lasso: "Лассо",
   code: "Code sketch",
+  image: "Изображение",
 };

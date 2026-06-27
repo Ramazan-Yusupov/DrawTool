@@ -1,4 +1,5 @@
 import type { BoardElement } from "@/entities/element";
+import { imageFileStore } from "@/entities/image-file";
 import { getElementBounds, renderElement } from "@/entities/element";
 import type { ExportFile, ExportOptions } from "./types";
 
@@ -16,6 +17,12 @@ function getBounds(elements: BoardElement[], padding: number) {
 export async function exportToPng(elements: BoardElement[], options: ExportOptions = {}): Promise<ExportFile> {
   const padding = options.padding ?? 24;
   const scale = options.scale ?? 1;
+
+  await Promise.all(
+    elements
+      .filter((element): element is Extract<BoardElement, { type: "image" }> => element.type === "image")
+      .map((element) => imageFileStore.preload(element.fileId, element.src)),
+  );
   const bounds = getBounds(elements, padding);
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(bounds.width * scale);

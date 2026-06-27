@@ -57,13 +57,13 @@ const ARROW_ROUTING_ITEMS = [
   {
     label: "Прямая стрелка",
     value: "straight",
-    icon: Route,
+    icon: ArrowRightLeft,
     iconOnly: true,
   },
   {
     label: "Сгибающаяся стрелка",
     value: "elbow",
-    icon: ArrowRightLeft,
+    icon: Route,
     iconOnly: true,
   },
 ] as const;

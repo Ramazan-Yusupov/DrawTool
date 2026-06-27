@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 import { toolStore } from "@/entities/tool";
 import { useDrawShape, useFreeDraw } from "@/features/draw-shape";
+import { addImageFiles, getSupportedImageFiles, usePasteImages } from "@/features/add-image";
 import { textEditorStore, useTextTool } from "@/features/edit-text";
 import { useEraser } from "@/features/erase-elements";
 import { useLaserPointer } from "@/features/laser-pointer";
@@ -11,6 +12,8 @@ import { useSelectElements } from "@/features/select-elements";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
 import { cn } from "@/shared/lib";
+import { getCanvasPointerPosition } from "@/shared/lib/dom/getCanvasPointerPosition";
+import { screenToWorld, viewportStore } from "@/entities/viewport";
 
 type BoardCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -39,6 +42,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   const textEvents = useTextTool();
 
   useCanvasWheel(canvasRef);
+  usePasteImages();
 
   const isPanOnly = isLocked || activeTool === "pan";
 
@@ -132,6 +136,26 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     }
   }
 
+  function onDragOver(event: React.DragEvent<HTMLCanvasElement>) {
+    if (getSupportedImageFiles(event.dataTransfer.files).length > 0) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+    }
+  }
+
+  function onDrop(event: React.DragEvent<HTMLCanvasElement>) {
+    const files = getSupportedImageFiles(event.dataTransfer.files);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    const canvasPoint = getCanvasPointerPosition(event.nativeEvent, event.currentTarget);
+    const worldPoint = screenToWorld(canvasPoint, viewportStore.get());
+    void addImageFiles(files, worldPoint).catch(() => undefined);
+  }
+
   function onToolPointerCancel(event: React.PointerEvent<HTMLCanvasElement>) {
     if (activeTool === "selection") {
       return selectionEvents.onPointerCancel(event);
@@ -163,6 +187,8 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       ref={canvasRef}
       aria-label="Интерактивная доска"
       className={cn("size-full touch-none", cursorClass)}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       onDoubleClick={(event) => {
         if (!isPanOnly && activeTool === "selection") {
           selectionEvents.onDoubleClick(event);
