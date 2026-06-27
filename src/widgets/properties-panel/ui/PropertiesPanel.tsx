@@ -7,6 +7,8 @@ import {
   BringToFront,
   CaseSensitive,
   Copy,
+  Paintbrush,
+  Pipette,
   MoveDown,
   MoveUp,
   Route,
@@ -31,6 +33,9 @@ import type {
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import { useDuplicateElements } from "@/features/duplicate-elements";
+import { applyCopiedStyleToSelectedElements, copyElementStyle, styleClipboardStore } from "@/features/style-clipboard";
+import { setElementLink } from "@/features/manage-link";
+import { updateTableCell, updateTableStructure } from "@/features/edit-table";
 import {
   canChangeElementsLayer,
   reorderElementsByLayer,
@@ -51,6 +56,8 @@ import {
   setSelectedElementRotation,
 } from "@/features/rotate-elements";
 import { EmbedSection } from "./EmbedSection";
+import { LinkSection } from "./LinkSection";
+import { TableSection } from "./TableSection";
 import { usePropertiesPanel } from "../model/usePropertiesPanel";
 
 const ARROW_ROUTING_ITEMS = [
@@ -119,6 +126,11 @@ export function PropertiesPanel() {
   const changeSelectedStyle = useChangeStyle();
   const deleteSelection = useDeleteElements();
   const duplicateSelection = useDuplicateElements();
+  const styleClipboard = useSyncExternalStore(
+    styleClipboardStore.subscribe,
+    styleClipboardStore.get,
+    styleClipboardStore.get,
+  );
 
   const selectedElementIds = new Set(
     selectedElements.map((element) => element.id),
@@ -192,6 +204,11 @@ export function PropertiesPanel() {
         element.type === "embed" ? updateElement(element, { url }) : element,
       );
     });
+  }
+
+  function changeElementLink(value: string) {
+    if (!primaryElement) return;
+    setElementLink(primaryElement.id, value);
   }
 
   function changeArrowRouting(routing: ArrowRouting) {
@@ -432,6 +449,18 @@ export function PropertiesPanel() {
             <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
           )}
 
+          {primaryElement?.type === "table" && (
+            <TableSection
+              onChangeCell={(cellIndex, value) => updateTableCell(primaryElement.id, cellIndex, value)}
+              onChangeStructure={(rows, columns) => updateTableStructure(primaryElement.id, rows, columns)}
+              table={primaryElement}
+            />
+          )}
+
+          {primaryElement && (
+            <LinkSection link={primaryElement.link} onChange={changeElementLink} />
+          )}
+
           {primaryElement && (
             <section className="space-y-3 border-t border-border pt-4">
               <div className="flex items-center gap-2 text-sm font-medium text-text">
@@ -470,6 +499,30 @@ export function PropertiesPanel() {
                 >
                   <Copy aria-hidden size={15} />
                   Копия
+                </Button>
+
+                <Button
+                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted"
+                  onClick={() => {
+                    const source = primaryElement ?? selectedElements[0];
+                    if (source) copyElementStyle(source);
+                  }}
+                  title="Скопировать стиль выбранного объекта"
+                  type="button"
+                >
+                  <Pipette aria-hidden size={15} />
+                  Стиль
+                </Button>
+
+                <Button
+                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!styleClipboard.style}
+                  onClick={applyCopiedStyleToSelectedElements}
+                  title="Применить скопированный стиль к выбранным объектам"
+                  type="button"
+                >
+                  <Paintbrush aria-hidden size={15} />
+                  Вставить
                 </Button>
 
                 <Button

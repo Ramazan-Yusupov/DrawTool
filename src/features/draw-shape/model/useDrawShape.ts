@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import { updateElement } from "@/entities/element";
+import { hitTestElement, updateElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
@@ -25,6 +25,18 @@ type DrawingState = {
 
 const MIN_ELEMENT_SIZE = 2;
 
+const CLICK_DEFAULT_SIZES: Partial<Record<ShapeToolId, { width: number; height: number }>> = {
+  sticky: { width: 220, height: 160 },
+  callout: { width: 260, height: 120 },
+  table: { width: 420, height: 210 },
+};
+
+function getElementAtPoint(point: Point, excludedId: string) {
+  return [...sceneStore.get().elements]
+    .reverse()
+    .find((candidate) => candidate.id !== excludedId && hitTestElement(candidate, point));
+}
+
 function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
   return [
     "rectangle",
@@ -38,15 +50,19 @@ function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
     "embed",
     "line",
     "arrow",
+    "measure",
+    "sticky",
+    "callout",
+    "table",
   ].includes(toolId);
 }
 
 function getConstraint(toolId: ShapeToolId) {
-  return toolId === "line" || toolId === "arrow" ? "angle" : "square";
+  return toolId === "line" || toolId === "arrow" || toolId === "measure" ? "angle" : "square";
 }
 
 function isTooSmall(width: number, height: number, toolId: ShapeToolId) {
-  if (toolId === "line" || toolId === "arrow") {
+  if (toolId === "line" || toolId === "arrow" || toolId === "measure") {
     return Math.hypot(width, height) < MIN_ELEMENT_SIZE;
   }
 
@@ -165,11 +181,54 @@ export function useDrawShape() {
 
     if (element) {
       if (isTooSmall(element.width, element.height, drawing.toolId)) {
-        sceneStore.removeById(element.id);
-      } else {
-        const normalizedElement = sceneStore
-          .get()
-          .elements.find((item) => item.id === element.id);
+        const defaultSize = CLICK_DEFAULT_SIZES[drawing.toolId];
+        if (defaultSize) {
+          sceneStore.updateById(element.id, (current) =>
+            updateElement(current, {
+              x: drawing.toolId === "callout" ? drawing.startPoint.x + 42 : drawing.startPoint.x,
+              y: drawing.toolId === "callout" ? drawing.startPoint.y + 34 : drawing.startPoint.y,
+              width: defaultSize.width,
+              height: defaultSize.height,
+            }),
+          );
+        } else {
+          sceneStore.removeById(element.id);
+        }
+      }
+
+      const normalizedElement = sceneStore
+        .get()
+        .elements.find((item) => item.id === element.id);
+
+      if (normalizedElement) {
+        if (normalizedElement.type === "arrow") {
+          const startTarget = getElementAtPoint(drawing.startPoint, normalizedElement.id);
+          const endTarget = getElementAtPoint(
+            { x: normalizedElement.x + normalizedElement.width, y: normalizedElement.y + normalizedElement.height },
+            normalizedElement.id,
+          );
+          if (startTarget || endTarget) {
+            sceneStore.updateById(normalizedElement.id, (current) =>
+              current.type === "arrow"
+                ? updateElement(current, {
+                    startBinding: startTarget ? { elementId: startTarget.id, focus: 0 } : undefined,
+                    endBinding: endTarget ? { elementId: endTarget.id, focus: 0 } : undefined,
+                  })
+                : current,
+            );
+          }
+        }
+
+        if (normalizedElement.type === "callout") {
+          const target = getElementAtPoint(drawing.startPoint, normalizedElement.id);
+          if (target) {
+            sceneStore.updateById(normalizedElement.id, (current) =>
+              current.type === "callout"
+                ? updateElement(current, { targetId: target.id })
+                : current,
+            );
+          }
+        }
 
         if (normalizedElement?.type === "frame") {
           sceneStore.setElements(

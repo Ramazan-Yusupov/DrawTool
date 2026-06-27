@@ -48,7 +48,7 @@ function nudgeSelection(deltaX: number, deltaY: number) {
         return element;
       }
 
-      if (element.type === "freedraw") {
+      if (element.type === "freedraw" || element.type === "highlighter") {
         return updateElement(element, {
           x: element.x + deltaX,
           y: element.y + deltaY,
@@ -90,7 +90,7 @@ function tryStartTextEditing() {
     .get()
     .elements.find((item) => item.id === selectedIds[0]);
 
-  if (!element || element.type !== "text") {
+  if (!element || (element.type !== "text" && element.type !== "sticky" && element.type !== "callout")) {
     return false;
   }
 

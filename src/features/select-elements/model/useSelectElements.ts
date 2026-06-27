@@ -157,6 +157,12 @@ export function useSelectElements() {
     const hitElement = findTopElement(point);
 
     if (hitElement) {
+      if ((event.ctrlKey || event.metaKey) && hitElement.link) {
+        event.preventDefault();
+        window.open(hitElement.link, "_blank", "noopener,noreferrer");
+        return;
+      }
+
       const isAlreadySelected = selection.elementIds.includes(hitElement.id);
 
       if (event.shiftKey || !isAlreadySelected) {
@@ -275,7 +281,7 @@ export function useSelectElements() {
     }
 
     const hitElement = findTopElement(getWorldPointerPosition(event));
-    if (hitElement?.type === "text") {
+    if (hitElement?.type === "text" || hitElement?.type === "sticky" || hitElement?.type === "callout") {
       selectionStore.setElementIds([hitElement.id]);
       historyStore.begin();
       textEditorStore.open(hitElement.id);

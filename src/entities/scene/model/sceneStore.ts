@@ -1,3 +1,4 @@
+import { syncElementRelations } from "@/entities/element";
 import type { BoardElement } from "@/entities/element";
 import { createScene } from "./createScene";
 import type { SceneState } from "./types";
@@ -12,7 +13,8 @@ function notifyListeners() {
 }
 
 function setScene(nextScene: SceneState) {
-  scene = nextScene;
+  const synchronizedElements = syncElementRelations(nextScene.elements);
+  scene = { ...nextScene, elements: synchronizedElements };
   notifyListeners();
 }
 

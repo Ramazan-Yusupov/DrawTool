@@ -7,6 +7,7 @@ import {
   ToolSettingsModal,
 } from "@/features/change-style";
 import { TextEditorOverlay } from "@/features/edit-text";
+import { StickerPickerModal } from "@/features/add-sticker";
 import { GenerateDialog } from "@/features/generate";
 import { editingLockStore } from "@/features/lock-editing";
 import { ProjectsSidebar } from "@/features/projects";
@@ -18,6 +19,7 @@ import { LayersPanel } from "@/widgets/layers-panel";
 import { PropertiesPanel } from "@/widgets/properties-panel";
 import { Toolbar } from "@/widgets/toolbar";
 import { ZoomControls } from "@/widgets/zoom-controls";
+import { Minimap } from "@/widgets/minimap";
 import { BoardCanvas } from "./BoardCanvas";
 import { SelectionFrame } from "./SelectionFrame";
 import { useBoardRenderer } from "../model/useBoardRenderer";
@@ -90,6 +92,7 @@ export function BoardShell() {
       )}
 
       <TextEditorOverlay />
+      <StickerPickerModal />
       <GenerateDialog />
       <ShortcutsDialog />
       <ToolSettingsModal
@@ -106,6 +109,7 @@ export function BoardShell() {
       />
       <Toolbar />
       <ThemeToggle />
+      <Minimap />
 
       <div className="absolute bottom-4 right-4 z-20 max-[1100px]:bottom-20">
         <ZoomControls />

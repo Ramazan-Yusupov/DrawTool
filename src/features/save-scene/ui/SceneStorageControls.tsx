@@ -247,7 +247,7 @@ export function SceneStorageControls({
           <div ref={fileMenuRef}>
             <Popover
               aria-label="Дополнительные действия с доской"
-              className="fixed z-100 overflow-y-auto overscroll-contain"
+              className="fixed z-[100] overflow-y-auto overscroll-contain"
               isOpen={fileMenu.isOpen}
               role="menu"
               style={fileMenuPosition}

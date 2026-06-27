@@ -196,7 +196,7 @@ export function resizeElement(
     },
   );
   const patch = modifiers.snapToGrid
-    ? element.type === "line" || element.type === "arrow"
+    ? element.type === "line" || element.type === "arrow" || element.type === "measure"
       ? snapConnectorPatch(element, handle, rawPatch)
       : snapShapePatch(element, handle, rawPatch)
     : rawPatch;
@@ -217,7 +217,7 @@ export function resizeElement(
     return;
   }
 
-  if (element.type === "freedraw") {
+  if (element.type === "freedraw" || element.type === "highlighter") {
     const geometry = getGeometry(element, patch);
     const bounds = getElementBounds(element);
     const scaleX = geometry.width / Math.max(bounds.width, 1);
@@ -228,7 +228,7 @@ export function resizeElement(
     }));
 
     sceneStore.updateById(element.id, (current) =>
-      current.type === "freedraw"
+      current.type === "freedraw" || current.type === "highlighter"
         ? updateElement(current, { ...geometry, points })
         : current,
     );
@@ -248,5 +248,13 @@ export function resizeElement(
     return;
   }
 
-  sceneStore.updateById(element.id, (current) => updateElement(current, patch));
+  sceneStore.updateById(element.id, (current) => {
+    if (current.type === "arrow" && (handle === "start" || handle === "end")) {
+      return updateElement(current, {
+        ...patch,
+        ...(handle === "start" ? { startBinding: undefined } : { endBinding: undefined }),
+      });
+    }
+    return updateElement(current, patch);
+  });
 }

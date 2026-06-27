@@ -1,9 +1,9 @@
 import { getLineDash } from "@/shared/lib/canvas/getLineDash";
-import type { FreeDrawElement } from "../model/types";
+import type { FreeDrawElement, HighlighterElement } from "../model/types";
 
 export function renderFreeDraw(
   context: CanvasRenderingContext2D,
-  element: FreeDrawElement,
+  element: FreeDrawElement | HighlighterElement,
 ) {
   const [firstPoint, ...remainingPoints] = element.points;
 

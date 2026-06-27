@@ -11,7 +11,7 @@ export function drawShape(element: BoardElement, startPoint: Point, endPoint: Po
     height: endPoint.y - startPoint.y,
   });
 
-  return drawn.type === "line" || drawn.type === "arrow"
+  return drawn.type === "line" || drawn.type === "arrow" || drawn.type === "measure"
     ? drawn
     : normalizeElement(drawn);
 }

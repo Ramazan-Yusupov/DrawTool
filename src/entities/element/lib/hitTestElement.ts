@@ -52,7 +52,7 @@ export function hitTestElement(element: BoardElement, point: Point) {
   const localPoint = toLocalPoint(element, point);
   const tolerance = Math.max(HIT_PADDING, element.style.strokeWidth + 5);
 
-  if (element.type === "line") {
+  if (element.type === "line" || element.type === "measure") {
     return (
       distanceToSegment(
         localPoint,
@@ -66,7 +66,7 @@ export function hitTestElement(element: BoardElement, point: Point) {
     return isPointNearPath(localPoint, getArrowPathPoints(element), tolerance);
   }
 
-  if (element.type === "freedraw") {
+  if (element.type === "freedraw" || element.type === "highlighter") {
     return element.points.length <= 1
       ? distance(localPoint, { x: element.x, y: element.y }) <= tolerance
       : isPointNearPath(localPoint, element.points, tolerance);

@@ -100,7 +100,7 @@ export function calculateResize(
   const deltaX = currentPoint.x - startPoint.x;
   const deltaY = currentPoint.y - startPoint.y;
 
-  if (element.type === "line" || element.type === "arrow") {
+  if (element.type === "line" || element.type === "arrow" || element.type === "measure") {
     if (handle === "start") {
       return {
         x: element.x + deltaX,

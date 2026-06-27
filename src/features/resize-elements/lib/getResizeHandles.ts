@@ -52,7 +52,7 @@ export function getElementRotationHandle(
 export function getElementResizeHandles(
   element: BoardElement,
 ): ResizeHandlePoint[] {
-  if (element.type === "line" || element.type === "arrow") {
+  if (element.type === "line" || element.type === "arrow" || element.type === "measure") {
     const connectorHandles: ResizeHandlePoint[] = [
       { handle: "start", point: { x: element.x, y: element.y } },
       {

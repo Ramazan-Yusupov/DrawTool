@@ -9,6 +9,8 @@ import { useLaserPointer } from "@/features/laser-pointer";
 import { useLassoSelect } from "@/features/lasso-select";
 import { editingLockStore } from "@/features/lock-editing";
 import { useSelectElements } from "@/features/select-elements";
+import { useStickerTool } from "@/features/add-sticker";
+import { useEyedropper } from "@/features/style-clipboard";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
 import { cn } from "@/shared/lib";
@@ -40,6 +42,8 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   const lassoEvents = useLassoSelect();
   const selectionEvents = useSelectElements();
   const textEvents = useTextTool();
+  const stickerEvents = useStickerTool();
+  const eyedropperEvents = useEyedropper();
 
   useCanvasWheel(canvasRef);
   usePasteImages();
@@ -52,7 +56,9 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       ? "cursor-default"
       : activeTool === "eraser"
         ? "cursor-cell"
-        : "cursor-crosshair";
+        : activeTool === "eyedropper"
+          ? "cursor-copy"
+          : "cursor-crosshair";
 
   function onToolPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     if (activeTool === "selection") {
@@ -63,7 +69,15 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return textEvents.onPointerDown(event);
     }
 
-    if (activeTool === "freedraw") {
+    if (activeTool === "sticker") {
+      return stickerEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "eyedropper") {
+      return eyedropperEvents.onPointerDown(event);
+    }
+
+    if (activeTool === "freedraw" || activeTool === "highlighter") {
       return freeDrawEvents.onPointerDown(event);
     }
 
@@ -89,7 +103,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return selectionEvents.onPointerMove(event);
     }
 
-    if (activeTool === "freedraw") {
+    if (activeTool === "freedraw" || activeTool === "highlighter") {
       return freeDrawEvents.onPointerMove(event);
     }
 
@@ -105,7 +119,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerMove(event);
     }
 
-    if (activeTool !== "text" && activeTool !== "pan") {
+    if (activeTool !== "text" && activeTool !== "sticker" && activeTool !== "eyedropper" && activeTool !== "pan") {
       return drawingEvents.onPointerMove(event);
     }
   }
@@ -115,7 +129,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return selectionEvents.onPointerUp(event);
     }
 
-    if (activeTool === "freedraw") {
+    if (activeTool === "freedraw" || activeTool === "highlighter") {
       return freeDrawEvents.onPointerUp(event);
     }
 
@@ -131,7 +145,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerUp(event);
     }
 
-    if (activeTool !== "text" && activeTool !== "pan") {
+    if (activeTool !== "text" && activeTool !== "sticker" && activeTool !== "eyedropper" && activeTool !== "pan") {
       return drawingEvents.onPointerUp(event);
     }
   }
@@ -161,7 +175,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return selectionEvents.onPointerCancel(event);
     }
 
-    if (activeTool === "freedraw") {
+    if (activeTool === "freedraw" || activeTool === "highlighter") {
       return freeDrawEvents.onPointerCancel(event);
     }
 
@@ -177,7 +191,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return lassoEvents.onPointerCancel(event);
     }
 
-    if (activeTool !== "pan") {
+    if (activeTool !== "sticker" && activeTool !== "eyedropper" && activeTool !== "pan") {
       return drawingEvents.onPointerCancel(event);
     }
   }

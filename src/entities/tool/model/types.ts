@@ -8,6 +8,10 @@ export type ShapeToolId =
   | "cloud"
   | "line"
   | "arrow"
+  | "measure"
+  | "sticky"
+  | "callout"
+  | "table"
   | "frame"
   | "embed";
 
@@ -16,6 +20,9 @@ export type ToolId =
   | "selection"
   | "text"
   | "freedraw"
+  | "highlighter"
+  | "sticker"
+  | "eyedropper"
   | "eraser"
   | "laser"
   | "lasso"

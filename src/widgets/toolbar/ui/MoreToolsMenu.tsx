@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import {
   Bot,
@@ -9,10 +9,21 @@ import {
   LassoSelect,
   Network,
   Sparkles,
+  Highlighter,
+  MessageSquareText,
+  Paintbrush,
+  Pipette,
+  Ruler,
+  SmilePlus,
+  StickyNote,
+  Table2,
+  Workflow,
 } from "lucide-react";
 import { toolStore } from "@/entities/tool";
 import { generateStore } from "@/features/generate";
 import { ImageUploadMenuItem } from "@/features/add-image";
+import { stickerSettingsStore } from "@/features/add-sticker";
+import { applyCopiedStyleToSelectedElements, styleClipboardStore } from "@/features/style-clipboard";
 import { Button, IconButton, Popover } from "@/shared/ui";
 import { MORE_SHAPE_ITEMS } from "../model/toolItems";
 
@@ -30,9 +41,22 @@ const MENU_GAP = 8;
 const DESKTOP_MENU_WIDTH = 288;
 const MOBILE_MENU_WIDTH = 320;
 
+const BOARD_TOOLS = [
+  { id: "sticky", label: "Стикер-заметка", shortcut: "N", icon: StickyNote },
+  { id: "callout", label: "Комментарий / Callout", shortcut: "M", icon: MessageSquareText },
+  { id: "table", label: "Таблица", shortcut: "", icon: Table2 },
+  { id: "measure", label: "Линейка / измерение", shortcut: "", icon: Ruler },
+  { id: "highlighter", label: "Маркер", shortcut: "", icon: Highlighter },
+] as const;
+
 export function MoreToolsMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
+  const styleClipboard = useSyncExternalStore(
+    styleClipboardStore.subscribe,
+    styleClipboardStore.get,
+    styleClipboardStore.get,
+  );
 
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -158,7 +182,7 @@ export function MoreToolsMenu() {
           <div ref={menuRef}>
             <Popover
               aria-label="Дополнительные инструменты"
-              className="fixed z-60 overflow-y-auto overscroll-contain"
+              className="fixed z-[60] overflow-y-auto overscroll-contain"
               isOpen={isOpen}
               role="menu"
               style={menuPosition}
@@ -196,6 +220,50 @@ export function MoreToolsMenu() {
                 })}
 
                 <ImageUploadMenuItem onImageAdded={() => setIsOpen(false)} />
+
+                {BOARD_TOOLS.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Button
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                      key={item.id}
+                      onClick={() => { toolStore.set(item.id); setIsOpen(false); }}
+                      type="button"
+                    >
+                      <Icon size={17} />
+                      <span className="flex-1">{item.label}</span>
+                      {item.shortcut && <kbd className="text-xs text-text-muted">{item.shortcut}</kbd>}
+                    </Button>
+                  );
+                })}
+
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => { stickerSettingsStore.openPicker(); setIsOpen(false); }}
+                  type="button"
+                >
+                  <SmilePlus size={17} />
+                  <span className="flex-1">Иконки и стикеры</span>
+                </Button>
+
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => { toolStore.set("eyedropper"); setIsOpen(false); }}
+                  type="button"
+                >
+                  <Pipette size={17} />
+                  <span className="flex-1">Пипетка стиля</span>
+                </Button>
+
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={!styleClipboard.style}
+                  onClick={() => { applyCopiedStyleToSelectedElements(); setIsOpen(false); }}
+                  type="button"
+                >
+                  <Paintbrush size={17} />
+                  <span className="flex-1">Применить стиль</span>
+                </Button>
 
                 <Button
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
@@ -240,6 +308,18 @@ export function MoreToolsMenu() {
                   <Sparkles size={17} />
                   <span className="flex-1">Текст в диаграмму</span>
                   <Bot className="text-accent" size={15} />
+                </Button>
+
+                <Button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
+                  onClick={() => {
+                    generateStore.open("templates");
+                    setIsOpen(false);
+                  }}
+                  type="button"
+                >
+                  <Workflow size={17} />
+                  <span className="flex-1">Шаблоны диаграмм</span>
                 </Button>
 
                 <Button

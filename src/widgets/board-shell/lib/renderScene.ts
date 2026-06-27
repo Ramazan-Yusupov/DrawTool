@@ -53,6 +53,7 @@ function renderFrameChildren(
   context.clip();
 
   children.forEach((child) => {
+    if (child.id === editingTextId) return;
     if (!isVisible(getElementBounds(child), visibleBounds)) return;
 
     if (child.type === "frame") {
@@ -116,6 +117,7 @@ export function renderScene({ context, viewport, size }: RenderSceneParams) {
   // First pass: all shapes and frame containers.
   rootElements.forEach((element) => {
     if (!isVisible(getElementBounds(element), visibleBounds)) return;
+    if (element.id === editingTextId) return;
     if (element.type === "text") return;
 
     renderElement(context, element);

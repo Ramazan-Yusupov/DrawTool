@@ -3,12 +3,17 @@ import { getElementRotation } from "../lib/getElementRotation";
 import type { BoardElement } from "../model/types";
 import { renderArrow } from "./renderArrow";
 import { renderCloud } from "./renderCloud";
+import { renderCallout } from "./renderCallout";
 import { renderCodeSketch } from "./renderCodeSketch";
 import { renderDiamond } from "./renderDiamond";
 import { renderEllipse } from "./renderEllipse";
 import { renderEmbed } from "./renderEmbed";
 import { renderFrame } from "./renderFrame";
 import { renderFreeDraw } from "./renderFreeDraw";
+import { renderMeasure } from "./renderMeasure";
+import { renderSticker } from "./renderSticker";
+import { renderSticky } from "./renderSticky";
+import { renderTable } from "./renderTable";
 import { renderHexagon } from "./renderHexagon";
 import { renderImageElement } from "./renderImageElement";
 import { renderLine } from "./renderLine";
@@ -46,6 +51,18 @@ function renderUnrotated(
     case "frame":
       renderFrame(context, element);
       return;
+    case "sticky":
+      renderSticky(context, element);
+      return;
+    case "callout":
+      renderCallout(context, element);
+      return;
+    case "table":
+      renderTable(context, element);
+      return;
+    case "sticker":
+      renderSticker(context, element);
+      return;
     case "embed":
       renderEmbed(context, element);
       return;
@@ -58,10 +75,14 @@ function renderUnrotated(
     case "line":
       renderLine(context, element);
       return;
+    case "measure":
+      renderMeasure(context, element);
+      return;
     case "arrow":
       renderArrow(context, element);
       return;
     case "freedraw":
+    case "highlighter":
       renderFreeDraw(context, element);
       return;
     case "text":

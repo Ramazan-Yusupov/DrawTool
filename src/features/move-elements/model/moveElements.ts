@@ -4,7 +4,7 @@ import { sceneStore } from "@/entities/scene";
 import type { Point } from "@/shared/types";
 
 export function moveElementByDelta(element: BoardElement, delta: Point) {
-  if (element.type === "freedraw") {
+  if (element.type === "freedraw" || element.type === "highlighter") {
     return updateElement(element, {
       x: element.x + delta.x,
       y: element.y + delta.y,
