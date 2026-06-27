@@ -2,6 +2,13 @@ export { createScene } from "./model/createScene";
 export { deserializeScene } from "./lib/deserializeScene";
 export { serializeScene } from "./lib/serializeScene";
 export { sceneStore } from "./model/sceneStore";
+export { resetScene } from "./model/resetScene";
+export {
+  getSceneElementById,
+  getSceneElementCount,
+  getSceneElementsByIds,
+  getSceneElementsByType,
+} from "./model/sceneSelectors";
 export {
   attachAllFrameChildren,
   attachFrameChildren,

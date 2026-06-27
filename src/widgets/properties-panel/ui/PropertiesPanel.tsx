@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { cn, createId } from "@/shared/lib";
+import { cn } from "@/shared/lib";
 import { getTextSize, updateElement } from "@/entities/element";
 import type {
   ArrowRouting,
@@ -25,6 +25,7 @@ import type {
   TextAlign,
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
+import { duplicateSelectedElements } from "@/features/duplicate-elements";
 import {
   canChangeElementsLayer,
   reorderElementsByLayer,
@@ -81,27 +82,6 @@ type StyleTarget = {
   style: ElementStyle;
   type: BoardElement["type"] | "tool";
 };
-
-function cloneForDuplicate(element: BoardElement): BoardElement {
-  const copy = JSON.parse(JSON.stringify(element)) as BoardElement;
-  const now = Date.now();
-
-  copy.id = createId(element.type);
-  copy.createdAt = now;
-  copy.updatedAt = now;
-  copy.x += 20;
-  copy.y += 20;
-  copy.style = { ...copy.style };
-
-  if (copy.type === "freedraw") {
-    copy.points = copy.points.map((point) => ({
-      x: point.x + 20,
-      y: point.y + 20,
-    }));
-  }
-
-  return copy;
-}
 
 export function PropertiesPanel() {
   const [isCompactPanelOpen, setIsCompactPanelOpen] = useState(false);
@@ -306,17 +286,7 @@ export function PropertiesPanel() {
   }
 
   function duplicateSelection() {
-    if (selectedElements.length === 0) {
-      return;
-    }
-
-    mutateScene(() => {
-      const copies = selectedElements.map(cloneForDuplicate);
-
-      sceneStore.setElements([...sceneStore.get().elements, ...copies]);
-
-      selectionStore.setElementIds(copies.map((element) => element.id));
-    });
+    duplicateSelectedElements();
   }
 
   function changeLayer(action: LayerAction) {

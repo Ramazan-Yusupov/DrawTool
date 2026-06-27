@@ -17,6 +17,7 @@ export {
   createTriangle,
 } from "./model/createElement";
 export { updateElement } from "./model/updateElement";
+export { cloneElement } from "./model/cloneElement";
 
 export { getArrowPathPoints } from "./lib/getArrowPathPoints";
 export { getElementBounds } from "./lib/getElementBounds";
@@ -33,6 +34,7 @@ export { hitTestElement } from "./lib/hitTestElement";
 export { normalizeElement } from "./lib/normalizeElement";
 
 export { renderElement } from "./render/renderElement";
+export { renderImage } from "./render/renderImage";
 
 export type {
   ArrowElement,

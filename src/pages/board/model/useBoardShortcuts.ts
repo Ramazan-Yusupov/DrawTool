@@ -7,6 +7,7 @@ import type { ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
 import { viewportStore, zoomAtPoint } from "@/entities/viewport";
 import { deleteSelectedElements } from "@/features/delete-elements";
+import { duplicateSelectedElements } from "@/features/duplicate-elements";
 import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
 import {
@@ -31,43 +32,6 @@ function isEditingTextOrDialog(target: EventTarget | null) {
       "input, textarea, select, [contenteditable='true'], [role='dialog'], [aria-modal='true']",
     ),
   );
-}
-
-function duplicateSelectedElements() {
-  const selectedElements = sceneStore
-    .get()
-    .elements.filter((element) =>
-      selectionStore.get().elementIds.includes(element.id),
-    );
-
-  if (selectedElements.length === 0) {
-    return false;
-  }
-
-  historyStore.begin();
-
-  const copies = selectedElements.map((element) => {
-    const copy = JSON.parse(JSON.stringify(element)) as typeof element;
-    copy.id = `${element.id}-copy-${Date.now()}`;
-    copy.x += 20;
-    copy.y += 20;
-    copy.updatedAt = Date.now();
-    copy.createdAt = Date.now();
-
-    if (copy.type === "freedraw") {
-      copy.points = copy.points.map((point) => ({
-        x: point.x + 20,
-        y: point.y + 20,
-      }));
-    }
-
-    return copy;
-  });
-
-  sceneStore.setElements([...sceneStore.get().elements, ...copies]);
-  selectionStore.setElementIds(copies.map((element) => element.id));
-  historyStore.commit();
-  return true;
 }
 
 function nudgeSelection(deltaX: number, deltaY: number) {
