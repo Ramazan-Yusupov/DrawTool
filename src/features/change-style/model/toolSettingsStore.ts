@@ -11,6 +11,19 @@ const defaultSettings = createToolSettings();
 let settingsByTool: Partial<Record<ToolId, ToolSettings>> = {};
 const listeners = new Set<SettingsListener>();
 
+function cloneSettings(settings: ToolSettings): ToolSettings {
+  return { ...settings, style: { ...settings.style } };
+}
+
+function cloneAllSettings() {
+  return Object.fromEntries(
+    Object.entries(settingsByTool).map(([toolId, settings]) => [
+      toolId,
+      cloneSettings(settings),
+    ]),
+  ) as Partial<Record<ToolId, ToolSettings>>;
+}
+
 function notifyListeners() {
   listeners.forEach((listener) => listener());
 }
@@ -42,6 +55,20 @@ function normalizeSnapSize(value: number) {
 export const toolSettingsStore = {
   get(toolId: ToolId) {
     return getSettings(toolId);
+  },
+
+  getAll() {
+    return cloneAllSettings();
+  },
+
+  replaceAll(nextSettings: Partial<Record<ToolId, ToolSettings>>) {
+    settingsByTool = Object.fromEntries(
+      Object.entries(nextSettings).map(([toolId, settings]) => [
+        toolId,
+        cloneSettings(settings),
+      ]),
+    ) as Partial<Record<ToolId, ToolSettings>>;
+    notifyListeners();
   },
 
   patchStyle(toolId: ToolId, patch: Partial<ElementStyle>) {

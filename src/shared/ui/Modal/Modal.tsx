@@ -44,7 +44,7 @@ export function Modal({ children, isOpen, title, onClose }: ModalProps) {
       <section
         aria-label={title}
         aria-modal="true"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-border bg-surface p-5 text-text shadow-panel max-sm:max-h-[82dvh] max-sm:rounded-2xl max-sm:p-4"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-lg border border-border bg-surface p-5 text-text shadow-panel max-sm:max-h-[82dvh] max-sm:rounded-2xl max-sm:p-4"
         role="dialog"
       >
         <header className="mb-5 flex items-center justify-between gap-4">

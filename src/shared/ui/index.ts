@@ -1,6 +1,7 @@
 export { Button } from "./Button/Button";
 export type { ButtonProps } from "./Button/types";
 export { ColorPalette } from "./ColorPalette/ColorPalette";
+export { ConfirmDialog } from "./ConfirmDialog/ConfirmDialog";
 export { Divider } from "./Divider/Divider";
 export { IconButton } from "./IconButton/IconButton";
 export type { IconButtonProps } from "./IconButton/types";

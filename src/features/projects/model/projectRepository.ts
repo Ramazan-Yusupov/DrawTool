@@ -1,9 +1,11 @@
 import type { BoardElement } from "@/entities/element";
+import type { Viewport } from "@/entities/viewport";
 import {
   deleteIndexedRecord,
   getAllIndexedRecords,
   getIndexedRecord,
   putIndexedRecord,
+  replaceIndexedProjectRecords,
 } from "@/shared/lib/storage/indexedDb";
 import type { DrawToolProject, ProjectSummary } from "./types";
 
@@ -11,10 +13,22 @@ function cloneElements(elements: BoardElement[]) {
   return JSON.parse(JSON.stringify(elements)) as BoardElement[];
 }
 
+function cloneViewport(viewport: Viewport): Viewport {
+  return { ...viewport };
+}
+
 function cloneProject(project: DrawToolProject): DrawToolProject {
   return {
     ...project,
     elements: cloneElements(project.elements),
+    viewport: cloneViewport(project.viewport),
+  };
+}
+
+function normalizeProject(project: DrawToolProject): DrawToolProject {
+  return {
+    ...project,
+    viewport: project.viewport ?? { x: 0, y: 0, zoom: 1 },
   };
 }
 
@@ -22,22 +36,34 @@ export async function getProjects() {
   const projects = await getAllIndexedRecords<DrawToolProject>();
 
   return projects
-    .map((project): ProjectSummary => ({
-      id: project.id,
-      name: project.name,
-      createdAt: project.createdAt,
-      updatedAt: project.updatedAt,
-    }))
+    .map((project): ProjectSummary => {
+      const normalized = normalizeProject(project);
+      return {
+        id: normalized.id,
+        name: normalized.name,
+        createdAt: normalized.createdAt,
+        updatedAt: normalized.updatedAt,
+      };
+    })
     .sort((left, right) => right.updatedAt - left.updatedAt);
+}
+
+export async function getAllProjects() {
+  const projects = await getAllIndexedRecords<DrawToolProject>();
+  return projects.map((project) => cloneProject(normalizeProject(project)));
 }
 
 export async function getProjectById(id: string) {
   const project = await getIndexedRecord<DrawToolProject>(id);
-  return project ? cloneProject(project) : null;
+  return project ? cloneProject(normalizeProject(project)) : null;
 }
 
 export async function putProject(project: DrawToolProject) {
-  await putIndexedRecord(cloneProject(project));
+  await putIndexedRecord(cloneProject(normalizeProject(project)));
+}
+
+export async function replaceAllProjects(projects: DrawToolProject[]) {
+  await replaceIndexedProjectRecords(projects.map((project) => cloneProject(normalizeProject(project))));
 }
 
 export async function removeProject(id: string) {

@@ -1,4 +1,5 @@
 import type { BoardElement } from "@/entities/element";
+import type { Viewport } from "@/entities/viewport";
 import { APP_CONFIG } from "@/shared/config";
 
 export const MAX_PROJECTS = APP_CONFIG.projectLimit;
@@ -9,9 +10,10 @@ export type DrawToolProject = {
   createdAt: number;
   updatedAt: number;
   elements: BoardElement[];
+  viewport: Viewport;
 };
 
-export type ProjectSummary = Omit<DrawToolProject, "elements">;
+export type ProjectSummary = Omit<DrawToolProject, "elements" | "viewport">;
 
 export type ProjectsState = {
   activeProjectId: string | null;

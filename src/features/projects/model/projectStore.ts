@@ -1,10 +1,8 @@
 import type { BoardElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import {
-  attachAllFrameChildren,
-  sceneStore,
-} from "@/entities/scene";
+import { attachAllFrameChildren, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
+import { createViewport, viewportStore } from "@/entities/viewport";
 import { createId } from "@/shared/lib";
 import { readLocalStorage, writeLocalStorage } from "@/shared/lib/storage/localStorage";
 import {
@@ -12,10 +10,12 @@ import {
   loadSceneFromLocalStorage,
 } from "@/features/save-scene/api/localSceneRepository";
 import {
+  getAllProjects,
   getProjectById,
   getProjects,
   putProject,
   removeProject,
+  replaceAllProjects,
 } from "./projectRepository";
 import { MAX_PROJECTS } from "./types";
 import type { DrawToolProject, ProjectsState } from "./types";
@@ -38,10 +38,7 @@ function notify() {
 }
 
 function setState(patch: Partial<ProjectsState>) {
-  state = {
-    ...state,
-    ...patch,
-  };
+  state = { ...state, ...patch };
   notify();
 }
 
@@ -49,7 +46,11 @@ function cloneElements(elements: BoardElement[]) {
   return JSON.parse(JSON.stringify(elements)) as BoardElement[];
 }
 
-function createProjectRecord(name: string, elements: BoardElement[] = []): DrawToolProject {
+function createProjectRecord(
+  name: string,
+  elements: BoardElement[] = [],
+  viewport = createViewport(),
+): DrawToolProject {
   const now = Date.now();
 
   return {
@@ -58,12 +59,17 @@ function createProjectRecord(name: string, elements: BoardElement[] = []): DrawT
     createdAt: now,
     updatedAt: now,
     elements: cloneElements(elements),
+    viewport: { ...viewport },
   };
 }
 
-async function refreshProjects() {
+async function refreshProjects(shouldNotify = true) {
   const projects = await getProjects();
-  setState({ projects });
+  if (shouldNotify) {
+    setState({ projects });
+  } else {
+    state = { ...state, projects };
+  }
   return projects;
 }
 
@@ -75,6 +81,7 @@ function setActiveProjectId(id: string | null) {
 function applyProjectToScene(project: DrawToolProject) {
   const elements = attachAllFrameChildren(project.elements);
   sceneStore.setElements(elements);
+  viewportStore.set(project.viewport ?? createViewport());
   selectionStore.clear();
   historyStore.clear();
 }
@@ -117,12 +124,8 @@ export const projectStore = {
         projects = await getProjects();
       }
 
-      const rememberedProjectId = readLocalStorage<string | null>(
-        ACTIVE_PROJECT_STORAGE_KEY,
-      );
-      const activeProjectId = projects.some(
-        (project) => project.id === rememberedProjectId,
-      )
+      const rememberedProjectId = readLocalStorage<string | null>(ACTIVE_PROJECT_STORAGE_KEY);
+      const activeProjectId = projects.some((project) => project.id === rememberedProjectId)
         ? rememberedProjectId
         : projects[0]?.id ?? null;
 
@@ -147,7 +150,11 @@ export const projectStore = {
     }
   },
 
-  async saveActiveProject(elements = sceneStore.get().elements) {
+  async saveActiveProject(
+    elements = sceneStore.get().elements,
+    viewport = viewportStore.get(),
+    shouldNotify = true,
+  ) {
     const projectId = state.activeProjectId;
     if (!state.isReady || !projectId) {
       return false;
@@ -162,9 +169,51 @@ export const projectStore = {
       await putProject({
         ...current,
         elements: cloneElements(elements),
+        viewport: { ...viewport },
         updatedAt: Date.now(),
       });
-      await refreshProjects();
+      await refreshProjects(shouldNotify);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  async getWorkspaceProjects() {
+    await this.saveActiveProject(sceneStore.get().elements, viewportStore.get(), false);
+    return getAllProjects();
+  },
+
+  async replaceWorkspaceProjects(
+    projects: DrawToolProject[],
+    activeProjectId: string | null,
+  ) {
+    if (projects.length === 0 || projects.length > MAX_PROJECTS) {
+      return false;
+    }
+
+    try {
+      await replaceAllProjects(projects);
+      const summaries = await getProjects();
+      const nextActiveProjectId = summaries.some((project) => project.id === activeProjectId)
+        ? activeProjectId
+        : summaries[0]?.id ?? null;
+      const nextActiveProject = nextActiveProjectId
+        ? await getProjectById(nextActiveProjectId)
+        : null;
+
+      if (nextActiveProject) {
+        applyProjectToScene(nextActiveProject);
+      }
+
+      writeLocalStorage(ACTIVE_PROJECT_STORAGE_KEY, nextActiveProjectId);
+      state = {
+        ...state,
+        activeProjectId: nextActiveProjectId,
+        projects: summaries,
+        isSidebarOpen: false,
+      };
+      notify();
       return true;
     } catch {
       return false;
@@ -226,11 +275,7 @@ export const projectStore = {
         return false;
       }
 
-      await putProject({
-        ...project,
-        name: nextName,
-        updatedAt: Date.now(),
-      });
+      await putProject({ ...project, name: nextName, updatedAt: Date.now() });
       await refreshProjects();
       return true;
     } catch {
@@ -257,6 +302,7 @@ export const projectStore = {
           sceneStore.clear();
           selectionStore.clear();
           historyStore.clear();
+          viewportStore.reset();
           setActiveProjectId(null);
         }
       }

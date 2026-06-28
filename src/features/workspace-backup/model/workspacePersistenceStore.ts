@@ -1,0 +1,310 @@
+import type { DrawToolWorkspace } from "@/entities/workspace";
+import { projectStore } from "@/features/projects";
+import {
+  activateFolderWorkspaceHandle,
+  clearActiveFolderWorkspace,
+  createActiveFolderBackup,
+  getActiveFolderName,
+  getWorkspaceFolderPermission,
+  initializeFolderWorkspace,
+  isWorkspaceFolderStorageSupported,
+  pickWorkspaceFolder,
+  readFolderWorkspace,
+  requestWorkspaceFolderPermission,
+  saveActiveFolderWorkspace,
+} from "../api/workspaceFolderStorage";
+import type {
+  FolderWorkspaceSnapshot,
+  WorkspaceFolderHandle,
+  WorkspaceFolderPermission,
+} from "../api/workspaceFolderStorage";
+import {
+  clearPersistedWorkspaceFolderHandle,
+  loadPersistedWorkspaceFolderHandle,
+  savePersistedWorkspaceFolderHandle,
+} from "./workspaceFolderRepository";
+import { createWorkspaceSnapshot } from "./createWorkspaceSnapshot";
+import { parseWorkspaceSource } from "./parseWorkspaceFile";
+import { restoreWorkspaceSnapshot } from "./restoreWorkspaceSnapshot";
+
+export type WorkspacePersistenceStatus =
+  | "idle"
+  | "saving"
+  | "saved"
+  | "error"
+  | "access-needed";
+
+export type WorkspacePersistenceState = {
+  folderName: string | null;
+  isBusy: boolean;
+  isConnected: boolean;
+  isSupported: boolean;
+  lastSavedAt: string | null;
+  message: string | null;
+  requiresFolderResolution: boolean;
+  status: WorkspacePersistenceStatus;
+};
+
+type Listener = () => void;
+type ConnectFolderResult =
+  | { kind: "empty" }
+  | { kind: "existing"; snapshot: FolderWorkspaceSnapshot }
+  | { kind: "cancelled" };
+
+let state: WorkspacePersistenceState = {
+  folderName: null,
+  isBusy: false,
+  isConnected: false,
+  isSupported: isWorkspaceFolderStorageSupported(),
+  lastSavedAt: null,
+  message: null,
+  requiresFolderResolution: false,
+  status: "idle",
+};
+
+const listeners = new Set<Listener>();
+let initialized = false;
+
+function notify() {
+  listeners.forEach((listener) => listener());
+}
+
+function setState(patch: Partial<WorkspacePersistenceState>) {
+  state = { ...state, ...patch };
+  notify();
+}
+
+function permissionMessage(permission: WorkspaceFolderPermission) {
+  return permission === "denied"
+    ? "Браузер не дал доступ к backup-папке."
+    : "Нужно снова разрешить доступ к backup-папке.";
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+async function attachFolder(handle: WorkspaceFolderHandle) {
+  const permission = await requestWorkspaceFolderPermission(handle);
+  if (permission !== "granted") {
+    setState({
+      isBusy: false,
+      isConnected: false,
+      folderName: handle.name,
+      message: permissionMessage(permission),
+      status: "access-needed",
+    });
+    return null;
+  }
+
+  const existing = await readFolderWorkspace(handle, parseWorkspaceSource);
+  if (existing) {
+    activateFolderWorkspaceHandle(handle, existing.workspace);
+  } else {
+    const workspace = await createWorkspaceSnapshot();
+    const initializedFolder = await initializeFolderWorkspace(handle, workspace);
+    activateFolderWorkspaceHandle(handle, initializedFolder.workspace);
+  }
+
+  await savePersistedWorkspaceFolderHandle(handle);
+  setState({
+    isBusy: false,
+    isConnected: true,
+    folderName: handle.name,
+    lastSavedAt: existing?.workspace.savedAt ?? new Date().toISOString(),
+    message: null,
+    requiresFolderResolution: Boolean(existing),
+    status: "saved",
+  });
+
+  return existing;
+}
+
+export const workspacePersistenceStore = {
+  get() {
+    return state;
+  },
+
+  subscribe(listener: Listener) {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
+
+  async initialize() {
+    if (initialized) return;
+    initialized = true;
+    await projectStore.initialize();
+
+    try {
+      const handle = await loadPersistedWorkspaceFolderHandle();
+      if (!handle) return;
+
+      const permission = await getWorkspaceFolderPermission(handle);
+      if (permission !== "granted") {
+        setState({
+          folderName: handle.name,
+          isConnected: false,
+          message: permissionMessage(permission),
+          status: "access-needed",
+        });
+        return;
+      }
+
+      const existing = await readFolderWorkspace(handle, parseWorkspaceSource);
+      if (existing) {
+        activateFolderWorkspaceHandle(handle, existing.workspace);
+        setState({
+          folderName: handle.name,
+          isConnected: true,
+          lastSavedAt: existing.workspace.savedAt,
+          message: null,
+          requiresFolderResolution: false,
+          status: "saved",
+        });
+      } else {
+        const workspace = await createWorkspaceSnapshot();
+        const snapshot = await initializeFolderWorkspace(handle, workspace);
+        activateFolderWorkspaceHandle(handle, snapshot.workspace);
+        setState({
+          folderName: handle.name,
+          isConnected: true,
+          lastSavedAt: snapshot.workspace.savedAt,
+          message: null,
+          requiresFolderResolution: false,
+          status: "saved",
+        });
+      }
+    } catch (error) {
+      setState({
+        message: error instanceof Error ? error.message : "Не удалось открыть backup-папку.",
+        status: "error",
+      });
+    }
+  },
+
+  async connectFolder(): Promise<ConnectFolderResult> {
+    await projectStore.initialize();
+    setState({ isBusy: true, message: null });
+
+    try {
+      const handle = await pickWorkspaceFolder();
+      const existing = await attachFolder(handle);
+      if (!state.isConnected) {
+        return { kind: "cancelled" };
+      }
+      return existing ? { kind: "existing", snapshot: existing } : { kind: "empty" };
+    } catch (error) {
+      if (isAbortError(error)) {
+        setState({ isBusy: false });
+        return { kind: "cancelled" };
+      }
+
+      setState({
+        isBusy: false,
+        message: error instanceof Error ? error.message : "Не удалось подключить папку.",
+        status: "error",
+      });
+      return { kind: "cancelled" };
+    }
+  },
+
+  async reconnectPersistedFolder() {
+    const handle = await loadPersistedWorkspaceFolderHandle();
+    if (!handle) return false;
+    setState({ isBusy: true, message: null });
+    const existing = await attachFolder(handle);
+    return Boolean(existing || getActiveFolderName());
+  },
+
+  async saveNow() {
+    if (!projectStore.get().isReady) {
+      setState({ message: "Рабочая область ещё загружается." });
+      return false;
+    }
+
+    if (state.isConnected && state.requiresFolderResolution) {
+      setState({
+        message: "Выберите: открыть backup из папки или перезаписать его текущими данными.",
+      });
+      return false;
+    }
+
+    try {
+      setState({ isBusy: true, message: null, status: state.isConnected ? "saving" : state.status });
+      const workspace = await createWorkspaceSnapshot();
+      const saved = await saveActiveFolderWorkspace(workspace);
+      setState({
+        isBusy: false,
+        lastSavedAt: saved?.savedAt ?? state.lastSavedAt,
+        message: null,
+        status: state.isConnected ? "saved" : "idle",
+      });
+      return true;
+    } catch (error) {
+      setState({
+        isBusy: false,
+        message: error instanceof Error ? error.message : "Не удалось сохранить workspace.",
+        status: "error",
+      });
+      return false;
+    }
+  },
+
+  async createBackup() {
+    try {
+      setState({ isBusy: true, message: null });
+      await this.saveNow();
+      const fileName = await createActiveFolderBackup();
+      setState({
+        isBusy: false,
+        message: fileName ? `Создан ${fileName}` : "Подключите папку для backup.",
+        status: state.isConnected ? "saved" : "idle",
+      });
+      return fileName;
+    } catch (error) {
+      setState({
+        isBusy: false,
+        message: error instanceof Error ? error.message : "Не удалось создать backup.",
+        status: "error",
+      });
+      return null;
+    }
+  },
+
+  async restoreWorkspace(workspace: DrawToolWorkspace) {
+    setState({ isBusy: true, message: null });
+    try {
+      await restoreWorkspaceSnapshot(workspace);
+      setState({ requiresFolderResolution: false });
+      await this.saveNow();
+      setState({ isBusy: false, message: null, status: state.isConnected ? "saved" : "idle" });
+      return true;
+    } catch (error) {
+      setState({
+        isBusy: false,
+        message: error instanceof Error ? error.message : "Не удалось восстановить workspace.",
+        status: "error",
+      });
+      return false;
+    }
+  },
+
+  async overwriteConnectedFolder() {
+    setState({ requiresFolderResolution: false });
+    return this.saveNow();
+  },
+
+  async disconnectFolder() {
+    clearActiveFolderWorkspace();
+    await clearPersistedWorkspaceFolderHandle();
+    setState({
+      folderName: null,
+      isConnected: false,
+      isBusy: false,
+      lastSavedAt: null,
+      message: null,
+      requiresFolderResolution: false,
+      status: "idle",
+    });
+  },
+};
