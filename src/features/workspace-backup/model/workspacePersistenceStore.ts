@@ -7,9 +7,9 @@ import {
   getActiveFolderName,
   getWorkspaceFolderPermission,
   initializeFolderWorkspace,
+  inspectFolderWorkspace,
   isWorkspaceFolderStorageSupported,
   pickWorkspaceFolder,
-  readFolderWorkspace,
   requestWorkspaceFolderPermission,
   saveActiveFolderWorkspace,
 } from "../api/workspaceFolderStorage";
@@ -47,7 +47,7 @@ export type WorkspacePersistenceState = {
 
 type Listener = () => void;
 type ConnectFolderResult =
-  | { kind: "empty" }
+  | { kind: "initialized"; preservedFileName: string | null }
   | { kind: "existing"; snapshot: FolderWorkspaceSnapshot }
   | { kind: "cancelled" };
 
@@ -84,7 +84,7 @@ function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-async function attachFolder(handle: WorkspaceFolderHandle) {
+async function attachFolder(handle: WorkspaceFolderHandle): Promise<ConnectFolderResult> {
   const permission = await requestWorkspaceFolderPermission(handle);
   if (permission !== "granted") {
     setState({
@@ -94,30 +94,46 @@ async function attachFolder(handle: WorkspaceFolderHandle) {
       message: permissionMessage(permission),
       status: "access-needed",
     });
-    return null;
+    return { kind: "cancelled" };
   }
 
-  const existing = await readFolderWorkspace(handle, parseWorkspaceSource);
-  if (existing) {
-    activateFolderWorkspaceHandle(handle, existing.workspace);
-  } else {
-    const workspace = await createWorkspaceSnapshot();
-    const initializedFolder = await initializeFolderWorkspace(handle, workspace);
-    activateFolderWorkspaceHandle(handle, initializedFolder.workspace);
+  const inspection = await inspectFolderWorkspace(handle, parseWorkspaceSource);
+  if (inspection.kind === "existing") {
+    activateFolderWorkspaceHandle(handle, inspection.snapshot.workspace);
+    await savePersistedWorkspaceFolderHandle(handle);
+    setState({
+      isBusy: false,
+      isConnected: true,
+      folderName: handle.name,
+      lastSavedAt: inspection.snapshot.workspace.savedAt,
+      message: null,
+      requiresFolderResolution: true,
+      status: "saved",
+    });
+    return { kind: "existing", snapshot: inspection.snapshot };
   }
 
+  const workspace = await createWorkspaceSnapshot();
+  const initializedFolder = await initializeFolderWorkspace(handle, workspace, {
+    preserveIncompatibleContent:
+      inspection.kind === "incompatible" ? inspection.content : undefined,
+  });
+  activateFolderWorkspaceHandle(handle, initializedFolder.workspace);
   await savePersistedWorkspaceFolderHandle(handle);
   setState({
     isBusy: false,
     isConnected: true,
     folderName: handle.name,
-    lastSavedAt: existing?.workspace.savedAt ?? new Date().toISOString(),
+    lastSavedAt: initializedFolder.workspace.savedAt,
     message: null,
-    requiresFolderResolution: Boolean(existing),
+    requiresFolderResolution: false,
     status: "saved",
   });
 
-  return existing;
+  return {
+    kind: "initialized",
+    preservedFileName: initializedFolder.preservedFileName,
+  };
 }
 
 export const workspacePersistenceStore = {
@@ -150,29 +166,9 @@ export const workspacePersistenceStore = {
         return;
       }
 
-      const existing = await readFolderWorkspace(handle, parseWorkspaceSource);
-      if (existing) {
-        activateFolderWorkspaceHandle(handle, existing.workspace);
-        setState({
-          folderName: handle.name,
-          isConnected: true,
-          lastSavedAt: existing.workspace.savedAt,
-          message: null,
-          requiresFolderResolution: false,
-          status: "saved",
-        });
-      } else {
-        const workspace = await createWorkspaceSnapshot();
-        const snapshot = await initializeFolderWorkspace(handle, workspace);
-        activateFolderWorkspaceHandle(handle, snapshot.workspace);
-        setState({
-          folderName: handle.name,
-          isConnected: true,
-          lastSavedAt: snapshot.workspace.savedAt,
-          message: null,
-          requiresFolderResolution: false,
-          status: "saved",
-        });
+      const result = await attachFolder(handle);
+      if (result.kind === "existing") {
+        setState({ requiresFolderResolution: false });
       }
     } catch (error) {
       setState({
@@ -188,11 +184,8 @@ export const workspacePersistenceStore = {
 
     try {
       const handle = await pickWorkspaceFolder();
-      const existing = await attachFolder(handle);
-      if (!state.isConnected) {
-        return { kind: "cancelled" };
-      }
-      return existing ? { kind: "existing", snapshot: existing } : { kind: "empty" };
+      const result = await attachFolder(handle);
+      return result;
     } catch (error) {
       if (isAbortError(error)) {
         setState({ isBusy: false });
@@ -212,8 +205,8 @@ export const workspacePersistenceStore = {
     const handle = await loadPersistedWorkspaceFolderHandle();
     if (!handle) return false;
     setState({ isBusy: true, message: null });
-    const existing = await attachFolder(handle);
-    return Boolean(existing || getActiveFolderName());
+    const result = await attachFolder(handle);
+    return result.kind !== "cancelled" && Boolean(getActiveFolderName());
   },
 
   async saveNow() {

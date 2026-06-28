@@ -49,6 +49,20 @@ export type FolderWorkspaceSnapshot = {
   workspace: DrawToolWorkspace;
 };
 
+/**
+ * Result of inspecting the selected folder. A folder is usable even when it
+ * has never been prepared by DrawTool before.
+ */
+export type FolderWorkspaceInspection =
+  | { kind: "empty"; folderName: string }
+  | { kind: "existing"; snapshot: FolderWorkspaceSnapshot }
+  | {
+      kind: "incompatible";
+      folderName: string;
+      content: string;
+      reason: string;
+    };
+
 type ActiveFolderSession = {
   handle: WorkspaceFolderHandle;
   workspaceId: string;
@@ -159,19 +173,42 @@ export async function requestWorkspaceFolderPermission(handle: WorkspaceFolderHa
   return handle.requestPermission({ mode: "readwrite" });
 }
 
-export async function readFolderWorkspace(
+export async function inspectFolderWorkspace(
   handle: WorkspaceFolderHandle,
   parseWorkspace: (source: string) => DrawToolWorkspace,
-): Promise<FolderWorkspaceSnapshot | null> {
+): Promise<FolderWorkspaceInspection> {
   const content = await readTextFile(handle, DRAWTOOL_WORKSPACE_FILE_NAME);
-  if (!content) return null;
+  if (!content) {
+    return { kind: "empty", folderName: handle.name };
+  }
 
-  return { folderName: handle.name, workspace: parseWorkspace(content) };
+  try {
+    return {
+      kind: "existing",
+      snapshot: {
+        folderName: handle.name,
+        workspace: parseWorkspace(content),
+      },
+    };
+  } catch (error) {
+    return {
+      kind: "incompatible",
+      folderName: handle.name,
+      content,
+      reason: error instanceof Error ? error.message : "Неизвестный формат файла.",
+    };
+  }
+}
+
+function createIncompatibleBackupFileName() {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return `incompatible-workspace-${timestamp}.json`;
 }
 
 export async function initializeFolderWorkspace(
   handle: WorkspaceFolderHandle,
   workspace: DrawToolWorkspace,
+  options: { preserveIncompatibleContent?: string } = {},
 ) {
   const payload = {
     ...normalizeWorkspace(workspace),
@@ -179,8 +216,25 @@ export async function initializeFolderWorkspace(
     revision: Math.max(1, workspace.revision || 1),
     savedAt: new Date().toISOString(),
   };
-  await writeTextFile(handle, DRAWTOOL_WORKSPACE_FILE_NAME, JSON.stringify(payload, null, 2));
-  return { folderName: handle.name, workspace: payload } satisfies FolderWorkspaceSnapshot;
+  const serialized = JSON.stringify(payload, null, 2);
+  const backups = await handle.getDirectoryHandle(DRAWTOOL_BACKUPS_DIRECTORY_NAME, {
+    create: true,
+  });
+
+  let preservedFileName: string | null = null;
+  if (options.preserveIncompatibleContent) {
+    preservedFileName = createIncompatibleBackupFileName();
+    await writeTextFile(backups, preservedFileName, options.preserveIncompatibleContent);
+  }
+
+  await writeTextFile(handle, DRAWTOOL_WORKSPACE_FILE_NAME, serialized);
+  await writeTextFile(backups, LAST_SAVED_BACKUP_FILE_NAME, serialized);
+
+  return {
+    folderName: handle.name,
+    workspace: payload,
+    preservedFileName,
+  };
 }
 
 export function activateFolderWorkspaceHandle(
