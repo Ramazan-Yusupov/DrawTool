@@ -1,24 +1,25 @@
 :root {
   color-scheme: dark;
 
-  --app-color-canvas: #101722;
-  --app-color-surface: #202937;
-  --app-color-panel: #1c2430;
-  --app-color-surface-muted: #2b3748;
-  --app-color-control: #273243;
-  --app-color-control-active: #4f78ba;
+  --app-color-canvas: #0e1520;
+  --app-color-surface: #1b2532;
+  --app-color-panel: #17202c;
+  --app-color-surface-muted: #263347;
+  --app-color-control: #222e3f;
+  --app-color-control-active: #3d6da8;
 
-  --app-color-text: #f8fafc;
-  --app-color-text-muted: #9aacc4;
+  --app-color-text: #f7f9fd;
+  --app-color-text-muted: #9caec7;
 
-  --app-color-border: #37475d;
-  --app-color-accent: #5b9df6;
+  --app-color-border: #34445b;
+  --app-color-accent: #6ba9ff;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 
-  --app-shadow-panel: 0 12px 30px rgb(0 0 0 / 34%);
+  --app-shadow-panel: 0 16px 40px rgb(0 0 0 / 30%);
+  --app-shadow-float: 0 26px 72px rgb(0 0 0 / 46%);
 
   --z-canvas: 0;
   --z-overlay: 10;
@@ -29,18 +30,19 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --app-color-canvas: #f7f9fc;
+  --app-color-canvas: #f5f8fc;
   --app-color-surface: #ffffff;
   --app-color-panel: #ffffff;
-  --app-color-surface-muted: #f1f5f9;
-  --app-color-control: #f4f6fa;
-  --app-color-control-active: #d8e7ff;
+  --app-color-surface-muted: #edf3fb;
+  --app-color-control: #f3f6fa;
+  --app-color-control-active: #d4e5ff;
 
-  --app-color-text: #182332;
-  --app-color-text-muted: #64748b;
+  --app-color-text: #172233;
+  --app-color-text-muted: #60738c;
 
-  --app-color-border: #d9e2ee;
-  --app-color-accent: #2563eb;
+  --app-color-border: #d5dfed;
+  --app-color-accent: #256cf0;
 
-  --app-shadow-panel: 0 10px 28px rgb(15 23 42 / 12%);
+  --app-shadow-panel: 0 14px 34px rgb(15 23 42 / 11%);
+  --app-shadow-float: 0 26px 62px rgb(15 23 42 / 18%);
 }

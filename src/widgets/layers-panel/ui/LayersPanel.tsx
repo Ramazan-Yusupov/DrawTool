@@ -12,7 +12,7 @@ export function LayersPanel({ onClose }: LayersPanelProps) {
   const { count, isSelected, layers, selectLayer } = useLayersPanel();
 
   return (
-    <Panel className="w-64 rounded-xl border border-border bg-panel p-2 shadow-panel">
+    <Panel className="w-64 rounded-2xl border border-border/90 bg-panel/94 p-2 shadow-panel backdrop-blur-xl">
       <header className="flex items-center justify-between gap-2 px-2 py-1">
         <div className="flex items-center gap-2 text-sm font-semibold text-text">
           <Layers3 className="text-accent" size={17} />

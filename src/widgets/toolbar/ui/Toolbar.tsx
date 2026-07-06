@@ -11,7 +11,7 @@ import { ToolButton } from "./ToolButton";
 
 const GROUPS = ["core", "actions"] as const;
 const TOOLBAR_CLASS_NAME =
-  "drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel min-[1100px]:ms-45 sm:justify-center max-[1100px]:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-[1100px]:top-auto max-[1100px]:w-[calc(100dvw-1rem)] max-[1100px]:max-w-none max-[1100px]:overflow-x-auto max-[1100px]:overscroll-contain";
+  "drawtool-toolbar-scroll absolute left-1/2 top-4 z-20 flex max-w-[calc(100dvw-2rem)] -translate-x-1/2 items-center gap-1 rounded-2xl border border-border/90 bg-panel/92 p-1.5 shadow-panel backdrop-blur-xl min-[1100px]:ms-45 sm:justify-center max-[1100px]:bottom-[max(0.5rem,env(safe-area-inset-bottom))] max-[1100px]:top-auto max-[1100px]:w-[calc(100dvw-1rem)] max-[1100px]:max-w-none max-[1100px]:overflow-x-auto max-[1100px]:overscroll-contain";
 
 export function Toolbar() {
   const activeTool = useActiveTool();

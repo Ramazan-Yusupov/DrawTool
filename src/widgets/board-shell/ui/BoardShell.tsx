@@ -81,7 +81,7 @@ export function BoardShell() {
     : null;
 
   return (
-    <section className="relative size-full overflow-hidden">
+    <section className="relative size-full overflow-hidden bg-canvas">
       <BoardCanvas canvasRef={canvasRef} />
 
       {selectionBoxRect && (

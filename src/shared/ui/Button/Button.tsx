@@ -1,12 +1,23 @@
 import { forwardRef } from "react";
+import { cn } from "@/shared/lib";
 import type { ButtonProps } from "./types";
 
 /**
- * Neutral button primitive. It preserves the caller's existing Tailwind classes
- * and only centralizes native button defaults and ref forwarding.
+ * Base interactive primitive. Callers remain responsible for semantic variants,
+ * while the shared component provides consistent focus, motion and disabled states.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ type = "button", ...props }, ref) => <button {...props} ref={ref} type={type} />,
+  ({ className, type = "button", ...props }, ref) => (
+    <button
+      {...props}
+      ref={ref}
+      className={cn(
+        "transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-150 ease-out active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      type={type}
+    />
+  ),
 );
 
 Button.displayName = "Button";

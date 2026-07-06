@@ -15,4 +15,5 @@
   --color-accent: var(--app-color-accent);
 
   --shadow-panel: var(--app-shadow-panel);
+  --shadow-float: var(--app-shadow-float);
 }

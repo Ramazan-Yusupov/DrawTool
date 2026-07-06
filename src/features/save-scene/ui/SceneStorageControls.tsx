@@ -118,14 +118,14 @@ export function SceneStorageControls({
   }
 
   const menuButtonClass =
-    "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-text transition-colors hover:bg-control";
+    "flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm text-text transition-colors hover:bg-control/85";
 
   return (
     <>
-      <Panel className="absolute left-34 top-20 z-20 flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel max-sm:left-2 sm:top-4 max-lg:left-33 max-lg:gap-0.5">
+      <Panel className="absolute left-34 top-20 z-20 flex items-center gap-1 rounded-2xl border border-border/90 bg-panel/92 p-1.5 shadow-panel backdrop-blur-xl max-sm:left-2 sm:top-4 max-lg:left-33 max-lg:gap-0.5">
         <IconButton
           aria-label="Открыть проекты"
-          className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+          className="grid size-9 place-items-center rounded-xl text-text transition-colors hover:bg-control/85"
           onClick={() => projectStore.toggleSidebar()}
           title="Проекты"
           type="button"
@@ -135,7 +135,7 @@ export function SceneStorageControls({
 
         <IconButton
           aria-label="Сохранить рабочую область"
-          className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+          className="grid size-9 place-items-center rounded-xl text-text transition-colors hover:bg-control/85"
           onClick={() => {
             void workspacePersistenceStore.saveNow().then((saved) => {
               notify(saved ? "Сохранено" : "Не удалось сохранить");
@@ -149,7 +149,7 @@ export function SceneStorageControls({
 
         <IconButton
           aria-label="Открыть хранилище и резервные копии"
-          className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+          className="grid size-9 place-items-center rounded-xl text-text transition-colors hover:bg-control/85"
           onClick={() => setIsWorkspaceModalOpen(true)}
           title="Хранилище и резервные копии"
           type="button"
@@ -159,7 +159,7 @@ export function SceneStorageControls({
 
         <IconButton
           aria-label="Открыть горячие клавиши"
-          className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+          className="grid size-9 place-items-center rounded-xl text-text transition-colors hover:bg-control/85"
           onClick={() => shortcutsHelpStore.open()}
           title="Горячие клавиши"
           type="button"
@@ -173,7 +173,7 @@ export function SceneStorageControls({
           aria-expanded={fileMenu.isOpen}
           aria-haspopup="menu"
           aria-label="Дополнительные действия с доской"
-          className="grid size-9 place-items-center rounded-lg text-text transition-colors hover:bg-control"
+          className="grid size-9 place-items-center rounded-xl text-text transition-colors hover:bg-control/85"
           onClick={fileMenu.toggle}
           ref={fileMenuButtonRef}
           title="Дополнительно"

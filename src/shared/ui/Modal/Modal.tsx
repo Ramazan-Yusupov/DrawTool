@@ -34,7 +34,7 @@ export function Modal({ children, isOpen, title, onClose }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/30 p-4 backdrop-blur-sm max-sm:items-end max-sm:p-2"
+      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/64 p-4 backdrop-blur-md max-sm:items-end max-sm:p-2"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -44,15 +44,15 @@ export function Modal({ children, isOpen, title, onClose }: ModalProps) {
       <section
         aria-label={title}
         aria-modal="true"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-lg border border-border bg-surface p-5 text-text shadow-panel max-sm:max-h-[82dvh] max-sm:rounded-2xl max-sm:p-4"
+        className="drawtool-surface-in max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-border/90 bg-surface p-5 text-text shadow-float max-sm:max-h-[82dvh] max-sm:rounded-t-3xl max-sm:p-4"
         role="dialog"
       >
-        <header className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="m-0 text-base font-semibold">{title}</h2>
+        <header className="mb-5 flex items-center justify-between gap-4 border-b border-border/70 pb-4">
+          <h2 className="m-0 text-base font-semibold tracking-[-0.01em]">{title}</h2>
 
           <IconButton
             aria-label="Закрыть окно"
-            className="grid size-8 place-items-center rounded-md text-text-muted hover:bg-surface-muted"
+            className="grid size-9 place-items-center rounded-xl text-text-muted hover:bg-surface-muted hover:text-text"
             onClick={onClose}
             type="button"
           >

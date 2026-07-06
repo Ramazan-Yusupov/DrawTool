@@ -7,10 +7,7 @@ type PopoverProps = HTMLAttributes<HTMLDivElement> & {
   isOpen: boolean;
 };
 
-/**
- * Lightweight content shell. Positioning and portal ownership stay with the
- * feature that owns the trigger, keeping responsive menu behavior unchanged.
- */
+/** Lightweight content shell. Positioning remains owned by the trigger feature. */
 export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
   ({ children, className, isOpen, ...props }, ref) => {
     if (!isOpen) {
@@ -22,7 +19,7 @@ export const Popover = forwardRef<HTMLDivElement, PopoverProps>(
         {...props}
         ref={ref}
         className={cn(
-          "rounded-xl border border-border bg-panel z-50 p-2 shadow-panel",
+          "drawtool-surface-in rounded-2xl border border-border/90 bg-panel/95 p-2 shadow-float backdrop-blur-xl",
           className,
         )}
       >

@@ -168,7 +168,7 @@ export function WorkspaceDataModal({
         title="Хранилище и резервные копии"
       >
         <div className="space-y-4">
-          <Panel className="rounded-xl border border-border bg-control/35 p-3">
+          <Panel className="rounded-2xl border border-border/90 bg-control/28 p-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="m-0 text-sm font-semibold text-text">
@@ -195,7 +195,7 @@ export function WorkspaceDataModal({
             ) : (
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <Button
-                  className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                   disabled={storage.isBusy}
                   onClick={() => void handleConnectFolder()}
                   type="button"
@@ -213,7 +213,7 @@ export function WorkspaceDataModal({
                 </Button>
                 {storage.status === "access-needed" ? (
                   <Button
-                    className="rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                    className="rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                     disabled={storage.isBusy}
                     onClick={() =>
                       void workspacePersistenceStore.reconnectPersistedFolder()
@@ -225,7 +225,7 @@ export function WorkspaceDataModal({
                 ) : null}
                 {storage.isConnected ? (
                   <Button
-                    className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                     disabled={storage.isBusy}
                     onClick={() =>
                       void runAction(async () => {
@@ -240,7 +240,7 @@ export function WorkspaceDataModal({
                 ) : null}
                 {storage.isConnected ? (
                   <Button
-                    className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-red-500/10 hover:text-red-300"
+                    className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm text-text-muted hover:bg-red-500/10 hover:text-red-300"
                     disabled={storage.isBusy}
                     onClick={() =>
                       void workspacePersistenceStore.disconnectFolder()
@@ -258,7 +258,7 @@ export function WorkspaceDataModal({
             ) : null}
           </Panel>
 
-          <Panel className="rounded-xl border border-border bg-control/35 p-3">
+          <Panel className="rounded-2xl border border-border/90 bg-control/28 p-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
             <h3 className="m-0 text-sm font-semibold text-text">Экспорт</h3>
             <p className="mt-1 text-xs leading-5 text-text-muted">
               Сцена — это только текущая доска. Полный backup включает все{" "}
@@ -267,28 +267,28 @@ export function WorkspaceDataModal({
             </p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                 onClick={downloadSceneFile}
                 type="button"
               >
                 <Download aria-hidden size={16} /> Текущий проект JSON
               </Button>
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                 onClick={() => void downloadWorkspaceExport()}
                 type="button"
               >
                 <Download aria-hidden size={16} /> Все проекты и настройки
               </Button>
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                 onClick={() => void downloadGraphic("png")}
                 type="button"
               >
                 <ImageDown aria-hidden size={16} /> Скачать PNG
               </Button>
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                 onClick={() => void downloadGraphic("svg")}
                 type="button"
               >
@@ -297,7 +297,7 @@ export function WorkspaceDataModal({
             </div>
           </Panel>
 
-          <Panel className="rounded-xl border border-border bg-control/35 p-3">
+          <Panel className="rounded-2xl border border-border/90 bg-control/28 p-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
             <h3 className="m-0 text-sm font-semibold text-text">Импорт</h3>
             <p className="mt-1 text-xs leading-5 text-text-muted">
               Выберите, добавить ли отдельную сцену новым проектом, заменить
@@ -332,7 +332,7 @@ export function WorkspaceDataModal({
             />
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                 disabled={isReading}
                 onClick={() => newProjectInputRef.current?.click()}
                 type="button"
@@ -340,7 +340,7 @@ export function WorkspaceDataModal({
                 <FilePlus2 aria-hidden size={16} /> Импортировать как новый
               </Button>
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
                 disabled={isReading}
                 onClick={() => replaceSceneInputRef.current?.click()}
                 type="button"
@@ -348,7 +348,7 @@ export function WorkspaceDataModal({
                 <Replace aria-hidden size={16} /> Заменить текущую доску
               </Button>
               <Button
-                className="flex items-center justify-center gap-2 rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted sm:col-span-2"
+                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted sm:col-span-2"
                 disabled={isReading}
                 onClick={() => workspaceInputRef.current?.click()}
                 type="button"
@@ -421,7 +421,7 @@ export function WorkspaceDataModal({
             Открыть данные из папки
           </Button>
           <Button
-            className="rounded-lg bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
+            className="rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
             onClick={() => {
               setFolderWorkspace(null);
               void runAction(async () => {

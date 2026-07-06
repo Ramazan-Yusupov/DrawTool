@@ -8,11 +8,11 @@ export function ZoomControls() {
   const { resetZoom, zoom, zoomIn, zoomOut } = useZoomControls();
 
   return (
-    <Panel className="flex items-center gap-1 rounded-xl border border-border bg-panel p-1.5 shadow-panel">
+    <Panel className="flex items-center gap-1 rounded-2xl border border-border/90 bg-panel/92 p-1.5 shadow-panel backdrop-blur-xl">
       <Tooltip content="Уменьшить масштаб" side="top">
         <IconButton
           aria-label="Уменьшить масштаб"
-          className="grid size-8 place-items-center rounded-lg hover:bg-control"
+          className="grid size-8 place-items-center rounded-xl hover:bg-control/85"
           onClick={zoomOut}
           type="button"
         >
@@ -25,7 +25,7 @@ export function ZoomControls() {
       <Tooltip content="Увеличить масштаб" side="top">
         <IconButton
           aria-label="Увеличить масштаб"
-          className="grid size-8 place-items-center rounded-lg hover:bg-control"
+          className="grid size-8 place-items-center rounded-xl hover:bg-control/85"
           onClick={zoomIn}
           type="button"
         >
@@ -36,7 +36,7 @@ export function ZoomControls() {
       <Tooltip content="Сбросить масштаб" side="top">
         <IconButton
           aria-label="Сбросить масштаб"
-          className="grid size-8 place-items-center rounded-lg hover:bg-control"
+          className="grid size-8 place-items-center rounded-xl hover:bg-control/85"
           onClick={resetZoom}
           type="button"
         >
