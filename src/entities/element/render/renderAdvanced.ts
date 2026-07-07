@@ -1,37 +1,73 @@
-import { getElementBounds } from "../lib/getElementBounds";
 import type { AdvancedElement } from "../model/types";
 import { drawRoundedRectPath } from "./drawRoundedRectPath";
 
 const PAD = 12;
 
-function textLines(context: CanvasRenderingContext2D, lines: string[], x: number, y: number, lineHeight = 18) {
+function getAdvancedElementBounds(element: AdvancedElement) {
+  const x = Math.min(element.x, element.x + element.width);
+  const y = Math.min(element.y, element.y + element.height);
+
+  return {
+    x,
+    y,
+    width: Math.abs(element.width),
+    height: Math.abs(element.height),
+  };
+}
+
+function textLines(
+  context: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight = 18,
+) {
   lines.forEach((line, index) => {
     context.fillText(line, x, y + index * lineHeight);
   });
 }
 
-function drawPanel(context: CanvasRenderingContext2D, element: AdvancedElement) {
-  const bounds = getElementBounds(element);
+function drawPanel(
+  context: CanvasRenderingContext2D,
+  element: AdvancedElement,
+) {
+  const bounds = getAdvancedElementBounds(element);
   context.globalAlpha = element.style.opacity;
   context.lineWidth = element.style.strokeWidth;
   context.strokeStyle = element.style.strokeColor;
   context.fillStyle =
-    element.style.fillStyle === "solid" ? element.style.backgroundColor : "transparent";
-  drawRoundedRectPath(context, bounds.x, bounds.y, bounds.width, bounds.height, 12);
+    element.style.fillStyle === "solid"
+      ? element.style.backgroundColor
+      : "transparent";
+  drawRoundedRectPath(
+    context,
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height,
+    12,
+  );
   context.fill();
   context.stroke();
   return bounds;
 }
 
-function drawTitle(context: CanvasRenderingContext2D, element: AdvancedElement, y: number) {
-  const bounds = getElementBounds(element);
+function drawTitle(
+  context: CanvasRenderingContext2D,
+  element: AdvancedElement,
+  y: number,
+) {
+  const bounds = getAdvancedElementBounds(element);
   context.fillStyle = element.style.strokeColor;
   context.font = "700 15px Inter, ui-sans-serif, system-ui, sans-serif";
   context.textBaseline = "top";
   context.fillText(element.title, bounds.x + PAD, y);
 }
 
-export function renderAdvanced(context: CanvasRenderingContext2D, element: AdvancedElement) {
+export function renderAdvanced(
+  context: CanvasRenderingContext2D,
+  element: AdvancedElement,
+) {
   const bounds = drawPanel(context, element);
   const centerX = bounds.x + bounds.width / 2;
   const centerY = bounds.y + bounds.height / 2;
@@ -43,10 +79,22 @@ export function renderAdvanced(context: CanvasRenderingContext2D, element: Advan
 
   if (element.kind === "bpmn-event") {
     context.beginPath();
-    context.arc(centerX, centerY, Math.min(bounds.width, bounds.height) * 0.36, 0, Math.PI * 2);
+    context.arc(
+      centerX,
+      centerY,
+      Math.min(bounds.width, bounds.height) * 0.36,
+      0,
+      Math.PI * 2,
+    );
     context.stroke();
     context.beginPath();
-    context.arc(centerX, centerY, Math.min(bounds.width, bounds.height) * 0.27, 0, Math.PI * 2);
+    context.arc(
+      centerX,
+      centerY,
+      Math.min(bounds.width, bounds.height) * 0.27,
+      0,
+      Math.PI * 2,
+    );
     context.stroke();
     context.textAlign = "center";
     context.fillText(element.title, centerX, centerY - 8);
@@ -85,7 +133,14 @@ export function renderAdvanced(context: CanvasRenderingContext2D, element: Advan
       context.fillText(lane, x + PAD, bounds.y + 46);
       if (element.kind === "kanban-board") {
         context.fillStyle = "rgb(30 41 59 / 82%)";
-        drawRoundedRectPath(context, x + 10, bounds.y + 78, laneWidth - 20, 46, 8);
+        drawRoundedRectPath(
+          context,
+          x + 10,
+          bounds.y + 78,
+          laneWidth - 20,
+          46,
+          8,
+        );
         context.fill();
       }
     });
@@ -130,7 +185,11 @@ export function renderAdvanced(context: CanvasRenderingContext2D, element: Advan
     context.lineTo(bounds.x + bounds.width - PAD, y);
     context.stroke();
     element.body.forEach((item, index) => {
-      const x = bounds.x + PAD + (bounds.width - PAD * 2) * (index / Math.max(1, element.body.length - 1));
+      const x =
+        bounds.x +
+        PAD +
+        (bounds.width - PAD * 2) *
+          (index / Math.max(1, element.body.length - 1));
       context.beginPath();
       context.arc(x, y, 5, 0, Math.PI * 2);
       context.fill();
@@ -141,10 +200,30 @@ export function renderAdvanced(context: CanvasRenderingContext2D, element: Advan
   }
 
   if (element.kind === "wireframe") {
-    context.strokeRect(bounds.x + PAD, bounds.y + 44, bounds.width - PAD * 2, 28);
-    context.strokeRect(bounds.x + PAD, bounds.y + 84, bounds.width * 0.48, bounds.height - 104);
-    context.strokeRect(bounds.x + bounds.width * 0.56, bounds.y + 84, bounds.width * 0.32, 34);
-    context.strokeRect(bounds.x + bounds.width * 0.56, bounds.y + 132, bounds.width * 0.32, 34);
+    context.strokeRect(
+      bounds.x + PAD,
+      bounds.y + 44,
+      bounds.width - PAD * 2,
+      28,
+    );
+    context.strokeRect(
+      bounds.x + PAD,
+      bounds.y + 84,
+      bounds.width * 0.48,
+      bounds.height - 104,
+    );
+    context.strokeRect(
+      bounds.x + bounds.width * 0.56,
+      bounds.y + 84,
+      bounds.width * 0.32,
+      34,
+    );
+    context.strokeRect(
+      bounds.x + bounds.width * 0.56,
+      bounds.y + 132,
+      bounds.width * 0.32,
+      34,
+    );
     context.restore();
     return;
   }

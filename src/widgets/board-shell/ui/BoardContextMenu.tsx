@@ -260,7 +260,7 @@ export function BoardContextMenu({
           <span>Readonly link</span>
         </Button>
         <Button
-          className={`${itemClass} text-red-300 bg-red-500/55 hover:bg-red-500/15 hover:text-red-200`}
+          className={`${itemClass} text-red-500! hover:bg-red-500/15 hover:text-red-200`}
           onClick={() => run(deleteSelectedElements)}
           type="button"
         >
