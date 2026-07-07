@@ -33,6 +33,77 @@ function getGeometry(element: BoardElement, patch: GeometryPatch) {
   };
 }
 
+function getGeometryCenter(geometry: Pick<BoardElement, "x" | "y" | "width" | "height">) {
+  return {
+    x: geometry.x + geometry.width / 2,
+    y: geometry.y + geometry.height / 2,
+  };
+}
+
+function getFixedResizeAnchor(
+  geometry: Pick<BoardElement, "x" | "y" | "width" | "height">,
+  handle: ResizeHandle,
+) {
+  const center = getGeometryCenter(geometry);
+  const right = geometry.x + geometry.width;
+  const bottom = geometry.y + geometry.height;
+
+  return {
+    x: handle.includes("w")
+      ? right
+      : handle.includes("e")
+        ? geometry.x
+        : center.x,
+    y: handle.includes("n")
+      ? bottom
+      : handle.includes("s")
+        ? geometry.y
+        : center.y,
+  };
+}
+
+function anchorRotatedPatch(
+  element: BoardElement,
+  handle: ResizeHandle,
+  patch: GeometryPatch,
+  resizeFromCenter: boolean,
+): GeometryPatch {
+  const angle = getElementRotation(element);
+
+  if (
+    angle === 0 ||
+    resizeFromCenter ||
+    element.type === "line" ||
+    element.type === "arrow" ||
+    element.type === "measure"
+  ) {
+    return patch;
+  }
+
+  const initialGeometry = getGeometry(element, {});
+  const nextGeometry = getGeometry(element, patch);
+  const initialCenter = getGeometryCenter(initialGeometry);
+  const nextCenter = getGeometryCenter(nextGeometry);
+  const fixedAnchor = getFixedResizeAnchor(initialGeometry, handle);
+  const fixedAnchorWorld = rotatePoint(fixedAnchor, initialCenter, angle);
+  const nextFixedAnchor = getFixedResizeAnchor(nextGeometry, handle);
+  const nextAnchorOffset = {
+    x: nextFixedAnchor.x - nextCenter.x,
+    y: nextFixedAnchor.y - nextCenter.y,
+  };
+  const rotatedOffset = rotatePoint(nextAnchorOffset, { x: 0, y: 0 }, angle);
+  const anchoredCenter = {
+    x: fixedAnchorWorld.x - rotatedOffset.x,
+    y: fixedAnchorWorld.y - rotatedOffset.y,
+  };
+
+  return {
+    ...patch,
+    x: anchoredCenter.x - nextGeometry.width / 2,
+    y: anchoredCenter.y - nextGeometry.height / 2,
+  };
+}
+
 function snapShapePatch(
   element: BoardElement,
   handle: ResizeHandle,
@@ -221,9 +292,15 @@ export function resizeElement(
       ? snapConnectorPatch(element, handle, rawPatch)
       : snapShapePatch(element, handle, rawPatch)
     : rawPatch;
+  const anchoredPatch = anchorRotatedPatch(
+    element,
+    handle,
+    patch,
+    modifiers.resizeFromCenter,
+  );
 
   if (element.type === "frame") {
-    const nextFrame = updateElement(element, patch) as FrameElement;
+    const nextFrame = updateElement(element, anchoredPatch) as FrameElement;
 
     sceneStore.updateAll((current) => {
       if (current.id === element.id) {
@@ -239,7 +316,7 @@ export function resizeElement(
   }
 
   if (element.type === "freedraw" || element.type === "highlighter") {
-    const geometry = getGeometry(element, patch);
+    const geometry = getGeometry(element, anchoredPatch);
     const bounds = getElementBounds(element);
     const scaleX = geometry.width / Math.max(bounds.width, 1);
     const scaleY = geometry.height / Math.max(bounds.height, 1);
@@ -258,8 +335,14 @@ export function resizeElement(
 
   if (element.type === "text") {
     const textPatch = resizeTextElement(element, handle, patch, modifiers);
+    const anchoredTextPatch = anchorRotatedPatch(
+      element,
+      handle,
+      textPatch,
+      modifiers.resizeFromCenter,
+    );
     sceneStore.updateById(element.id, (current) =>
-      current.type === "text" ? updateElement(current, textPatch) : current,
+      current.type === "text" ? updateElement(current, anchoredTextPatch) : current,
     );
 
     const nextElements = expandFramesToFitChildren(sceneStore.get().elements);
@@ -272,10 +355,10 @@ export function resizeElement(
   sceneStore.updateById(element.id, (current) => {
     if (current.type === "arrow" && (handle === "start" || handle === "end")) {
       return updateElement(current, {
-        ...patch,
+        ...anchoredPatch,
         ...(handle === "start" ? { startBinding: undefined } : { endBinding: undefined }),
       });
     }
-    return updateElement(current, patch);
+    return updateElement(current, anchoredPatch);
   });
 }

@@ -27,6 +27,7 @@ export const TOOL_BY_SHORTCUT: Readonly<Record<string, ToolId>> = {
   h: "pan",
   k: "laser",
   i: "highlighter",
+  j: "code",
   l: "lasso",
   m: "callout",
   n: "sticky",

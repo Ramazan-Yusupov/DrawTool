@@ -80,7 +80,8 @@ export function useBoardRenderer(
     const unsubscribeViewport = viewportStore.subscribe(scheduleRender);
     const unsubscribeScene = sceneStore.subscribe(scheduleRender);
     const unsubscribeImages = imageFileStore.subscribe(scheduleRender);
-    const unsubscribeSelection = selectionStore.subscribe(scheduleRender);
+    const unsubscribeSelection =
+      selectionStore.subscribeElementIds(scheduleRender);
     const unsubscribeTextEditor = textEditorStore.subscribe(scheduleRender);
     const unsubscribeTheme = themeStore.subscribe(scheduleRender);
     const unsubscribeSnapIndicator =

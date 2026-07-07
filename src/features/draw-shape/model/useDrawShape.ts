@@ -41,6 +41,7 @@ const CLICK_DEFAULT_SIZES: Partial<Record<ShapeToolId, { width: number; height: 
   sticky: { width: 220, height: 160 },
   callout: { width: 260, height: 120 },
   table: { width: 420, height: 210 },
+  code: { width: 360, height: 220 },
 };
 
 function getElementAtPoint(point: Point, excludedId: string) {
@@ -84,6 +85,7 @@ function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
     "sticky",
     "callout",
     "table",
+    "code",
   ].includes(toolId);
 }
 

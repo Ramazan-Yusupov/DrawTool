@@ -13,7 +13,8 @@ export type ShapeToolId =
   | "callout"
   | "table"
   | "frame"
-  | "embed";
+  | "embed"
+  | "code";
 
 export type ToolId =
   | "pan"
@@ -26,6 +27,5 @@ export type ToolId =
   | "eraser"
   | "laser"
   | "lasso"
-  | "code"
   | "image"
   | ShapeToolId;

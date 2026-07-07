@@ -1,7 +1,6 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
-import { viewportStore, worldToScreen } from "@/entities/viewport";
 import {
   TOOL_SETTINGS_CAPABILITIES,
   ToolSettingsModal,
@@ -21,7 +20,7 @@ import { Toolbar } from "@/widgets/toolbar";
 import { ZoomControls } from "@/widgets/zoom-controls";
 import { Minimap } from "@/widgets/minimap";
 import { BoardCanvas } from "./BoardCanvas";
-import { SelectionFrame } from "./SelectionFrame";
+import { BoardSelectionFrame } from "./BoardSelectionFrame";
 import { useBoardRenderer } from "../model/useBoardRenderer";
 
 const UTILITY_TOOLS_WITHOUT_PROPERTIES = new Set([
@@ -44,16 +43,10 @@ export function BoardShell() {
     toolStore.get,
   );
 
-  const selection = useSyncExternalStore(
-    selectionStore.subscribe,
-    selectionStore.get,
-    selectionStore.get,
-  );
-
-  const viewport = useSyncExternalStore(
-    viewportStore.subscribe,
-    viewportStore.get,
-    viewportStore.get,
+  const selectedElementIds = useSyncExternalStore(
+    selectionStore.subscribeElementIds,
+    () => selectionStore.get().elementIds,
+    () => selectionStore.get().elementIds,
   );
 
   const { isLocked } = useSyncExternalStore(
@@ -62,7 +55,7 @@ export function BoardShell() {
     editingLockStore.get,
   );
 
-  const hasSelectedElements = selection.elementIds.length > 0;
+  const hasSelectedElements = selectedElementIds.length > 0;
   const toolCapabilities = TOOL_SETTINGS_CAPABILITIES[activeTool];
   const toolHasSettings = Object.values(toolCapabilities).some(Boolean);
 
@@ -71,25 +64,10 @@ export function BoardShell() {
     !UTILITY_TOOLS_WITHOUT_PROPERTIES.has(activeTool) &&
     (hasSelectedElements || (activeTool !== "selection" && toolHasSettings));
 
-  const selectionBox = selection.selectionBox;
-  const selectionBoxRect = selectionBox
-    ? {
-        ...worldToScreen({ x: selectionBox.x, y: selectionBox.y }, viewport),
-        height: selectionBox.height * viewport.zoom,
-        width: selectionBox.width * viewport.zoom,
-      }
-    : null;
-
   return (
     <section className="relative size-full overflow-hidden bg-canvas">
       <BoardCanvas canvasRef={canvasRef} />
-
-      {selectionBoxRect && (
-        <SelectionFrame
-          className="border-dashed border-accent bg-accent/10"
-          rect={selectionBoxRect}
-        />
-      )}
+      <BoardSelectionFrame />
 
       <TextEditorOverlay />
       <StickerPickerModal />

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 import { toolStore } from "@/entities/tool";
 import { useDrawShape, useFreeDraw } from "@/features/draw-shape";
@@ -21,7 +21,22 @@ type BoardCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
 };
 
+type PointerOwner =
+  | "pan"
+  | "selection"
+  | "draw"
+  | "freeDraw"
+  | "eraser"
+  | "laser"
+  | "lasso";
+
+type ActivePointerInteraction = {
+  owner: PointerOwner;
+  pointerId: number;
+};
+
 export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
+  const activePointerRef = useRef<ActivePointerInteraction | null>(null);
   const activeTool = useSyncExternalStore(
     toolStore.subscribe,
     toolStore.get,
@@ -60,9 +75,31 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
           ? "cursor-copy"
           : "cursor-crosshair";
 
+  function setActivePointerOwner(
+    event: React.PointerEvent<HTMLCanvasElement>,
+    owner: PointerOwner,
+  ) {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      activePointerRef.current = { owner, pointerId: event.pointerId };
+    }
+  }
+
+  function clearActivePointerOwner(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (activePointerRef.current?.pointerId === event.pointerId) {
+      activePointerRef.current = null;
+    }
+  }
+
+  function getActivePointerOwner(event: React.PointerEvent<HTMLCanvasElement>) {
+    const interaction = activePointerRef.current;
+    return interaction?.pointerId === event.pointerId ? interaction.owner : null;
+  }
+
   function onToolPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     if (activeTool === "selection") {
-      return selectionEvents.onPointerDown(event);
+      selectionEvents.onPointerDown(event);
+      setActivePointerOwner(event, "selection");
+      return;
     }
 
     if (activeTool === "text") {
@@ -78,74 +115,117 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     }
 
     if (activeTool === "freedraw" || activeTool === "highlighter") {
-      return freeDrawEvents.onPointerDown(event);
+      freeDrawEvents.onPointerDown(event);
+      setActivePointerOwner(event, "freeDraw");
+      return;
     }
 
     if (activeTool === "eraser") {
-      return eraserEvents.onPointerDown(event);
+      eraserEvents.onPointerDown(event);
+      setActivePointerOwner(event, "eraser");
+      return;
     }
 
     if (activeTool === "laser") {
-      return laserEvents.onPointerDown(event);
+      laserEvents.onPointerDown(event);
+      setActivePointerOwner(event, "laser");
+      return;
     }
 
     if (activeTool === "lasso") {
-      return lassoEvents.onPointerDown(event);
+      lassoEvents.onPointerDown(event);
+      setActivePointerOwner(event, "lasso");
+      return;
     }
 
     if (activeTool !== "pan") {
-      return drawingEvents.onPointerDown(event);
+      drawingEvents.onPointerDown(event);
+      setActivePointerOwner(event, "draw");
     }
   }
 
-  function onToolPointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") {
+  function onToolPointerMove(
+    event: React.PointerEvent<HTMLCanvasElement>,
+    owner: PointerOwner | null = null,
+  ) {
+    const hasFixedOwner = owner !== null;
+    const toolOwner = owner ?? activeTool;
+
+    if (toolOwner === "selection") {
       return selectionEvents.onPointerMove(event);
     }
 
-    if (activeTool === "freedraw" || activeTool === "highlighter") {
+    if (
+      toolOwner === "freeDraw" ||
+      (!hasFixedOwner &&
+        (activeTool === "freedraw" || activeTool === "highlighter"))
+    ) {
       return freeDrawEvents.onPointerMove(event);
     }
 
-    if (activeTool === "eraser") {
+    if (toolOwner === "eraser") {
       return eraserEvents.onPointerMove(event);
     }
 
-    if (activeTool === "laser") {
+    if (toolOwner === "laser") {
       return laserEvents.onPointerMove(event);
     }
 
-    if (activeTool === "lasso") {
+    if (toolOwner === "lasso") {
       return lassoEvents.onPointerMove(event);
     }
 
-    if (activeTool !== "text" && activeTool !== "sticker" && activeTool !== "eyedropper" && activeTool !== "pan") {
+    if (
+      toolOwner === "draw" ||
+      (!hasFixedOwner &&
+        activeTool !== "text" &&
+        activeTool !== "sticker" &&
+        activeTool !== "eyedropper" &&
+        activeTool !== "pan")
+    ) {
       return drawingEvents.onPointerMove(event);
     }
   }
 
-  function onToolPointerUp(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") {
+  function onToolPointerUp(
+    event: React.PointerEvent<HTMLCanvasElement>,
+    owner: PointerOwner | null = null,
+  ) {
+    const hasFixedOwner = owner !== null;
+    const toolOwner = owner ?? activeTool;
+
+    if (toolOwner === "selection") {
       return selectionEvents.onPointerUp(event);
     }
 
-    if (activeTool === "freedraw" || activeTool === "highlighter") {
+    if (
+      toolOwner === "freeDraw" ||
+      (!hasFixedOwner &&
+        (activeTool === "freedraw" || activeTool === "highlighter"))
+    ) {
       return freeDrawEvents.onPointerUp(event);
     }
 
-    if (activeTool === "eraser") {
+    if (toolOwner === "eraser") {
       return eraserEvents.onPointerUp(event);
     }
 
-    if (activeTool === "laser") {
+    if (toolOwner === "laser") {
       return laserEvents.onPointerUp(event);
     }
 
-    if (activeTool === "lasso") {
+    if (toolOwner === "lasso") {
       return lassoEvents.onPointerUp(event);
     }
 
-    if (activeTool !== "text" && activeTool !== "sticker" && activeTool !== "eyedropper" && activeTool !== "pan") {
+    if (
+      toolOwner === "draw" ||
+      (!hasFixedOwner &&
+        activeTool !== "text" &&
+        activeTool !== "sticker" &&
+        activeTool !== "eyedropper" &&
+        activeTool !== "pan")
+    ) {
       return drawingEvents.onPointerUp(event);
     }
   }
@@ -170,28 +250,44 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     void addImageFiles(files, worldPoint).catch(() => undefined);
   }
 
-  function onToolPointerCancel(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activeTool === "selection") {
+  function onToolPointerCancel(
+    event: React.PointerEvent<HTMLCanvasElement>,
+    owner: PointerOwner | null = null,
+  ) {
+    const hasFixedOwner = owner !== null;
+    const toolOwner = owner ?? activeTool;
+
+    if (toolOwner === "selection") {
       return selectionEvents.onPointerCancel(event);
     }
 
-    if (activeTool === "freedraw" || activeTool === "highlighter") {
+    if (
+      toolOwner === "freeDraw" ||
+      (!hasFixedOwner &&
+        (activeTool === "freedraw" || activeTool === "highlighter"))
+    ) {
       return freeDrawEvents.onPointerCancel(event);
     }
 
-    if (activeTool === "eraser") {
+    if (toolOwner === "eraser") {
       return eraserEvents.onPointerCancel(event);
     }
 
-    if (activeTool === "laser") {
+    if (toolOwner === "laser") {
       return laserEvents.onPointerCancel(event);
     }
 
-    if (activeTool === "lasso") {
+    if (toolOwner === "lasso") {
       return lassoEvents.onPointerCancel(event);
     }
 
-    if (activeTool !== "sticker" && activeTool !== "eyedropper" && activeTool !== "pan") {
+    if (
+      toolOwner === "draw" ||
+      (!hasFixedOwner &&
+        activeTool !== "sticker" &&
+        activeTool !== "eyedropper" &&
+        activeTool !== "pan")
+    ) {
       return drawingEvents.onPointerCancel(event);
     }
   }
@@ -209,11 +305,21 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
         }
       }}
       onPointerCancel={(event) => {
-        panEvents.onPointerUp(event);
+        const owner = getActivePointerOwner(event);
 
-        if (!isPanOnly) {
-          onToolPointerCancel(event);
+        if (owner === "pan") {
+          panEvents.onPointerUp(event);
+        } else if (owner) {
+          onToolPointerCancel(event, owner);
+        } else {
+          panEvents.onPointerUp(event);
+
+          if (!isPanOnly) {
+            onToolPointerCancel(event);
+          }
         }
+
+        clearActivePointerOwner(event);
       }}
       onPointerDown={(event) => {
         /*
@@ -225,25 +331,44 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
         }
 
         panEvents.onPointerDown(event, isPanOnly);
+        setActivePointerOwner(event, "pan");
 
-        if (!isPanOnly) {
+        if (!isPanOnly && getActivePointerOwner(event) !== "pan") {
           onToolPointerDown(event);
         }
       }}
       onPointerLeave={drawingEvents.onPointerLeave}
       onPointerMove={(event) => {
-        panEvents.onPointerMove(event);
+        const owner = getActivePointerOwner(event);
 
-        if (!isPanOnly) {
-          onToolPointerMove(event);
+        if (owner === "pan") {
+          panEvents.onPointerMove(event);
+        } else if (owner) {
+          onToolPointerMove(event, owner);
+        } else {
+          panEvents.onPointerMove(event);
+
+          if (!isPanOnly) {
+            onToolPointerMove(event);
+          }
         }
       }}
       onPointerUp={(event) => {
-        panEvents.onPointerUp(event);
+        const owner = getActivePointerOwner(event);
 
-        if (!isPanOnly) {
-          onToolPointerUp(event);
+        if (owner === "pan") {
+          panEvents.onPointerUp(event);
+        } else if (owner) {
+          onToolPointerUp(event, owner);
+        } else {
+          panEvents.onPointerUp(event);
+
+          if (!isPanOnly) {
+            onToolPointerUp(event);
+          }
         }
+
+        clearActivePointerOwner(event);
       }}
     />
   );
