@@ -4,14 +4,10 @@ import { commandPaletteStore } from "../model/commandPaletteStore";
 import { Button, Modal } from "@/shared/ui";
 
 type CommandPaletteProps = {
-  onOpenAi: () => void;
   onOpenPremiumStudio: () => void;
 };
 
-export function CommandPalette({
-  onOpenAi,
-  onOpenPremiumStudio,
-}: CommandPaletteProps) {
+export function CommandPalette({ onOpenPremiumStudio }: CommandPaletteProps) {
   const isOpen = useSyncExternalStore(
     commandPaletteStore.subscribe,
     commandPaletteStore.get,
@@ -19,14 +15,25 @@ export function CommandPalette({
   );
   const [query, setQuery] = useState("");
   const commands = [
-    { label: "Open AI Studio", run: onOpenAi },
     { label: "Open Premium Studio", run: onOpenPremiumStudio },
-    { label: "Insert flowchart template", run: () => boardActions.insertTemplate("flowchart") },
-    { label: "Insert mind map template", run: () => boardActions.insertTemplate("mindmap") },
-    { label: "Create checkpoint", run: () => boardActions.createSnapshot("Checkpoint") },
+    {
+      label: "Insert flowchart template",
+      run: () => boardActions.insertTemplate("flowchart"),
+    },
+    {
+      label: "Insert mind map template",
+      run: () => boardActions.insertTemplate("mindmap"),
+    },
+    {
+      label: "Create checkpoint",
+      run: () => boardActions.createSnapshot("Checkpoint"),
+    },
     { label: "Restore checkpoint", run: boardActions.restoreLatestSnapshot },
     { label: "Group selection", run: boardActions.groupSelection },
-    { label: "Lock / unlock selection", run: () => boardActions.toggleLockSelection() },
+    {
+      label: "Lock / unlock selection",
+      run: () => boardActions.toggleLockSelection(),
+    },
     { label: "Apply brand kit", run: boardActions.applyBrandKit },
   ].filter((command) =>
     command.label.toLowerCase().includes(query.trim().toLowerCase()),
