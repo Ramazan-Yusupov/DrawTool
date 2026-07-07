@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import {
   Bot,
@@ -119,7 +114,7 @@ export function MoreToolsMenu() {
           <div ref={menuRef}>
             <Popover
               aria-label="Дополнительные инструменты"
-              className="fixed z-[60] overflow-y-auto overscroll-contain"
+              className="fixed z-60 overflow-y-auto overscroll-contain"
               isOpen={isOpen}
               role="menu"
               style={menuPosition}
