@@ -8,6 +8,78 @@ import type { ArrowElement } from "../model/types";
 const ARROW_HEAD_LENGTH = 12;
 const ARROW_HEAD_ANGLE = Math.PI / 7;
 
+function getMidPathLabelPlacement(points: { x: number; y: number }[]) {
+  if (points.length < 2) {
+    return null;
+  }
+
+  const segments = points.slice(0, -1).map((start, index) => {
+    const end = points[index + 1];
+    return {
+      start,
+      end,
+      length: Math.hypot(end.x - start.x, end.y - start.y),
+    };
+  });
+  const totalLength = segments.reduce((sum, segment) => sum + segment.length, 0);
+  let remaining = totalLength / 2;
+
+  for (const segment of segments) {
+    if (remaining <= segment.length || segment === segments.at(-1)) {
+      const progress = segment.length <= 0 ? 0 : remaining / segment.length;
+      let angle = Math.atan2(
+        segment.end.y - segment.start.y,
+        segment.end.x - segment.start.x,
+      );
+
+      if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+        angle += Math.PI;
+      }
+
+      return {
+        angle,
+        point: {
+          x: segment.start.x + (segment.end.x - segment.start.x) * progress,
+          y: segment.start.y + (segment.end.y - segment.start.y) * progress,
+        },
+      };
+    }
+
+    remaining -= segment.length;
+  }
+
+  return null;
+}
+
+function renderArrowLabel(
+  context: CanvasRenderingContext2D,
+  element: ArrowElement,
+  points: { x: number; y: number }[],
+) {
+  const label = element.label?.trim();
+  const placement = label ? getMidPathLabelPlacement(points) : null;
+
+  if (!label || !placement) {
+    return;
+  }
+
+  context.save();
+  context.translate(placement.point.x, placement.point.y);
+  context.rotate(placement.angle);
+  context.font = "700 15px Inter, ui-sans-serif, system-ui, sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+
+  const metrics = context.measureText(label);
+  const width = metrics.width + 14;
+  const height = 24;
+  context.fillStyle = "rgb(15 23 42 / 86%)";
+  context.fillRect(-width / 2, -height / 2, width, height);
+  context.fillStyle = element.style.strokeColor;
+  context.fillText(label, 0, 0.5);
+  context.restore();
+}
+
 function getArrowHeadAngle(element: ArrowElement) {
   const end = {
     x: element.x + element.width,
@@ -78,5 +150,6 @@ export function renderArrow(
     end.y - ARROW_HEAD_LENGTH * Math.sin(angle + ARROW_HEAD_ANGLE),
   );
   context.stroke();
+  renderArrowLabel(context, element, points);
   context.restore();
 }

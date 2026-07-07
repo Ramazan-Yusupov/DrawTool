@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/shared/lib";
-import { Button } from "@/shared/ui";
+import { Button, Tooltip } from "@/shared/ui";
 
 type MoreToolsMenuItemProps = {
   className?: string;
@@ -12,7 +12,7 @@ type MoreToolsMenuItemProps = {
   shortcutHint?: string;
   title?: string;
   trailing?: ReactNode;
-  variant?: "default" | "compact";
+  variant?: "default" | "compact" | "icon";
   disabled?: boolean;
 };
 
@@ -28,6 +28,39 @@ export function MoreToolsMenuItem({
   trailing,
   variant = "default",
 }: MoreToolsMenuItemProps) {
+  const tooltipContent =
+    shortcutHint || shortcut ? `${label} (${shortcutHint ?? shortcut})` : label;
+
+  if (variant === "icon") {
+    return (
+      <Tooltip content={tooltipContent} side="top">
+        <Button
+          aria-label={label}
+          className={cn(
+            "group relative grid size-12 place-items-center rounded-xl text-text hover:bg-control hover:shadow-sm focus-visible:bg-control disabled:opacity-40",
+            className,
+          )}
+          disabled={disabled}
+          onClick={onClick}
+          role="menuitem"
+          title={title ?? tooltipContent}
+          type="button"
+        >
+          <Icon
+            className="text-text-muted transition-colors group-hover:text-text"
+            size={24}
+          />
+          {shortcut && (
+            <kbd className="pointer-events-none absolute bottom-1 right-1 text-[10px] leading-none text-text-muted">
+              {shortcut}
+            </kbd>
+          )}
+          {trailing}
+        </Button>
+      </Tooltip>
+    );
+  }
+
   return (
     <Button
       className={cn(
@@ -49,10 +82,7 @@ export function MoreToolsMenuItem({
       />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {shortcut && (
-        <kbd
-          className="shrink-0 text-xs text-text-muted"
-          title={shortcutHint}
-        >
+        <kbd className="shrink-0 text-xs text-text-muted" title={shortcutHint}>
           {shortcut}
         </kbd>
       )}

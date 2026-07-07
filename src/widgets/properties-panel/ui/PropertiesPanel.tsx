@@ -27,6 +27,7 @@ import {
   updateElement,
 } from "@/entities/element";
 import type {
+  AdvancedElement,
   ArrowRouting,
   BoardElement,
   ElementStyle,
@@ -57,7 +58,9 @@ import {
   setSelectedElementRotation,
 } from "@/features/rotate-elements";
 import { EmbedSection } from "./EmbedSection";
+import { ElementTitleSection, hasOwnTitle } from "./ElementTitleSection";
 import { LinkSection } from "./LinkSection";
+import { PremiumSection } from "./PremiumSection";
 import { TableSection } from "./TableSection";
 import { usePropertiesPanel } from "../model/usePropertiesPanel";
 
@@ -107,6 +110,10 @@ type StyleTarget = {
   style: ElementStyle;
   type: BoardElement["type"] | "tool";
 };
+
+function isAdvancedElement(element: BoardElement | null): element is AdvancedElement {
+  return Boolean(element && element.type === "code" && "kind" in element);
+}
 
 export function PropertiesPanel() {
   const [isCompactPanelOpen, setIsCompactPanelOpen] = useState(false);
@@ -452,6 +459,10 @@ export function PropertiesPanel() {
             </section>
           )}
 
+          {hasOwnTitle(primaryElement) && (
+            <ElementTitleSection element={primaryElement} />
+          )}
+
           {primaryElement?.type === "embed" && (
             <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
           )}
@@ -462,6 +473,10 @@ export function PropertiesPanel() {
               onChangeStructure={(rows, columns) => updateTableStructure(primaryElement.id, rows, columns)}
               table={primaryElement}
             />
+          )}
+
+          {isAdvancedElement(primaryElement) && (
+            <PremiumSection element={primaryElement} />
           )}
 
           {primaryElement && (

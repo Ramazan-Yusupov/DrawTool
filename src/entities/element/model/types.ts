@@ -114,6 +114,7 @@ export type FrameElement = BaseElement & {
 
 export type EmbedElement = BaseElement & {
   type: "embed";
+  title?: string;
   url: string;
 };
 
@@ -129,7 +130,17 @@ export type AdvancedElementKind =
   | "timeline"
   | "mindmap-node"
   | "cloud-service"
-  | "wireframe";
+  | "wireframe"
+  | "smart-connector"
+  | "section-zone"
+  | "erd-relationship"
+  | "flow-step"
+  | "status-badge"
+  | "annotation-pin"
+  | "template-stamp"
+  | "api-endpoint"
+  | "database-cylinder"
+  | "org-card";
 
 export type AdvancedElement = BaseElement & {
   type: "code";
@@ -221,6 +232,7 @@ export type BoardElement =
   | StickerElement
   | FrameElement
   | EmbedElement
+  | AdvancedElement
   | CodeSketchElement
   | ImageElement;
 

@@ -262,7 +262,7 @@ export function resizeElement(
     sceneStore.updateById(element.id, (current) =>
       current.type === "arrow"
         ? updateElement(current, {
-            curveOffset: clamp(getArrowCurveOffset(element, localPoint), -1.5, 1.5),
+            curveOffset: clamp(getArrowCurveOffset(element, localPoint), -2.5, 2.5),
           })
         : current,
     );

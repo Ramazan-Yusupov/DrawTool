@@ -4,6 +4,7 @@ import type {
   ArrowElement,
   ArrowRouting,
   AdvancedElementKind,
+  AdvancedElement,
   BoardElement,
   CalloutElement,
   CloudElement,
@@ -145,6 +146,66 @@ const ADVANCED_DEFAULTS: Record<
     width: 320,
     height: 220,
   },
+  "smart-connector": {
+    title: "Connector",
+    body: ["Source", "Target", "Rule"],
+    width: 320,
+    height: 120,
+  },
+  "section-zone": {
+    title: "Section",
+    body: ["Scope", "Owner", "Status"],
+    width: 420,
+    height: 260,
+  },
+  "erd-relationship": {
+    title: "1:N relationship",
+    body: ["users.id", "orders.user_id"],
+    width: 360,
+    height: 130,
+  },
+  "flow-step": {
+    title: "01",
+    body: ["Process step", "Outcome"],
+    width: 240,
+    height: 130,
+  },
+  "status-badge": {
+    title: "Status",
+    body: ["Draft", "In review", "Done"],
+    width: 220,
+    height: 100,
+  },
+  "annotation-pin": {
+    title: "Note",
+    body: ["Review this area"],
+    width: 190,
+    height: 150,
+  },
+  "template-stamp": {
+    title: "Template",
+    body: ["Reusable block", "Drag into scene"],
+    width: 260,
+    height: 150,
+  },
+  "api-endpoint": {
+    title: "GET /api/items",
+    body: ["Request", "Response", "Auth"],
+    width: 300,
+    height: 150,
+  },
+  "database-cylinder": {
+    title: "Database",
+    body: ["users", "orders", "events"],
+    width: 230,
+    height: 170,
+  },
+  "org-card": {
+    title: "Team / person",
+    body: ["Role", "Owner", "Contact"],
+    width: 260,
+    height: 150,
+  },
 };
 
 function createBase<T extends BoardElement>(
@@ -219,15 +280,19 @@ export function createMeasure(params: BaseCreateParams): MeasureElement {
 export function createFrame(params: BaseCreateParams & { name?: string }): FrameElement {
   return { ...createBase<FrameElement>("frame", params), name: params.name ?? "Frame" };
 }
-export function createEmbed(params: BaseCreateParams & { url?: string }): EmbedElement {
-  return { ...createBase<EmbedElement>("embed", params), url: params.url ?? "https://example.com" };
+export function createEmbed(params: BaseCreateParams & { title?: string; url?: string }): EmbedElement {
+  return {
+    ...createBase<EmbedElement>("embed", params),
+    title: params.title ?? "Встроенная страница",
+    url: params.url ?? "https://example.com",
+  };
 }
 
-export function createAdvanced(params: AdvancedCreateParams): CodeSketchElement {
+export function createAdvanced(params: AdvancedCreateParams): AdvancedElement {
   const kind = params.kind ?? "swimlane";
   const defaults = ADVANCED_DEFAULTS[kind];
   return {
-    ...createBase<CodeSketchElement>("code", {
+    ...createBase<AdvancedElement>("code", {
       ...params,
       width: params.width ?? defaults.width,
       height: params.height ?? defaults.height,
@@ -239,9 +304,9 @@ export function createAdvanced(params: AdvancedCreateParams): CodeSketchElement 
         ...params.style,
       },
     }),
+    kind,
     title: params.title ?? defaults.title,
-    code: [kind, ...(params.body ?? defaults.body)].join("\n"),
-    language: "diagram",
+    body: params.body ?? defaults.body,
   };
 }
 

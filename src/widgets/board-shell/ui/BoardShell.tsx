@@ -7,7 +7,6 @@ import {
 } from "@/features/change-style";
 import { TextEditorOverlay } from "@/features/edit-text";
 import { StickerPickerModal } from "@/features/add-sticker";
-import { GenerateDialog } from "@/features/generate";
 import { CommandPalette } from "@/features/command-palette";
 import { editingLockStore } from "@/features/lock-editing";
 import { PremiumStudioDialog } from "@/features/premium-studio";
@@ -20,7 +19,6 @@ import { LayersPanel } from "@/widgets/layers-panel";
 import { PropertiesPanel } from "@/widgets/properties-panel";
 import { Toolbar } from "@/widgets/toolbar";
 import { ZoomControls } from "@/widgets/zoom-controls";
-import { Minimap } from "@/widgets/minimap";
 import { BoardCanvas } from "./BoardCanvas";
 import { BoardSelectionFrame } from "./BoardSelectionFrame";
 import { useBoardRenderer } from "../model/useBoardRenderer";
@@ -74,7 +72,6 @@ export function BoardShell() {
 
       <TextEditorOverlay />
       <StickerPickerModal />
-      <GenerateDialog />
       <PremiumStudioDialog
         isOpen={isPremiumStudioOpen}
         onClose={() => setIsPremiumStudioOpen(false)}
@@ -98,7 +95,6 @@ export function BoardShell() {
       />
       <Toolbar />
       <ThemeToggle />
-      <Minimap />
 
       <div className="absolute bottom-4 right-4 z-20 max-[1100px]:bottom-20">
         <ZoomControls />

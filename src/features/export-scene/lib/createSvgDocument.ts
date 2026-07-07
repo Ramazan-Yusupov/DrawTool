@@ -24,6 +24,53 @@ function textSvg(text: string, x: number, y: number, fontSize: number, color: st
   return text.split("\n").map((line, index) => `<text x="${x}" y="${y + fontSize + index * Math.round(fontSize * 1.25)}" fill="${color}" font-size="${fontSize}" font-family="Inter,Segoe UI,sans-serif"${width}>${escapeXml(line || " ")}</text>`).join("");
 }
 
+function getPathLabelPlacement(points: { x: number; y: number }[]) {
+  if (points.length < 2) return null;
+
+  const segments = points.slice(0, -1).map((start, index) => {
+    const end = points[index + 1];
+    return {
+      end,
+      length: Math.hypot(end.x - start.x, end.y - start.y),
+      start,
+    };
+  });
+  const totalLength = segments.reduce((sum, segment) => sum + segment.length, 0);
+  let remaining = totalLength / 2;
+
+  for (const segment of segments) {
+    if (remaining <= segment.length || segment === segments.at(-1)) {
+      const progress = segment.length <= 0 ? 0 : remaining / segment.length;
+      let angle = Math.atan2(segment.end.y - segment.start.y, segment.end.x - segment.start.x);
+
+      if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+        angle += Math.PI;
+      }
+
+      return {
+        angle: (angle * 180) / Math.PI,
+        x: segment.start.x + (segment.end.x - segment.start.x) * progress,
+        y: segment.start.y + (segment.end.y - segment.start.y) * progress,
+      };
+    }
+
+    remaining -= segment.length;
+  }
+
+  return null;
+}
+
+function labelAlongPathSvg(label: string | undefined, points: { x: number; y: number }[], color: string) {
+  const value = label?.trim();
+  const placement = value ? getPathLabelPlacement(points) : null;
+
+  if (!value || !placement) return "";
+
+  const width = Math.max(24, value.length * 8 + 14);
+  const height = 24;
+  return `<g transform="translate(${placement.x} ${placement.y}) rotate(${placement.angle})"><rect x="${-width / 2}" y="${-height / 2}" width="${width}" height="${height}" fill="rgb(15 23 42)" fill-opacity="0.86" /><text x="0" y="0.5" fill="${color}" font-size="15" font-weight="700" font-family="Inter,Segoe UI,sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(value)}</text></g>`;
+}
+
 function elementToSvg(element: BoardElement) {
   const { x, y, width, height, style } = element;
   const bounds = getElementBounds(element);
@@ -34,6 +81,9 @@ function elementToSvg(element: BoardElement) {
     markup = `<ellipse cx="${x + width / 2}" cy="${y + height / 2}" rx="${Math.abs(width) / 2}" ry="${Math.abs(height) / 2}" ${common} />`;
   } else if (element.type === "line" || element.type === "measure") {
     markup = `<line x1="${x}" y1="${y}" x2="${x + width}" y2="${y + height}" ${common} />`;
+    if (element.type === "line") {
+      markup += labelAlongPathSvg(element.label, [{ x, y }, { x: x + width, y: y + height }], style.strokeColor);
+    }
     if (element.type === "measure") {
       const distance = Math.hypot(width, height).toFixed(1);
       markup += textSvg(`${distance} px`, x + width / 2 - 20, y + height / 2 - 8, 12, style.strokeColor);
@@ -46,6 +96,7 @@ function elementToSvg(element: BoardElement) {
       const points = getArrowPathPoints(element).map((point) => `${point.x},${point.y}`).join(" ");
       markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
     }
+    markup += labelAlongPathSvg(element.label, getArrowPathPoints(element), style.strokeColor);
   } else if (element.type === "text") {
     markup = textSvg(element.text, x + 6, y + 4, element.fontSize, style.strokeColor);
   } else if (element.type === "sticky") {

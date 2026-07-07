@@ -1,15 +1,19 @@
 import { ImagePlus } from "lucide-react";
 import { useRef, useState } from "react";
-import { Button } from "@/shared/ui";
+import { Button, Tooltip } from "@/shared/ui";
 import { addImageFiles } from "../model/addImageFiles";
 import { getViewportImageAnchor } from "../model/getViewportImageAnchor";
 
 type ImageUploadMenuItemProps = {
   onImageAdded?: () => void;
+  variant?: "default" | "icon";
 };
 
 /** Opens a file picker from the More tools menu and inserts selected images. */
-export function ImageUploadMenuItem({ onImageAdded }: ImageUploadMenuItemProps) {
+export function ImageUploadMenuItem({
+  onImageAdded,
+  variant = "default",
+}: ImageUploadMenuItemProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +36,23 @@ export function ImageUploadMenuItem({ onImageAdded }: ImageUploadMenuItemProps) 
     }
   }
 
-  return (
-    <div className="relative">
+  const button =
+    variant === "icon" ? (
+      <Tooltip content="Вставить изображение (Ctrl/⌘V)" side="top">
+        <Button
+          aria-label="Вставить изображение"
+          className="group relative grid size-12 place-items-center rounded-xl text-text hover:bg-control hover:shadow-sm focus-visible:bg-control"
+          onClick={() => inputRef.current?.click()}
+          title="Вставить изображение (Ctrl/⌘V)"
+          type="button"
+        >
+          <ImagePlus
+            className="text-text-muted transition-colors group-hover:text-text"
+            size={24}
+          />
+        </Button>
+      </Tooltip>
+    ) : (
       <Button
         className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-text hover:bg-control"
         onClick={() => inputRef.current?.click()}
@@ -43,6 +62,11 @@ export function ImageUploadMenuItem({ onImageAdded }: ImageUploadMenuItemProps) 
         <span className="flex-1">Вставить изображение</span>
         <kbd className="text-xs text-text-muted">Ctrl/⌘V</kbd>
       </Button>
+    );
+
+  return (
+    <div className="relative">
+      {button}
 
       <input
         accept="image/*"

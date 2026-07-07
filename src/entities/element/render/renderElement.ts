@@ -1,6 +1,7 @@
 import { getElementCenter } from "../lib/getElementCenter";
 import { getElementRotation } from "../lib/getElementRotation";
 import type { BoardElement } from "../model/types";
+import { renderAdvanced } from "./renderAdvanced";
 import { renderArrow } from "./renderArrow";
 import { renderCloud } from "./renderCloud";
 import { renderCallout } from "./renderCallout";
@@ -31,6 +32,10 @@ function shouldRenderLabel(element: BoardElement) {
       element.type !== "table" &&
       element.type !== "code" &&
       element.type !== "embed" &&
+      element.type !== "frame" &&
+      element.type !== "arrow" &&
+      element.type !== "line" &&
+      element.type !== "measure" &&
       element.type !== "image",
   );
 }
@@ -119,6 +124,10 @@ function renderUnrotated(
       renderEmbed(context, element);
       return;
     case "code":
+      if ("kind" in element) {
+        renderAdvanced(context, element);
+        return;
+      }
       renderCodeSketch(context, element);
       return;
     case "image":

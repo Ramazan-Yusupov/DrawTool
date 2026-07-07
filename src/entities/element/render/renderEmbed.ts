@@ -38,7 +38,7 @@ export function renderEmbed(
   context.fillStyle = style.strokeColor;
   context.font = "600 13px Inter, ui-sans-serif, system-ui, sans-serif";
   context.textBaseline = "middle";
-  context.fillText("Встроенная страница", bounds.x + 12, bounds.y + headerHeight / 2);
+  context.fillText(element.title || "Встроенная страница", bounds.x + 12, bounds.y + headerHeight / 2);
 
   context.fillStyle = "rgb(148 163 184)";
   context.font = "12px Inter, ui-sans-serif, system-ui, sans-serif";

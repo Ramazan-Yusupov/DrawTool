@@ -48,6 +48,20 @@ function getSelectedElements() {
   return sceneStore.get().elements.filter((element) => selectedIds.has(element.id));
 }
 
+function canUseLabel(element: BoardElement) {
+  return (
+    element.type === "rectangle" ||
+    element.type === "ellipse" ||
+    element.type === "diamond" ||
+    element.type === "triangle" ||
+    element.type === "hexagon" ||
+    element.type === "star" ||
+    element.type === "cloud" ||
+    element.type === "line" ||
+    element.type === "arrow"
+  );
+}
+
 function getElementsByIds(elementIds: string[]) {
   const ids = new Set(elementIds);
   return sceneStore.get().elements.filter((element) => ids.has(element.id));
@@ -372,7 +386,9 @@ export const boardActions = {
   },
 
   setSelectionLabel(label: string) {
-    const elements = getSelectedElements().filter((element) => !element.locked);
+    const elements = getSelectedElements().filter(
+      (element) => !element.locked && canUseLabel(element),
+    );
     if (elements.length === 0) return false;
     historyStore.begin();
     sceneStore.updateAll((element) =>

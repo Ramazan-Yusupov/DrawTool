@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import {
-  Bot,
-  Braces,
   Crosshair,
   Ellipsis,
   Globe2,
   LassoSelect,
   Network,
-  Sparkles,
   Highlighter,
   MessageSquareText,
   Paintbrush,
@@ -28,7 +25,6 @@ import {
 import type { AdvancedElementKind } from "@/entities/element";
 import { toolStore } from "@/entities/tool";
 import { advancedShapeStore } from "@/features/advanced-shapes";
-import { generateStore } from "@/features/generate";
 import { ImageUploadMenuItem } from "@/features/add-image";
 import { stickerSettingsStore } from "@/features/add-sticker";
 import {
@@ -70,6 +66,16 @@ const ADVANCED_TOOLS: readonly {
   { kind: "mindmap-node", label: "Mind map", icon: Network },
   { kind: "cloud-service", label: "Cloud service", icon: Network },
   { kind: "wireframe", label: "Wireframe", icon: Square },
+  { kind: "smart-connector", label: "Smart connector", icon: Workflow },
+  { kind: "section-zone", label: "Section / Zone", icon: Frame },
+  { kind: "erd-relationship", label: "ERD relation", icon: Network },
+  { kind: "flow-step", label: "Flow step", icon: Circle },
+  { kind: "status-badge", label: "Status badge", icon: Square },
+  { kind: "annotation-pin", label: "Annotation pin", icon: MessageSquareText },
+  { kind: "template-stamp", label: "Template stamp", icon: Frame },
+  { kind: "api-endpoint", label: "API endpoint", icon: Code2 },
+  { kind: "database-cylinder", label: "Database", icon: Table2 },
+  { kind: "org-card", label: "Org card", icon: SmilePlus },
 ];
 
 export function MoreToolsMenu() {
@@ -140,63 +146,124 @@ export function MoreToolsMenu() {
           <div ref={menuRef}>
             <Popover
               aria-label="Дополнительные инструменты"
-              className="fixed z-60 overflow-y-auto overscroll-contain"
+              className="fixed z-60"
               isOpen={isOpen}
               role="menu"
               style={menuPosition}
             >
-              <div className="space-y-1">
-                {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
-                  const Icon = item.icon;
+              <div className="space-y-3">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
+                    const Icon = item.icon;
 
-                  return (
-                    <MoreToolsMenuItem
-                      icon={item.id === "embed" ? Globe2 : Icon}
-                      key={item.id}
-                      label={item.label}
-                      onClick={() => {
-                        toolStore.set(item.id);
-                        setIsOpen(false);
-                      }}
-                      shortcut={item.shortcut}
-                      shortcutHint={item.shortcutHint}
-                    />
-                  );
-                })}
+                    return (
+                      <MoreToolsMenuItem
+                        icon={item.id === "embed" ? Globe2 : Icon}
+                        key={item.id}
+                        label={item.label}
+                        onClick={() => {
+                          toolStore.set(item.id);
+                          setIsOpen(false);
+                        }}
+                        shortcut={item.shortcut}
+                        shortcutHint={item.shortcutHint}
+                        variant="icon"
+                      />
+                    );
+                  })}
 
-                <ImageUploadMenuItem onImageAdded={() => setIsOpen(false)} />
+                  <ImageUploadMenuItem
+                    onImageAdded={() => setIsOpen(false)}
+                    variant="icon"
+                  />
 
-                {BOARD_TOOLS.map((item) => {
-                  return (
-                    <MoreToolsMenuItem
-                      icon={item.icon}
-                      key={item.id}
-                      label={item.label}
-                      onClick={() => {
-                        toolStore.set(item.id);
-                        setIsOpen(false);
-                      }}
-                      shortcut={item.shortcut}
-                    />
-                  );
-                })}
+                  {BOARD_TOOLS.map((item) => {
+                    return (
+                      <MoreToolsMenuItem
+                        icon={item.icon}
+                        key={item.id}
+                        label={item.label}
+                        onClick={() => {
+                          toolStore.set(item.id);
+                          setIsOpen(false);
+                        }}
+                        shortcut={item.shortcut}
+                        variant="icon"
+                      />
+                    );
+                  })}
 
-                <MoreToolsMenuItem
-                  icon={Code2}
-                  label="Блок кода"
-                  onClick={() => {
-                    toolStore.set("code");
-                    setIsOpen(false);
-                  }}
-                  shortcut="J"
-                  shortcutHint="J"
-                />
+                  <MoreToolsMenuItem
+                    icon={Code2}
+                    label="Блок кода"
+                    onClick={() => {
+                      toolStore.set("code");
+                      setIsOpen(false);
+                    }}
+                    shortcut="J"
+                    shortcutHint="J"
+                    variant="icon"
+                  />
 
-                <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+                  <MoreToolsMenuItem
+                    icon={SmilePlus}
+                    label="Иконки и стикеры"
+                    onClick={() => {
+                      stickerSettingsStore.openPicker();
+                      setIsOpen(false);
+                    }}
+                    variant="icon"
+                  />
+
+                  <MoreToolsMenuItem
+                    icon={Pipette}
+                    label="Пипетка стиля"
+                    onClick={() => {
+                      toolStore.set("eyedropper");
+                      setIsOpen(false);
+                    }}
+                    variant="icon"
+                  />
+
+                  <MoreToolsMenuItem
+                    disabled={!styleClipboard.style}
+                    icon={Paintbrush}
+                    label="Применить стиль"
+                    onClick={() => {
+                      applyCopiedStyleToSelectedElements();
+                      setIsOpen(false);
+                    }}
+                    variant="icon"
+                  />
+
+                  <MoreToolsMenuItem
+                    icon={Crosshair}
+                    label="Лазерная указка"
+                    onClick={() => {
+                      toolStore.set("laser");
+                      setIsOpen(false);
+                    }}
+                    shortcut="K"
+                    variant="icon"
+                  />
+
+                  <MoreToolsMenuItem
+                    icon={LassoSelect}
+                    label="Выделение лассо"
+                    onClick={() => {
+                      toolStore.set("lasso");
+                      setIsOpen(false);
+                    }}
+                    shortcut="L"
+                    variant="icon"
+                  />
+                </div>
+
+                <p className="px-1 text-xs font-semibold text-text-muted">
                   Premium shapes
                 </p>
 
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-4 gap-1.5">
                   {ADVANCED_TOOLS.map((item) => (
                     <MoreToolsMenuItem
                       icon={item.icon}
@@ -207,109 +274,17 @@ export function MoreToolsMenu() {
                         toolStore.set("advanced");
                         setIsOpen(false);
                       }}
-                      variant="compact"
+                      variant="icon"
                     />
                   ))}
                 </div>
-
-                <MoreToolsMenuItem
-                  icon={SmilePlus}
-                  label="Иконки и стикеры"
-                  onClick={() => {
-                    stickerSettingsStore.openPicker();
-                    setIsOpen(false);
-                  }}
-                />
-
-                <MoreToolsMenuItem
-                  icon={Pipette}
-                  label="Пипетка стиля"
-                  onClick={() => {
-                    toolStore.set("eyedropper");
-                    setIsOpen(false);
-                  }}
-                />
-
-                <MoreToolsMenuItem
-                  disabled={!styleClipboard.style}
-                  icon={Paintbrush}
-                  label="Применить стиль"
-                  onClick={() => {
-                    applyCopiedStyleToSelectedElements();
-                    setIsOpen(false);
-                  }}
-                />
-
-                <MoreToolsMenuItem
-                  icon={Crosshair}
-                  label="Лазерная указка"
-                  onClick={() => {
-                    toolStore.set("laser");
-                    setIsOpen(false);
-                  }}
-                  shortcut="K"
-                />
-
-                <MoreToolsMenuItem
-                  icon={LassoSelect}
-                  label="Выделение лассо"
-                  onClick={() => {
-                    toolStore.set("lasso");
-                    setIsOpen(false);
-                  }}
-                  shortcut="L"
-                />
               </div>
 
-              <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
-                Generate
-              </p>
-
-              <div className="space-y-1">
-                <MoreToolsMenuItem
-                  icon={Sparkles}
-                  label="Текст в диаграмму"
-                  onClick={() => {
-                    generateStore.open("diagram");
-                    setIsOpen(false);
-                  }}
-                  trailing={<Bot className="shrink-0 text-accent" size={15} />}
-                />
-
-                <MoreToolsMenuItem
-                  icon={Workflow}
-                  label="Шаблоны диаграмм"
-                  onClick={() => {
-                    generateStore.open("templates");
-                    setIsOpen(false);
-                  }}
-                />
-
-                <MoreToolsMenuItem
-                  icon={Network}
-                  label="Mermaid в DrawTool"
-                  onClick={() => {
-                    generateStore.open("mermaid");
-                    setIsOpen(false);
-                  }}
-                />
-
-                <MoreToolsMenuItem
-                  icon={Braces}
-                  label="Каркас для кода"
-                  onClick={() => {
-                    generateStore.open("code");
-                    setIsOpen(false);
-                  }}
-                  trailing={<Bot className="shrink-0 text-accent" size={15} />}
-                />
-              </div>
-
-              <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+              <p className="mb-1 mt-3 px-1 text-xs font-semibold text-text-muted">
                 Другие фигуры
               </p>
 
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-4 gap-1.5">
                 {MORE_SHAPE_ITEMS.slice(2).map((item) => {
                   return (
                     <MoreToolsMenuItem
@@ -322,7 +297,7 @@ export function MoreToolsMenu() {
                       }}
                       shortcutHint={item.shortcutHint}
                       title={`${item.label} (${item.shortcutHint})`}
-                      variant="compact"
+                      variant="icon"
                     />
                   );
                 })}
