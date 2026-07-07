@@ -13,7 +13,6 @@ import { PremiumStudioDialog } from "@/features/premium-studio";
 import { ProjectsSidebar } from "@/features/projects";
 import { SceneStorageControls } from "@/features/save-scene";
 import { ShortcutsDialog } from "@/features/shortcuts-help";
-import { ThemeToggle } from "@/features/toggle-theme";
 import { UndoRedoButtons } from "@/features/undo-redo";
 import { LayersPanel } from "@/widgets/layers-panel";
 import { PropertiesPanel } from "@/widgets/properties-panel";
@@ -94,7 +93,6 @@ export function BoardShell() {
         onToggleLayers={() => setIsLayersOpen((open) => !open)}
       />
       <Toolbar />
-      <ThemeToggle />
 
       <div className="absolute bottom-4 right-4 z-20 max-[1100px]:bottom-20">
         <ZoomControls />

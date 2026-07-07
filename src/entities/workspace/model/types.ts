@@ -1,7 +1,6 @@
-import type { ArrowRouting, ElementStyle, TextAlign } from "@/entities/element";
+import type { ArrowRouting, BoardElement, ElementStyle, TextAlign } from "@/entities/element";
 import type { ToolId } from "@/entities/tool";
 import type { Viewport } from "@/entities/viewport";
-import type { BoardElement } from "@/entities/element";
 
 export const DRAWTOOL_WORKSPACE_FORMAT = "drawtool-workspace" as const;
 export const DRAWTOOL_WORKSPACE_VERSION = 1 as const;
@@ -26,7 +25,6 @@ export type WorkspaceProject = {
 };
 
 export type WorkspacePreferences = {
-  theme: "dark" | "light";
   activeTool: ToolId;
   toolSettingsByTool: Partial<Record<ToolId, PersistedToolSettings>>;
   stickerContent: string;

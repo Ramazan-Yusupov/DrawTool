@@ -7,7 +7,6 @@ import type { DrawToolWorkspace } from "@/entities/workspace";
 import { stickerSettingsStore } from "@/features/add-sticker";
 import { toolSettingsStore } from "@/features/change-style";
 import { projectStore } from "@/features/projects";
-import { themeStore } from "@/features/toggle-theme";
 import { createId } from "@/shared/lib";
 
 export async function createWorkspaceSnapshot(
@@ -28,7 +27,6 @@ export async function createWorkspaceSnapshot(
     activeProjectId: projectState.activeProjectId,
     projects,
     preferences: {
-      theme: themeStore.get(),
       activeTool: toolStore.get(),
       toolSettingsByTool: toolSettingsStore.getAll(),
       stickerContent: stickerSettingsStore.get().content,

@@ -63,7 +63,6 @@ function parseSettings(value: unknown): PersistedToolSettings | null {
 
 function parsePreferences(value: unknown): WorkspacePreferences {
   const fallback: WorkspacePreferences = {
-    theme: "dark",
     activeTool: "selection",
     toolSettingsByTool: {},
     stickerContent: "✨",
@@ -81,7 +80,6 @@ function parsePreferences(value: unknown): WorkspacePreferences {
   ) as WorkspacePreferences["toolSettingsByTool"];
 
   return {
-    theme: value.theme === "light" ? "light" : "dark",
     activeTool: typeof value.activeTool === "string" && TOOL_IDS.has(value.activeTool as ToolId)
       ? value.activeTool as ToolId
       : fallback.activeTool,

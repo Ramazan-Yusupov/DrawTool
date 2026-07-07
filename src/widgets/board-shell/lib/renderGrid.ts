@@ -1,4 +1,3 @@
-import { themeStore } from "@/features/toggle-theme";
 import type { Viewport } from "@/entities/viewport";
 import { CANVAS_CONFIG } from "@/shared/config";
 import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
@@ -29,13 +28,10 @@ export function renderGrid({ context, viewport, size }: RenderGridParams) {
   const screenStep = worldStep * viewport.zoom;
   const startX = getOffset(viewport.x * viewport.zoom, screenStep);
   const startY = getOffset(viewport.y * viewport.zoom, screenStep);
-  const isDark = themeStore.get() === "dark";
   const dotRadius = Math.min(1.35, Math.max(0.65, viewport.zoom * 0.85));
 
   context.save();
-  context.fillStyle = isDark
-    ? "rgb(148 163 184 / 28%)"
-    : "rgb(100 116 139 / 21%)";
+  context.fillStyle = "rgb(148 163 184 / 28%)";
   context.beginPath();
 
   for (let x = startX; x <= size.width + screenStep; x += screenStep) {

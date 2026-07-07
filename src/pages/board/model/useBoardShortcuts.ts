@@ -21,7 +21,6 @@ import { toggleEditingLock } from "@/features/lock-editing/model/toggleEditingLo
 import { saveScene } from "@/features/save-scene";
 import { shortcutsHelpStore } from "@/features/shortcuts-help";
 import { getToolFromShortcut } from "@/features/shortcuts-help/model/shortcutDefinitions";
-import { toggleTheme } from "@/features/toggle-theme";
 import { toolLockStore } from "@/features/tool-lock";
 
 function isEditingTextOrDialog(target: EventTarget | null) {
@@ -172,13 +171,7 @@ export function useBoardShortcuts() {
         return;
       }
 
-      if (modifierPressed && event.shiftKey && key === "d") {
-        event.preventDefault();
-        toggleTheme();
-        return;
-      }
-
-      if (modifierPressed && key === "d") {
+      if (modifierPressed && !event.shiftKey && key === "d") {
         event.preventDefault();
         if (!editingLockStore.get().isLocked) {
           duplicateSelectedElements();

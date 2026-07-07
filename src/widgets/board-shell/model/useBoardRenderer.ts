@@ -1,28 +1,27 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { RefObject } from "react";
-import { sceneStore } from "@/entities/scene";
 import { imageFileStore } from "@/entities/image-file";
-import { viewportStore } from "@/entities/viewport";
+import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
+import { viewportStore } from "@/entities/viewport";
+import {
+  arrowBindingIndicatorStore,
+  renderArrowBindingIndicator,
+} from "@/features/arrow-binding";
+import { renderSnapIndicator, snapIndicatorStore } from "@/features/draw-shape";
 import { textEditorStore } from "@/features/edit-text/model/textEditorStore";
-import { themeStore } from "@/features/toggle-theme";
+import { renderLaserPointer, laserPointerStore } from "@/features/laser-pointer";
+import { renderLasso, lassoStore } from "@/features/lasso-select";
+import {
+  alignmentGuidesStore,
+  renderAlignmentGuides,
+} from "@/features/move-elements";
 import { clearCanvas } from "@/shared/lib/canvas/clearCanvas";
 import { prepareCanvas } from "@/shared/lib/canvas/prepareCanvas";
 import type { CanvasSize } from "@/shared/lib/canvas/resizeCanvas";
 import { renderGrid } from "../lib/renderGrid";
 import { renderScene } from "../lib/renderScene";
 import { useCanvasSize } from "./useCanvasSize";
-import { renderSnapIndicator, snapIndicatorStore } from "@/features/draw-shape";
-import { renderLaserPointer, laserPointerStore } from "@/features/laser-pointer";
-import { renderLasso, lassoStore } from "@/features/lasso-select";
-import {
-  arrowBindingIndicatorStore,
-  renderArrowBindingIndicator,
-} from "@/features/arrow-binding";
-import {
-  alignmentGuidesStore,
-  renderAlignmentGuides,
-} from "@/features/move-elements";
 
 export function useBoardRenderer(
   canvasRef: RefObject<HTMLCanvasElement | null>,
@@ -83,7 +82,6 @@ export function useBoardRenderer(
     const unsubscribeSelection =
       selectionStore.subscribeElementIds(scheduleRender);
     const unsubscribeTextEditor = textEditorStore.subscribe(scheduleRender);
-    const unsubscribeTheme = themeStore.subscribe(scheduleRender);
     const unsubscribeSnapIndicator =
       snapIndicatorStore.subscribe(scheduleRender);
     const unsubscribeLaser = laserPointerStore.subscribe(scheduleRender);
@@ -101,7 +99,6 @@ export function useBoardRenderer(
       unsubscribeImages();
       unsubscribeSelection();
       unsubscribeTextEditor();
-      unsubscribeTheme();
       unsubscribeSnapIndicator();
       unsubscribeLaser();
       unsubscribeLasso();
