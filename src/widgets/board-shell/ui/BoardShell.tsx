@@ -8,7 +8,10 @@ import {
 import { TextEditorOverlay } from "@/features/edit-text";
 import { StickerPickerModal } from "@/features/add-sticker";
 import { GenerateDialog } from "@/features/generate";
+import { AiAssistantDialog } from "@/features/ai-assistant";
+import { CommandPalette } from "@/features/command-palette";
 import { editingLockStore } from "@/features/lock-editing";
+import { PremiumStudioDialog } from "@/features/premium-studio";
 import { ProjectsSidebar } from "@/features/projects";
 import { SceneStorageControls } from "@/features/save-scene";
 import { ShortcutsDialog } from "@/features/shortcuts-help";
@@ -33,6 +36,8 @@ const UTILITY_TOOLS_WITHOUT_PROPERTIES = new Set([
 export function BoardShell() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isLayersOpen, setIsLayersOpen] = useState(false);
+  const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isPremiumStudioOpen, setIsPremiumStudioOpen] = useState(false);
   const [isToolSettingsOpen, setIsToolSettingsOpen] = useState(false);
 
   useBoardRenderer(canvasRef);
@@ -72,6 +77,22 @@ export function BoardShell() {
       <TextEditorOverlay />
       <StickerPickerModal />
       <GenerateDialog />
+      <AiAssistantDialog
+        isOpen={isAiOpen}
+        onClose={() => setIsAiOpen(false)}
+      />
+      <PremiumStudioDialog
+        isOpen={isPremiumStudioOpen}
+        onClose={() => setIsPremiumStudioOpen(false)}
+        onOpenAi={() => {
+          setIsPremiumStudioOpen(false);
+          setIsAiOpen(true);
+        }}
+      />
+      <CommandPalette
+        onOpenAi={() => setIsAiOpen(true)}
+        onOpenPremiumStudio={() => setIsPremiumStudioOpen(true)}
+      />
       <ShortcutsDialog />
       <ToolSettingsModal
         isOpen={isToolSettingsOpen}
@@ -83,6 +104,7 @@ export function BoardShell() {
       <SceneStorageControls
         isLayersOpen={isLayersOpen}
         onOpenToolSettings={() => setIsToolSettingsOpen(true)}
+        onOpenPremiumStudio={() => setIsPremiumStudioOpen(true)}
         onToggleLayers={() => setIsLayersOpen((open) => !open)}
       />
       <Toolbar />

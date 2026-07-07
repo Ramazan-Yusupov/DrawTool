@@ -14,6 +14,7 @@ export type ShapeToolId =
   | "table"
   | "frame"
   | "embed"
+  | "advanced"
   | "code";
 
 export type ToolId =

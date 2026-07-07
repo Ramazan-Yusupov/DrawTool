@@ -65,6 +65,12 @@ export type BaseElement = {
   parentId?: string;
   /** Optional external link opened with Ctrl/Cmd + click while using selection. */
   link?: string;
+  /** Optional user-facing label rendered on top of simple shapes and arrows. */
+  label?: string;
+  /** Optional grouping token. Elements with the same group move/select together. */
+  groupId?: string;
+  /** Locked elements stay visible but cannot be selected or changed accidentally. */
+  locked?: boolean;
   createdAt: number;
   updatedAt: number;
   style: ElementStyle;
@@ -109,6 +115,27 @@ export type FrameElement = BaseElement & {
 export type EmbedElement = BaseElement & {
   type: "embed";
   url: string;
+};
+
+export type AdvancedElementKind =
+  | "swimlane"
+  | "bpmn-task"
+  | "bpmn-event"
+  | "bpmn-gateway"
+  | "uml-class"
+  | "uml-actor"
+  | "erd-table"
+  | "kanban-board"
+  | "timeline"
+  | "mindmap-node"
+  | "cloud-service"
+  | "wireframe";
+
+export type AdvancedElement = BaseElement & {
+  type: "code";
+  kind: AdvancedElementKind;
+  title: string;
+  body: string[];
 };
 
 /** A self-contained, resizable code card. Its title and source stay inside the card. */

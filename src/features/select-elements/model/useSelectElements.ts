@@ -32,7 +32,6 @@ import { viewportStore } from "@/entities/viewport";
 import { normalizeAngleDelta } from "@/shared/lib";
 import type { Point, Rect } from "@/shared/types";
 import { selectByArea } from "./selectByArea";
-import { selectElement } from "./selectElement";
 
 const ARROW_BINDING_RADIUS = 18;
 
@@ -78,7 +77,7 @@ export function useSelectElements() {
   function findTopElement(point: Point) {
     return [...sceneStore.get().elements]
       .reverse()
-      .find((element) => hitTestElement(element, point));
+      .find((element) => !element.locked && hitTestElement(element, point));
   }
 
   function getArrowEndpointBinding(point: Point, arrowId: string) {
@@ -108,7 +107,9 @@ export function useSelectElements() {
       selection.elementIds.length === 1
         ? sceneStore
             .get()
-            .elements.find((element) => element.id === selection.elementIds[0])
+            .elements.find(
+              (element) => element.id === selection.elementIds[0] && !element.locked,
+            )
         : undefined;
 
     if (!selectedElement) {
@@ -145,7 +146,9 @@ export function useSelectElements() {
       selection.elementIds.length === 1
         ? sceneStore
             .get()
-            .elements.find((element) => element.id === selection.elementIds[0])
+            .elements.find(
+              (element) => element.id === selection.elementIds[0] && !element.locked,
+            )
         : undefined;
     const zoom = viewportStore.get().zoom;
 
@@ -202,9 +205,19 @@ export function useSelectElements() {
       }
 
       const isAlreadySelected = selection.elementIds.includes(hitElement.id);
+      const groupIds = hitElement.groupId
+        ? sceneStore
+            .get()
+            .elements.filter((element) => element.groupId === hitElement.groupId && !element.locked)
+            .map((element) => element.id)
+        : [hitElement.id];
 
       if (event.shiftKey || !isAlreadySelected) {
-        selectElement(hitElement.id, event.shiftKey);
+        selectionStore.setElementIds(
+          event.shiftKey
+            ? [...selectionStore.get().elementIds, ...groupIds]
+            : groupIds,
+        );
       }
 
       const elementIds = selectionStore.get().elementIds;

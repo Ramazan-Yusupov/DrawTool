@@ -22,6 +22,58 @@ import { renderStar } from "./renderStar";
 import { renderText } from "./renderText";
 import { renderTriangle } from "./renderTriangle";
 
+function shouldRenderLabel(element: BoardElement) {
+  return Boolean(
+    element.label &&
+      element.type !== "text" &&
+      element.type !== "sticky" &&
+      element.type !== "callout" &&
+      element.type !== "table" &&
+      element.type !== "code" &&
+      element.type !== "embed" &&
+      element.type !== "image",
+  );
+}
+
+function renderElementLabel(
+  context: CanvasRenderingContext2D,
+  element: BoardElement,
+) {
+  if (!shouldRenderLabel(element)) {
+    return;
+  }
+
+  const label = element.label?.trim();
+  if (!label) {
+    return;
+  }
+
+  const center = getElementCenter(element);
+  const fontSize = Math.max(11, Math.min(18, Math.min(Math.abs(element.width), Math.abs(element.height)) / 5 || 14));
+  context.save();
+  context.font = `600 ${fontSize}px Inter, ui-sans-serif, system-ui, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillStyle = element.type === "arrow" || element.type === "line" || element.type === "measure"
+    ? element.style.strokeColor
+    : element.style.strokeColor;
+
+  const metrics = context.measureText(label);
+  const paddingX = 6;
+  const paddingY = 3;
+  context.globalAlpha = Math.min(1, element.style.opacity + 0.15);
+  context.fillStyle = "rgb(15 23 42 / 78%)";
+  context.fillRect(
+    center.x - metrics.width / 2 - paddingX,
+    center.y - fontSize / 2 - paddingY,
+    metrics.width + paddingX * 2,
+    fontSize + paddingY * 2,
+  );
+  context.fillStyle = element.style.strokeColor;
+  context.fillText(label, center.x, center.y + 0.5);
+  context.restore();
+}
+
 function renderUnrotated(
   context: CanvasRenderingContext2D,
   element: BoardElement,
@@ -100,6 +152,7 @@ export function renderElement(
 
   if (angle === 0) {
     renderUnrotated(context, element);
+    renderElementLabel(context, element);
     return;
   }
 
@@ -109,5 +162,6 @@ export function renderElement(
   context.rotate(angle);
   context.translate(-center.x, -center.y);
   renderUnrotated(context, element);
+  renderElementLabel(context, element);
   context.restore();
 }

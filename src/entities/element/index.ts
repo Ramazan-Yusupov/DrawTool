@@ -1,5 +1,6 @@
 export { DEFAULT_ELEMENT_STYLE } from "./model/constants";
 export {
+  createAdvanced,
   createArrow,
   createCallout,
   createCloud,
@@ -59,6 +60,8 @@ export { renderImage } from "./render/renderImage";
 export type {
   ArrowElement,
   ArrowRouting,
+  AdvancedElement,
+  AdvancedElementKind,
   BaseElement,
   BoardElement,
   CalloutElement,

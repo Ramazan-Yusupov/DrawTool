@@ -1,9 +1,14 @@
 import {
   Download,
+  FileJson,
   FolderTree,
+  Focus,
   Keyboard,
   Layers3,
+  Link2,
   MoreHorizontal,
+  PackageOpen,
+  Sparkles,
   Save,
   Settings2,
   Trash2,
@@ -11,6 +16,7 @@ import {
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { resetScene } from "@/entities/scene";
+import { boardActions } from "@/features/board-actions";
 import { projectStore } from "@/features/projects";
 import { shortcutsHelpStore } from "@/features/shortcuts-help";
 import {
@@ -41,11 +47,13 @@ const FILE_MENU_WIDTH = 240;
 type SceneStorageControlsProps = {
   isLayersOpen?: boolean;
   onOpenToolSettings?: () => void;
+  onOpenPremiumStudio?: () => void;
   onToggleLayers?: () => void;
 };
 
 export function SceneStorageControls({
   isLayersOpen = false,
+  onOpenPremiumStudio,
   onOpenToolSettings,
   onToggleLayers,
 }: SceneStorageControlsProps) {
@@ -219,6 +227,86 @@ export function SceneStorageControls({
                 >
                   <Settings2 aria-hidden size={17} />
                   <span>Настройки инструмента</span>
+                </Button>
+
+                <Button
+                  className={menuButtonClass}
+                  onClick={() => {
+                    onOpenPremiumStudio?.();
+                    fileMenu.close();
+                  }}
+                  type="button"
+                >
+                  <Sparkles aria-hidden size={17} />
+                  <span>Premium Studio</span>
+                </Button>
+
+                <Button
+                  className={menuButtonClass}
+                  onClick={() => {
+                    void boardActions.pasteElementsFromClipboard().then((ok) =>
+                      notify(ok ? "Вставлено" : "Clipboard пуст"),
+                    );
+                    fileMenu.close();
+                  }}
+                  type="button"
+                >
+                  <FileJson aria-hidden size={17} />
+                  <span>Вставить JSON</span>
+                </Button>
+
+                <Button
+                  className={menuButtonClass}
+                  onClick={() => {
+                    const ok = boardActions.insertLatestLibraryItem();
+                    notify(ok ? "Компонент вставлен" : "Библиотека пуста");
+                    fileMenu.close();
+                  }}
+                  type="button"
+                >
+                  <PackageOpen aria-hidden size={17} />
+                  <span>Вставить компонент</span>
+                </Button>
+
+                <Button
+                  className={menuButtonClass}
+                  onClick={() => {
+                    const ok = boardActions.focusSelectedFrame();
+                    notify(ok ? "Фрейм в фокусе" : "Выберите фрейм");
+                    fileMenu.close();
+                  }}
+                  type="button"
+                >
+                  <Focus aria-hidden size={17} />
+                  <span>Фокус на фрейм</span>
+                </Button>
+
+                <Button
+                  className={menuButtonClass}
+                  onClick={() => {
+                    void boardActions.exportSelectedFrame("png").then((ok) =>
+                      notify(ok ? "Фрейм экспортирован" : "Выберите фрейм"),
+                    );
+                    fileMenu.close();
+                  }}
+                  type="button"
+                >
+                  <Download aria-hidden size={17} />
+                  <span>Экспорт фрейма PNG</span>
+                </Button>
+
+                <Button
+                  className={menuButtonClass}
+                  onClick={() => {
+                    void boardActions.copyReadonlyShareLink().then(() =>
+                      notify("Readonly link скопирован"),
+                    );
+                    fileMenu.close();
+                  }}
+                  type="button"
+                >
+                  <Link2 aria-hidden size={17} />
+                  <span>Readonly link</span>
                 </Button>
 
                 <Divider className="my-2" />

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { PropsWithChildren } from "react";
+import { boardActions } from "@/features/board-actions";
 import { APP_CONFIG, ENV } from "@/shared/config";
 
 /**
@@ -10,6 +11,7 @@ import { APP_CONFIG, ENV } from "@/shared/config";
 export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
     document.title = ENV.appName || APP_CONFIG.name;
+    boardActions.restoreSceneFromShareHash();
   }, []);
 
   return children;

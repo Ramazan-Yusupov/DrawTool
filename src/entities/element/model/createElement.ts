@@ -3,6 +3,7 @@ import { DEFAULT_ELEMENT_STYLE } from "./constants";
 import type {
   ArrowElement,
   ArrowRouting,
+  AdvancedElementKind,
   BoardElement,
   CalloutElement,
   CloudElement,
@@ -60,6 +61,90 @@ type ImageCreateParams = BaseCreateParams & {
   mimeType?: string;
   originalWidth: number;
   originalHeight: number;
+};
+
+type AdvancedCreateParams = BaseCreateParams & {
+  kind?: AdvancedElementKind;
+  title?: string;
+  body?: string[];
+};
+
+const ADVANCED_DEFAULTS: Record<
+  AdvancedElementKind,
+  { title: string; body: string[]; width: number; height: number }
+> = {
+  swimlane: {
+    title: "Swimlane",
+    body: ["Role A", "Role B", "Role C"],
+    width: 520,
+    height: 260,
+  },
+  "bpmn-task": {
+    title: "BPMN Task",
+    body: ["Owner", "Input", "Output"],
+    width: 220,
+    height: 120,
+  },
+  "bpmn-event": {
+    title: "Event",
+    body: ["Start / End"],
+    width: 120,
+    height: 120,
+  },
+  "bpmn-gateway": {
+    title: "Gateway",
+    body: ["Yes", "No"],
+    width: 150,
+    height: 150,
+  },
+  "uml-class": {
+    title: "ClassName",
+    body: ["+ property: string", "+ method(): void"],
+    width: 260,
+    height: 190,
+  },
+  "uml-actor": {
+    title: "Actor",
+    body: ["Role / system"],
+    width: 140,
+    height: 220,
+  },
+  "erd-table": {
+    title: "entity_table",
+    body: ["PK id uuid", "name varchar", "FK owner_id"],
+    width: 280,
+    height: 200,
+  },
+  "kanban-board": {
+    title: "Kanban",
+    body: ["Backlog", "Doing", "Done"],
+    width: 520,
+    height: 260,
+  },
+  timeline: {
+    title: "Timeline",
+    body: ["Milestone 1", "Milestone 2", "Launch"],
+    width: 520,
+    height: 140,
+  },
+  "mindmap-node": {
+    title: "Idea",
+    body: ["Branch", "Branch", "Branch"],
+    width: 220,
+    height: 140,
+  },
+  "cloud-service": {
+    title: "Cloud service",
+    body: ["API", "Queue", "Database"],
+    width: 230,
+    height: 150,
+  },
+  wireframe: {
+    title: "Wireframe",
+    body: ["Header", "Content", "CTA"],
+    width: 320,
+    height: 220,
+  },
 };
 
 function createBase<T extends BoardElement>(
@@ -137,6 +222,29 @@ export function createFrame(params: BaseCreateParams & { name?: string }): Frame
 export function createEmbed(params: BaseCreateParams & { url?: string }): EmbedElement {
   return { ...createBase<EmbedElement>("embed", params), url: params.url ?? "https://example.com" };
 }
+
+export function createAdvanced(params: AdvancedCreateParams): CodeSketchElement {
+  const kind = params.kind ?? "swimlane";
+  const defaults = ADVANCED_DEFAULTS[kind];
+  return {
+    ...createBase<CodeSketchElement>("code", {
+      ...params,
+      width: params.width ?? defaults.width,
+      height: params.height ?? defaults.height,
+      style: {
+        strokeColor: "#93c5fd",
+        backgroundColor: "#0f172a",
+        fillStyle: "solid",
+        cornerStyle: "rounded",
+        ...params.style,
+      },
+    }),
+    title: params.title ?? defaults.title,
+    code: [kind, ...(params.body ?? defaults.body)].join("\n"),
+    language: "diagram",
+  };
+}
+
 export function createCodeSketch(params: BaseCreateParams & { title?: string; code?: string; language?: string }): CodeSketchElement {
   return {
     ...createBase<CodeSketchElement>("code", params),
@@ -261,8 +369,12 @@ export function createSticker(params: BaseCreateParams & { content?: string; fon
 }
 
 export function createElement(
-  type: Exclude<ElementType, "image">,
-  params: BaseCreateParams & TextCreateParams & ArrowCreateParams & FreeDrawCreateParams,
+  type: Exclude<ElementType, "image"> | "advanced",
+  params: BaseCreateParams &
+    TextCreateParams &
+    ArrowCreateParams &
+    FreeDrawCreateParams &
+    AdvancedCreateParams,
 ): BoardElement {
   switch (type) {
     case "rectangle": return createRectangle(params);
@@ -277,6 +389,7 @@ export function createElement(
     case "measure": return createMeasure(params);
     case "frame": return createFrame(params);
     case "embed": return createEmbed(params);
+    case "advanced": return createAdvanced(params);
     case "code": return createCodeSketch(params);
     case "freedraw": return createFreeDraw(params);
     case "highlighter": return createHighlighter(params);

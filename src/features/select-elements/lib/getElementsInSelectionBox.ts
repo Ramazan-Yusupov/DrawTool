@@ -7,6 +7,10 @@ export function getElementsInSelectionBox(
   selectionBox: Rect,
 ) {
   return elements.filter((element) => {
+    if (element.locked) {
+      return false;
+    }
+
     const bounds = getElementBounds(element);
 
     return (

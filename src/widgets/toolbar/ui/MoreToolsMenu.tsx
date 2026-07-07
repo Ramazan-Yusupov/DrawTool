@@ -19,8 +19,15 @@ import {
   Table2,
   Code2,
   Workflow,
+  Circle,
+  Diamond,
+  Frame,
+  Minus,
+  Square,
 } from "lucide-react";
+import type { AdvancedElementKind } from "@/entities/element";
 import { toolStore } from "@/entities/tool";
+import { advancedShapeStore } from "@/features/advanced-shapes";
 import { generateStore } from "@/features/generate";
 import { ImageUploadMenuItem } from "@/features/add-image";
 import { stickerSettingsStore } from "@/features/add-sticker";
@@ -45,6 +52,25 @@ const BOARD_TOOLS = [
   { id: "measure", label: "Линейка / измерение", shortcut: "", icon: Ruler },
   { id: "highlighter", label: "Маркер", shortcut: "", icon: Highlighter },
 ] as const;
+
+const ADVANCED_TOOLS: readonly {
+  icon: typeof Table2;
+  kind: AdvancedElementKind;
+  label: string;
+}[] = [
+  { kind: "swimlane", label: "Swimlane", icon: Table2 },
+  { kind: "bpmn-task", label: "BPMN задача", icon: Workflow },
+  { kind: "bpmn-event", label: "BPMN событие", icon: Circle },
+  { kind: "bpmn-gateway", label: "BPMN gateway", icon: Diamond },
+  { kind: "uml-class", label: "UML class", icon: Code2 },
+  { kind: "uml-actor", label: "UML actor", icon: SmilePlus },
+  { kind: "erd-table", label: "ERD table", icon: Table2 },
+  { kind: "kanban-board", label: "Kanban board", icon: Frame },
+  { kind: "timeline", label: "Timeline", icon: Minus },
+  { kind: "mindmap-node", label: "Mind map", icon: Network },
+  { kind: "cloud-service", label: "Cloud service", icon: Network },
+  { kind: "wireframe", label: "Wireframe", icon: Square },
+];
 
 export function MoreToolsMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -165,6 +191,26 @@ export function MoreToolsMenu() {
                   shortcut="J"
                   shortcutHint="J"
                 />
+
+                <p className="mb-1 mt-3 px-3 text-xs font-semibold text-text-muted">
+                  Premium shapes
+                </p>
+
+                <div className="grid grid-cols-2 gap-1">
+                  {ADVANCED_TOOLS.map((item) => (
+                    <MoreToolsMenuItem
+                      icon={item.icon}
+                      key={item.kind}
+                      label={item.label}
+                      onClick={() => {
+                        advancedShapeStore.set(item.kind);
+                        toolStore.set("advanced");
+                        setIsOpen(false);
+                      }}
+                      variant="compact"
+                    />
+                  ))}
+                </div>
 
                 <MoreToolsMenuItem
                   icon={SmilePlus}

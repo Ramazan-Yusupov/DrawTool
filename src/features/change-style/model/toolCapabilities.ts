@@ -85,6 +85,7 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
     text: false,
     arrowRouting: false,
   },
+  advanced: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
   code: { ...SHAPE_CAPABILITIES, corner: true, snap: false },
   image: {
     stroke: false,

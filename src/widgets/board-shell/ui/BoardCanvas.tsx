@@ -1,5 +1,8 @@
-import { useRef, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
+import { hitTestElement } from "@/entities/element";
+import { sceneStore } from "@/entities/scene";
+import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
 import { useDrawShape, useFreeDraw } from "@/features/draw-shape";
 import { addImageFiles, getSupportedImageFiles, usePasteImages } from "@/features/add-image";
@@ -16,6 +19,7 @@ import { useCanvasWheel } from "../model/useCanvasWheel";
 import { cn } from "@/shared/lib";
 import { getCanvasPointerPosition } from "@/shared/lib/dom/getCanvasPointerPosition";
 import { screenToWorld, viewportStore } from "@/entities/viewport";
+import { BoardContextMenu } from "./BoardContextMenu";
 
 type BoardCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -35,8 +39,16 @@ type ActivePointerInteraction = {
   pointerId: number;
 };
 
+type ContextMenuState = {
+  left: number;
+  targetElementId?: string;
+  targetIsLocked?: boolean;
+  top: number;
+};
+
 export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   const activePointerRef = useRef<ActivePointerInteraction | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const activeTool = useSyncExternalStore(
     toolStore.subscribe,
     toolStore.get,
@@ -292,13 +304,46 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     }
   }
 
+  function getContextTarget(event: React.MouseEvent<HTMLCanvasElement>) {
+    const canvasPoint = getCanvasPointerPosition(event.nativeEvent, event.currentTarget);
+    const worldPoint = screenToWorld(canvasPoint, viewportStore.get());
+    return [...sceneStore.get().elements]
+      .reverse()
+      .find((element) => hitTestElement(element, worldPoint));
+  }
+
   return (
-    <canvas
+    <>
+      <canvas
       ref={canvasRef}
       aria-label="Интерактивная доска"
       className={cn("size-full touch-none", cursorClass)}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        const target = getContextTarget(event);
+
+        if (target && !target.locked) {
+          const selectedIds = selectionStore.get().elementIds;
+          if (!selectedIds.includes(target.id)) {
+            const groupIds = target.groupId
+              ? sceneStore
+                  .get()
+                  .elements.filter((element) => element.groupId === target.groupId && !element.locked)
+                  .map((element) => element.id)
+              : [target.id];
+            selectionStore.setElementIds(groupIds);
+          }
+        }
+
+        setContextMenu({
+          left: event.clientX,
+          targetElementId: target?.id,
+          targetIsLocked: Boolean(target?.locked),
+          top: event.clientY,
+        });
+      }}
       onDoubleClick={(event) => {
         if (!isPanOnly && activeTool === "selection") {
           selectionEvents.onDoubleClick(event);
@@ -322,6 +367,10 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
         clearActivePointerOwner(event);
       }}
       onPointerDown={(event) => {
+        if (contextMenu) {
+          setContextMenu(null);
+        }
+
         /*
          * Первый клик за пределами textarea подтверждает текст через blur.
          * Canvas в этот момент не должен начинать другой инструмент.
@@ -370,6 +419,17 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
 
         clearActivePointerOwner(event);
       }}
-    />
+      />
+
+      {contextMenu && (
+          <BoardContextMenu
+            left={contextMenu.left}
+            onClose={() => setContextMenu(null)}
+            targetElementId={contextMenu.targetElementId}
+            targetIsLocked={contextMenu.targetIsLocked}
+            top={contextMenu.top}
+          />
+      )}
+    </>
   );
 }

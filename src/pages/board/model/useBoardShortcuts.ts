@@ -6,6 +6,8 @@ import { selectionStore } from "@/entities/selection";
 import type { ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
 import { viewportStore, zoomAtPoint } from "@/entities/viewport";
+import { boardActions } from "@/features/board-actions";
+import { commandPaletteStore } from "@/features/command-palette";
 import { deleteSelectedElements } from "@/features/delete-elements";
 import { duplicateSelectedElements } from "@/features/duplicate-elements";
 import { textEditorStore } from "@/features/edit-text";
@@ -286,6 +288,40 @@ export function useBoardShortcuts() {
       }
 
       if (modifierPressed || event.altKey) {
+        if (modifierPressed && key === "k") {
+          event.preventDefault();
+          commandPaletteStore.open();
+          return;
+        }
+
+        if (modifierPressed && key === "c") {
+          event.preventDefault();
+          boardActions.copySelectionToClipboard();
+          return;
+        }
+
+        if (modifierPressed && key === "v") {
+          event.preventDefault();
+          void boardActions.pasteElementsFromClipboard();
+          return;
+        }
+
+        if (modifierPressed && key === "g") {
+          event.preventDefault();
+          if (event.shiftKey) {
+            boardActions.ungroupSelection();
+          } else {
+            boardActions.groupSelection();
+          }
+          return;
+        }
+
+        if (modifierPressed && event.shiftKey && key === "k") {
+          event.preventDefault();
+          boardActions.toggleLockSelection();
+          return;
+        }
+
         return;
       }
 
