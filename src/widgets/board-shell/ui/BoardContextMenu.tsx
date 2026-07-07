@@ -19,9 +19,11 @@ import {
   PackageOpen,
   Tags,
   Ungroup,
+  Trash2,
 } from "lucide-react";
 import { boardActions } from "@/features/board-actions";
 import { Button, Divider, Popover } from "@/shared/ui";
+import { deleteSelectedElements } from "@/features/delete-elements";
 
 type BoardContextMenuProps = {
   left: number;
@@ -125,7 +127,9 @@ export function BoardContextMenu({
         </Button>
         <Button
           className={itemClass}
-          onClick={() => run(() => boardActions.toggleLockSelection(targetElementId))}
+          onClick={() =>
+            run(() => boardActions.toggleLockSelection(targetElementId))
+          }
           type="button"
         >
           {targetIsLocked ? <LockOpen size={16} /> : <Lock size={16} />}
@@ -254,6 +258,14 @@ export function BoardContextMenu({
         >
           <Link2 size={16} />
           <span>Readonly link</span>
+        </Button>
+        <Button
+          className={`${itemClass} text-red-300 bg-red-500/55 hover:bg-red-500/15 hover:text-red-200`}
+          onClick={() => run(deleteSelectedElements)}
+          type="button"
+        >
+          <Trash2 size={16} />
+          <span>Удалить выбранное</span>
         </Button>
       </Popover>
     </div>,
