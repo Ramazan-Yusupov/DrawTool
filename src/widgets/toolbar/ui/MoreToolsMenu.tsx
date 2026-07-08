@@ -161,13 +161,13 @@ export function MoreToolsMenu() {
           <div ref={menuRef}>
             <Popover
               aria-label="Дополнительные инструменты"
-              className="fixed z-60 mt-2"
+              className="fixed z-60 mt-2 mb-2"
               isOpen={isOpen}
               role="menu"
               style={menuPosition}
             >
               <div className="space-y-3">
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-6 gap-2">
                   {MORE_SHAPE_ITEMS.slice(0, 2).map((item) => {
                     const Icon = item.icon;
 
@@ -288,7 +288,7 @@ export function MoreToolsMenu() {
                   Premium shapes
                 </p>
 
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-6 gap-2">
                   {ADVANCED_TOOLS.map((item) => (
                     <MoreToolsMenuItem
                       icon={item.icon}
@@ -309,7 +309,7 @@ export function MoreToolsMenu() {
                 Другие фигуры
               </p>
 
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-6 gap-2">
                 {MORE_SHAPE_ITEMS.slice(2).map((item) => {
                   return (
                     <MoreToolsMenuItem
