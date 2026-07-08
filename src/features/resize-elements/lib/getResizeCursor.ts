@@ -1,6 +1,10 @@
 import type { ResizeHandle } from "../model/types";
 
 export function getResizeCursor(handle: ResizeHandle) {
+  if (handle.startsWith("waypoint:")) {
+    return "grab";
+  }
+
   switch (handle) {
     case "n":
     case "s":

@@ -18,6 +18,7 @@ import { renderTable } from "./renderTable";
 import { renderHexagon } from "./renderHexagon";
 import { renderImageElement } from "./renderImageElement";
 import { renderLine } from "./renderLine";
+import { renderMarkdown } from "./renderMarkdown";
 import { renderRectangle } from "./renderRectangle";
 import { renderStar } from "./renderStar";
 import { renderText } from "./renderText";
@@ -32,6 +33,7 @@ function shouldRenderLabel(element: BoardElement) {
       element.type !== "table" &&
       element.type !== "code" &&
       element.type !== "embed" &&
+      element.type !== "markdown" &&
       element.type !== "frame" &&
       element.type !== "arrow" &&
       element.type !== "line" &&
@@ -122,6 +124,9 @@ function renderUnrotated(
       return;
     case "embed":
       renderEmbed(context, element);
+      return;
+    case "markdown":
+      renderMarkdown(context, element);
       return;
     case "code":
       if ("kind" in element) {

@@ -69,6 +69,20 @@ function getPointerAngle(point: Point, center: Point) {
   return Math.atan2(point.y - center.y, point.x - center.x);
 }
 
+function canEditLabelOnCanvas(element: { type: string }) {
+  return (
+    element.type === "rectangle" ||
+    element.type === "ellipse" ||
+    element.type === "diamond" ||
+    element.type === "triangle" ||
+    element.type === "hexagon" ||
+    element.type === "star" ||
+    element.type === "cloud" ||
+    element.type === "line" ||
+    element.type === "arrow"
+  );
+}
+
 export function useSelectElements() {
   const interactionRef = useRef<SelectionInteraction>(null);
   const move = useMoveElements();
@@ -372,6 +386,13 @@ export function useSelectElements() {
       selectionStore.setElementIds([hitElement.id]);
       historyStore.begin();
       textEditorStore.open(hitElement.id);
+      return;
+    }
+
+    if (hitElement && canEditLabelOnCanvas(hitElement)) {
+      selectionStore.setElementIds([hitElement.id]);
+      historyStore.begin();
+      textEditorStore.openLabel(hitElement.id);
     }
   }
 

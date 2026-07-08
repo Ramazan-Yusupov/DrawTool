@@ -57,11 +57,14 @@ import {
   degreesToRadians,
   setSelectedElementRotation,
 } from "@/features/rotate-elements";
+import { ArrowSection } from "./ArrowSection";
 import { EmbedSection } from "./EmbedSection";
 import { ElementTitleSection, hasOwnTitle } from "./ElementTitleSection";
 import { LinkSection } from "./LinkSection";
+import { MarkdownSection } from "./MarkdownSection";
 import { PremiumSection } from "./PremiumSection";
 import { TableSection } from "./TableSection";
+import { TagsSection } from "./TagsSection";
 import { usePropertiesPanel } from "../model/usePropertiesPanel";
 
 const ARROW_ROUTING_ITEMS = [
@@ -425,6 +428,10 @@ export function PropertiesPanel() {
             </section>
           )}
 
+          {primaryElement?.type === "arrow" && (
+            <ArrowSection element={primaryElement} />
+          )}
+
           {capabilities.text && (
             <section className="space-y-3 border-t border-border pt-4">
               <div className="flex items-center gap-2 text-sm font-medium text-text">
@@ -467,6 +474,10 @@ export function PropertiesPanel() {
             <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
           )}
 
+          {primaryElement?.type === "markdown" && (
+            <MarkdownSection element={primaryElement} />
+          )}
+
           {primaryElement?.type === "table" && (
             <TableSection
               onChangeCell={(cellIndex, value) => updateTableCell(primaryElement.id, cellIndex, value)}
@@ -482,6 +493,8 @@ export function PropertiesPanel() {
           {primaryElement && (
             <LinkSection link={primaryElement.link} onChange={changeElementLink} />
           )}
+
+          {primaryElement && <TagsSection element={primaryElement} />}
 
           {primaryElement && (
             <section className="space-y-3 border-t border-border pt-4">

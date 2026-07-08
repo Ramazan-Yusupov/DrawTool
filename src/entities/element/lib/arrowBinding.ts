@@ -85,9 +85,11 @@ export function getArrowBindingAnchor(
 ) {
   if (binding.anchor === "fixed") {
     const center = getElementCenter(target);
+    const bounds = getElementBounds(target);
+    const rayLength = Math.max(bounds.width, bounds.height, 1) * 2;
     const fixedDirection = {
-      x: center.x + Math.cos(binding.focus),
-      y: center.y + Math.sin(binding.focus),
+      x: center.x + Math.cos(binding.focus) * rayLength,
+      y: center.y + Math.sin(binding.focus) * rayLength,
     };
 
     return getRelationAnchor(target, fixedDirection);

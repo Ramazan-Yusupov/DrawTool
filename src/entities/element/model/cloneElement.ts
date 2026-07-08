@@ -21,8 +21,15 @@ export function cloneElement(
   copy.y += offset.y;
   copy.style = { ...copy.style };
 
-  if (copy.type === "freedraw") {
+  if (copy.type === "freedraw" || copy.type === "highlighter") {
     copy.points = copy.points.map((point) => ({
+      x: point.x + offset.x,
+      y: point.y + offset.y,
+    }));
+  }
+
+  if (copy.type === "arrow" && copy.waypoints?.length) {
+    copy.waypoints = copy.waypoints.map((point) => ({
       x: point.x + offset.x,
       y: point.y + offset.y,
     }));

@@ -1,4 +1,5 @@
 import type { Point } from "@/shared/types";
+import { rotatePoint } from "@/shared/lib";
 import { getElementBounds } from "./getElementBounds";
 import type { BoardElement } from "../model/types";
 
@@ -17,16 +18,28 @@ function getCenter(element: BoardElement): Point {
 export function getRelationAnchor(element: BoardElement, toward: Point): Point {
   const bounds = getElementBounds(element);
   const center = getCenter(element);
-  const dx = toward.x - center.x;
-  const dy = toward.y - center.y;
+  const angle = element.angle ?? 0;
+  const localToward = rotatePoint(toward, center, -angle);
+  const dx = localToward.x - center.x;
+  const dy = localToward.y - center.y;
 
   if (Math.abs(dx) < EPSILON && Math.abs(dy) < EPSILON) {
-    return { x: center.x + bounds.width / 2, y: center.y };
+    return rotatePoint({ x: center.x + bounds.width / 2, y: center.y }, center, angle);
   }
 
-  const scaleX = Math.abs(dx) / Math.max(bounds.width / 2, 1);
-  const scaleY = Math.abs(dy) / Math.max(bounds.height / 2, 1);
-  const scale = 1 / Math.max(scaleX, scaleY, EPSILON);
+  const halfWidth = Math.max(bounds.width / 2, 1);
+  const halfHeight = Math.max(bounds.height / 2, 1);
+  const scaleX = Math.abs(dx) / halfWidth;
+  const scaleY = Math.abs(dy) / halfHeight;
+  const scale = element.type === "ellipse"
+    ? 1 / Math.max(Math.hypot(scaleX, scaleY), EPSILON)
+    : element.type === "diamond"
+      ? 1 / Math.max(scaleX + scaleY, EPSILON)
+      : 1 / Math.max(scaleX, scaleY, EPSILON);
 
-  return { x: center.x + dx * scale, y: center.y + dy * scale };
+  return rotatePoint(
+    { x: center.x + dx * scale, y: center.y + dy * scale },
+    center,
+    angle,
+  );
 }

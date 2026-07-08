@@ -14,6 +14,7 @@ export type ShapeToolId =
   | "table"
   | "frame"
   | "embed"
+  | "markdown"
   | "advanced"
   | "code";
 

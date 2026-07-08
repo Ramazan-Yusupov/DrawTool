@@ -3,6 +3,7 @@ import {
   getArrowPathPoints,
   getElementBounds,
 } from "@/entities/element";
+import { roundedPolylineSvgPath } from "@/entities/element/lib/getRoundedPolylinePath";
 import type { BoardElement } from "@/entities/element";
 
 function escapeXml(value: string) {
@@ -89,9 +90,11 @@ function elementToSvg(element: BoardElement) {
       markup += textSvg(`${distance} px`, x + width / 2 - 20, y + height / 2 - 8, 12, style.strokeColor);
     }
   } else if (element.type === "arrow") {
-    if (element.routing === "curve") {
+    if (element.routing === "curve" && !element.waypoints?.length) {
       const control = getArrowCurveControlPoint(element);
       markup = `<path d="M ${element.x} ${element.y} Q ${control.x} ${control.y} ${element.x + element.width} ${element.y + element.height}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
+    } else if (element.routeCornerStyle === "rounded") {
+      markup = `<path d="${roundedPolylineSvgPath(getArrowPathPoints(element))}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
     } else {
       const points = getArrowPathPoints(element).map((point) => `${point.x},${point.y}`).join(" ");
       markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
@@ -101,6 +104,11 @@ function elementToSvg(element: BoardElement) {
     markup = textSvg(element.text, x + 6, y + 4, element.fontSize, style.strokeColor);
   } else if (element.type === "sticky") {
     markup = `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" rx="12" fill="${style.backgroundColor}" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />` + textSvg(element.text, bounds.x + 10, bounds.y + 8, element.fontSize, style.strokeColor);
+  } else if (element.type === "markdown") {
+    markup = `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" rx="14" fill="${style.backgroundColor}" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />`;
+    markup += `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="34" rx="14" fill="#1e293b" opacity="0.82" />`;
+    markup += textSvg(element.title, bounds.x + 12, bounds.y + 4, 14, "#f8fafc", bounds.width - 24);
+    markup += textSvg(element.content.replace(/^#{1,2}\s+/gm, "").replace(/^[-*]\s+/gm, "• "), bounds.x + 12, bounds.y + 42, element.fontSize, "#cbd5e1", bounds.width - 24);
   } else if (element.type === "callout") {
     const line = element.targetPoint ? `<line x1="${bounds.x + bounds.width / 2}" y1="${bounds.y + bounds.height / 2}" x2="${element.targetPoint.x}" y2="${element.targetPoint.y}" stroke="${style.strokeColor}" stroke-dasharray="5 4" />` : "";
     markup = `${line}<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" rx="12" fill="${style.backgroundColor}" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />${textSvg(element.text, bounds.x + 10, bounds.y + 8, element.fontSize, "#f8fafc")}`;

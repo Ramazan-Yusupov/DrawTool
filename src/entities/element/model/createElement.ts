@@ -2,6 +2,7 @@ import { createId } from "@/shared/lib";
 import { DEFAULT_ELEMENT_STYLE } from "./constants";
 import type {
   ArrowElement,
+  ArrowCornerStyle,
   ArrowRouting,
   AdvancedElementKind,
   AdvancedElement,
@@ -20,6 +21,7 @@ import type {
   HighlighterElement,
   ImageElement,
   LineElement,
+  MarkdownElement,
   MeasureElement,
   RectangleElement,
   StarElement,
@@ -49,6 +51,7 @@ type TextCreateParams = BaseCreateParams & {
 
 type ArrowCreateParams = BaseCreateParams & {
   routing?: ArrowRouting;
+  routeCornerStyle?: ArrowCornerStyle;
 };
 
 type FreeDrawCreateParams = BaseCreateParams & {
@@ -260,6 +263,7 @@ export function createArrow(params: ArrowCreateParams): ArrowElement {
   return {
     ...createBase<ArrowElement>("arrow", params),
     routing: params.routing ?? "elbow",
+    routeCornerStyle: params.routeCornerStyle ?? "sharp",
     elbowAxis: "horizontal",
     elbowOffset: 0.5,
     curveOffset: 0.22,
@@ -285,6 +289,26 @@ export function createEmbed(params: BaseCreateParams & { title?: string; url?: s
     ...createBase<EmbedElement>("embed", params),
     title: params.title ?? "Встроенная страница",
     url: params.url ?? "https://example.com",
+  };
+}
+
+export function createMarkdown(params: BaseCreateParams & { title?: string; content?: string; fontSize?: number }): MarkdownElement {
+  return {
+    ...createBase<MarkdownElement>("markdown", {
+      ...params,
+      width: params.width ?? 320,
+      height: params.height ?? 220,
+      style: {
+        strokeColor: "#cbd5e1",
+        backgroundColor: "#0f172a",
+        fillStyle: "solid",
+        cornerStyle: "rounded",
+        ...params.style,
+      },
+    }),
+    title: params.title ?? "Markdown note",
+    content: params.content ?? "## Заметка\n- идея\n- действие\n\n`code` и ссылки рядом с диаграммой",
+    fontSize: params.fontSize ?? 15,
   };
 }
 
@@ -439,7 +463,14 @@ export function createElement(
     TextCreateParams &
     ArrowCreateParams &
     FreeDrawCreateParams &
-    AdvancedCreateParams,
+    AdvancedCreateParams & {
+      content?: string;
+      language?: string;
+      rows?: number;
+      columns?: number;
+      cells?: string[];
+      title?: string;
+    },
 ): BoardElement {
   switch (type) {
     case "rectangle": return createRectangle(params);
@@ -454,6 +485,7 @@ export function createElement(
     case "measure": return createMeasure(params);
     case "frame": return createFrame(params);
     case "embed": return createEmbed(params);
+    case "markdown": return createMarkdown(params);
     case "advanced": return createAdvanced(params);
     case "code": return createCodeSketch(params);
     case "freedraw": return createFreeDraw(params);

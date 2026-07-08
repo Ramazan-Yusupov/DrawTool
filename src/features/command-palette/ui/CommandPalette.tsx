@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 import { boardActions } from "@/features/board-actions";
+import { productivityToolsStore } from "@/features/productivity-tools";
 import { commandPaletteStore } from "../model/commandPaletteStore";
 import { Button, Modal } from "@/shared/ui";
 
@@ -16,6 +17,18 @@ export function CommandPalette({ onOpenPremiumStudio }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const commands = [
     { label: "Open Premium Studio", run: onOpenPremiumStudio },
+    { label: "Open Power Tools", run: productivityToolsStore.open },
+    { label: "Search elements", run: productivityToolsStore.open },
+    { label: "Export .drawtool file", run: boardActions.exportDrawToolFile },
+    { label: "Insert markdown note", run: boardActions.insertMarkdownNote },
+    {
+      label: "Connect selection with smart arrows",
+      run: boardActions.connectSelectionSmart,
+    },
+    {
+      label: "Auto layout selection",
+      run: () => boardActions.autoLayoutSelection("flow"),
+    },
     {
       label: "Insert flowchart template",
       run: () => boardActions.insertTemplate("flowchart"),

@@ -3,6 +3,7 @@ import {
   getArrowCurveControlPoint,
   getArrowPathPoints,
 } from "../lib/getArrowPathPoints";
+import { roundedPolylineCommands } from "../lib/getRoundedPolylinePath";
 import type { ArrowElement } from "../model/types";
 
 const ARROW_HEAD_LENGTH = 12;
@@ -85,18 +86,43 @@ function getArrowHeadAngle(element: ArrowElement) {
     x: element.x + element.width,
     y: element.y + element.height,
   };
+  const points = getArrowPathPoints(element);
+  const previousPoint = points.at(-2);
+
+  if (element.waypoints?.length && previousPoint) {
+    return Math.atan2(end.y - previousPoint.y, end.x - previousPoint.x);
+  }
 
   if (element.routing === "curve") {
     const control = getArrowCurveControlPoint(element);
     return Math.atan2(end.y - control.y, end.x - control.x);
   }
 
-  const points = getArrowPathPoints(element);
-  const previousPoint = points.at(-2);
-
   return previousPoint
     ? Math.atan2(end.y - previousPoint.y, end.x - previousPoint.x)
     : 0;
+}
+
+function renderRoundedPolyline(
+  context: CanvasRenderingContext2D,
+  points: { x: number; y: number }[],
+) {
+  const commands = roundedPolylineCommands(points);
+
+  commands.forEach((command) => {
+    if (command.type === "move") {
+      context.moveTo(command.point.x, command.point.y);
+    } else if (command.type === "line") {
+      context.lineTo(command.point.x, command.point.y);
+    } else {
+      context.quadraticCurveTo(
+        command.control.x,
+        command.control.y,
+        command.point.x,
+        command.point.y,
+      );
+    }
+  });
 }
 
 export function renderArrow(
@@ -128,9 +154,11 @@ export function renderArrow(
   context.beginPath();
   context.moveTo(start.x, start.y);
 
-  if (element.routing === "curve") {
+  if (element.routing === "curve" && !element.waypoints?.length) {
     const control = getArrowCurveControlPoint(element);
     context.quadraticCurveTo(control.x, control.y, end.x, end.y);
+  } else if (element.routeCornerStyle === "rounded" && points.length > 2) {
+    renderRoundedPolyline(context, points);
   } else {
     points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
   }

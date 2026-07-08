@@ -1,15 +1,23 @@
 import {
+  createArrowBinding,
   createElement,
   DEFAULT_ELEMENT_STYLE,
   getElementBounds,
+  getElementCenter,
   updateElement,
+  type ArrowCornerStyle,
   type BoardElement,
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { sceneStore, serializeScene } from "@/entities/scene";
+import { deserializeScene, sceneStore, serializeScene } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { viewportStore } from "@/entities/viewport";
-import { downloadFile, exportToJson, exportToPng, exportToSvg } from "@/features/export-scene";
+import {
+  downloadFile,
+  exportToJson,
+  exportToPng,
+  exportToSvg,
+} from "@/features/export-scene";
 import { createId } from "@/shared/lib";
 
 type ClipboardPayload = {
@@ -23,6 +31,12 @@ type LibraryItem = {
   name: string;
   elements: BoardElement[];
   createdAt: number;
+};
+
+export type ElementSearchResult = {
+  id: string;
+  label: string;
+  meta: string;
 };
 
 export type AlignCommand =
@@ -45,7 +59,9 @@ function cloneElements(elements: BoardElement[]) {
 
 function getSelectedElements() {
   const selectedIds = new Set(selectionStore.get().elementIds);
-  return sceneStore.get().elements.filter((element) => selectedIds.has(element.id));
+  return sceneStore
+    .get()
+    .elements.filter((element) => selectedIds.has(element.id));
 }
 
 function canUseLabel(element: BoardElement) {
@@ -92,7 +108,9 @@ function getFrameExportElements(frame: BoardElement) {
 }
 
 function getSelectedFrame() {
-  return getSelectedElements().find((element) => element.type === "frame") ?? null;
+  return (
+    getSelectedElements().find((element) => element.type === "frame") ?? null
+  );
 }
 
 function normalizeInsertedElements(elements: BoardElement[], offset = 32) {
@@ -147,6 +165,7 @@ function writeLibrary(items: LibraryItem[]) {
 
 const SNAPSHOT_STORAGE_KEY = "drawtool.snapshots.v1";
 const BRAND_KIT_STORAGE_KEY = "drawtool.brandKit.v1";
+const DRAWTOOL_FILE_FORMAT = "drawtool-file";
 
 type SnapshotItem = {
   id: string;
@@ -166,6 +185,126 @@ function readSnapshots(): SnapshotItem[] {
 
 function writeSnapshots(items: SnapshotItem[]) {
   localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(items));
+}
+
+function getInsertionPoint() {
+  const viewport = viewportStore.get();
+  return {
+    x: viewport.x + window.innerWidth / viewport.zoom / 2 - 160,
+    y: viewport.y + window.innerHeight / viewport.zoom / 2 - 100,
+  };
+}
+
+function getElementText(element: BoardElement) {
+  const tags = element.tags?.join(" ") ?? "";
+  const metadata = element.metadata
+    ? Object.entries(element.metadata)
+        .map(([key, value]) => `${key} ${value}`)
+        .join(" ")
+    : "";
+  const suffix = `${tags} ${metadata}`.trim();
+  const withMeta = (value: string) => `${value}\n${suffix}`.trim();
+
+  if ("label" in element && element.label) return withMeta(element.label);
+  if (element.type === "frame") return withMeta(element.name);
+  if (element.type === "embed") return withMeta(element.title ?? element.url);
+  if (element.type === "markdown")
+    return withMeta(`${element.title}\n${element.content}`);
+  if (
+    element.type === "text" ||
+    element.type === "sticky" ||
+    element.type === "callout"
+  )
+    return withMeta(element.text);
+  if (element.type === "table") return withMeta(element.cells.join("\n"));
+  if (element.type === "code" && "kind" in element)
+    return withMeta(`${element.title}\n${element.body.join("\n")}`);
+  if (element.type === "code")
+    return withMeta(`${element.title}\n${element.language}\n${element.code}`);
+  if (element.type === "sticker") return withMeta(element.content);
+  if (element.type === "image") return withMeta(element.name);
+  return withMeta(element.type);
+}
+
+function getMidpointBetween(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+) {
+  return {
+    x: start.x + (end.x - start.x) / 2,
+    y: start.y + (end.y - start.y) / 2,
+  };
+}
+
+function parseCsvRows(source: string) {
+  return source
+    .trim()
+    .split(/\r?\n/)
+    .map((line) =>
+      line.split(",").map((cell) => cell.trim().replace(/^"|"$/g, "")),
+    )
+    .filter((row) => row.some(Boolean));
+}
+
+function createBoundArrow(
+  startElement: BoardElement,
+  endElement: BoardElement,
+  label?: string,
+) {
+  const start = getElementCenter(startElement);
+  const end = getElementCenter(endElement);
+  const arrow = createElement("arrow", {
+    x: start.x,
+    y: start.y,
+    width: end.x - start.x,
+    height: end.y - start.y,
+    routing: "curve",
+    style: {
+      ...DEFAULT_ELEMENT_STYLE,
+      strokeColor: "#93c5fd",
+      fillStyle: "transparent",
+    },
+  });
+
+  if (arrow.type !== "arrow") {
+    return arrow;
+  }
+
+  return updateElement(arrow, {
+    label,
+    startBinding: createArrowBinding(startElement, start),
+    endBinding: createArrowBinding(endElement, end),
+  });
+}
+
+function cleanDiagramNodeName(value: string) {
+  return value
+    .trim()
+    .replace(/^[A-Za-z0-9_]+\s*\[/, "")
+    .replace(/\]$/, "")
+    .replace(/^[A-Za-z0-9_]+\s*\(/, "")
+    .replace(/\)$/, "")
+    .replace(/^["']|["']$/g, "")
+    .trim();
+}
+
+function parseDiagramEdges(source: string) {
+  return source
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("%%") && !line.startsWith("#"))
+    .map((line) => line.replace(/^flowchart\s+\w+/i, "").trim())
+    .map((line) => {
+      const match = line.match(/^(.+?)\s*(?:-->|---|->|=>)\s*(.+)$/);
+      if (!match) return null;
+      return {
+        from: cleanDiagramNodeName(match[1]),
+        to: cleanDiagramNodeName(match[2]),
+      };
+    })
+    .filter((edge): edge is { from: string; to: string } =>
+      Boolean(edge?.from && edge.to),
+    );
 }
 
 function createTemplateElements(template: "flowchart" | "mindmap" | "roadmap") {
@@ -219,6 +358,8 @@ function createTemplateElements(template: "flowchart" | "mindmap" | "roadmap") {
   ];
 }
 
+const MAX_WAYPOINTS = 10;
+
 export const boardActions = {
   copySelectionToClipboard() {
     const elements = getSelectedElements();
@@ -239,7 +380,10 @@ export const boardActions = {
 
     try {
       parsed = JSON.parse(text) as ClipboardPayload;
-      if (parsed.format !== CLIPBOARD_FORMAT || !Array.isArray(parsed.elements)) {
+      if (
+        parsed.format !== CLIPBOARD_FORMAT ||
+        !Array.isArray(parsed.elements)
+      ) {
         return false;
       }
     } catch {
@@ -263,7 +407,9 @@ export const boardActions = {
     ) {
       return false;
     }
-    const file = await exportToPng(elements, { fileName: "drawtool-selection.png" });
+    const file = await exportToPng(elements, {
+      fileName: "drawtool-selection.png",
+    });
     await navigator.clipboard.write([
       new ClipboardItem({ [file.mimeType]: file.blob }),
     ]);
@@ -337,12 +483,33 @@ export const boardActions = {
       const bounds = getElementBounds(element);
       const patch: Partial<Pick<BoardElement, "x" | "y">> = {};
 
-      if (command === "left") patch.x = element.x + selectionBounds.x - bounds.x;
-      if (command === "center") patch.x = element.x + selectionBounds.x + selectionBounds.width / 2 - (bounds.x + bounds.width / 2);
-      if (command === "right") patch.x = element.x + selectionBounds.x + selectionBounds.width - (bounds.x + bounds.width);
+      if (command === "left")
+        patch.x = element.x + selectionBounds.x - bounds.x;
+      if (command === "center")
+        patch.x =
+          element.x +
+          selectionBounds.x +
+          selectionBounds.width / 2 -
+          (bounds.x + bounds.width / 2);
+      if (command === "right")
+        patch.x =
+          element.x +
+          selectionBounds.x +
+          selectionBounds.width -
+          (bounds.x + bounds.width);
       if (command === "top") patch.y = element.y + selectionBounds.y - bounds.y;
-      if (command === "middle") patch.y = element.y + selectionBounds.y + selectionBounds.height / 2 - (bounds.y + bounds.height / 2);
-      if (command === "bottom") patch.y = element.y + selectionBounds.y + selectionBounds.height - (bounds.y + bounds.height);
+      if (command === "middle")
+        patch.y =
+          element.y +
+          selectionBounds.y +
+          selectionBounds.height / 2 -
+          (bounds.y + bounds.height / 2);
+      if (command === "bottom")
+        patch.y =
+          element.y +
+          selectionBounds.y +
+          selectionBounds.height -
+          (bounds.y + bounds.height);
 
       return updateElement(element, patch);
     });
@@ -356,13 +523,13 @@ export const boardActions = {
     const sorted = [...elements].sort((a, b) => {
       const aBounds = getElementBounds(a);
       const bBounds = getElementBounds(b);
-      return command === "horizontal" ? aBounds.x - bBounds.x : aBounds.y - bBounds.y;
+      return command === "horizontal"
+        ? aBounds.x - bBounds.x
+        : aBounds.y - bBounds.y;
     });
     const first = getElementBounds(sorted[0]);
     const last = getElementBounds(sorted[sorted.length - 1]);
-    const span = command === "horizontal"
-      ? last.x - first.x
-      : last.y - first.y;
+    const span = command === "horizontal" ? last.x - first.x : last.y - first.y;
     const step = span / (sorted.length - 1);
     const targetById = new Map<string, number>();
     sorted.forEach((element, index) => {
@@ -404,15 +571,17 @@ export const boardActions = {
     const elements = getSelectedElements();
     if (elements.length === 0) return false;
     const items = readLibrary();
-    writeLibrary([
-      {
-        id: createId("library"),
-        name,
-        elements: cloneElements(elements),
-        createdAt: Date.now(),
-      },
-      ...items,
-    ].slice(0, 24));
+    writeLibrary(
+      [
+        {
+          id: createId("library"),
+          name,
+          elements: cloneElements(elements),
+          createdAt: Date.now(),
+        },
+        ...items,
+      ].slice(0, 24),
+    );
     return true;
   },
 
@@ -432,11 +601,12 @@ export const boardActions = {
     if (!frame) return false;
     const elements = getFrameExportElements(frame);
     const fileName = `${frame.type}-${frame.id}`;
-    const file = format === "png"
-      ? await exportToPng(elements, { fileName: `${fileName}.png` })
-      : format === "svg"
-        ? exportToSvg(elements, { fileName: `${fileName}.svg` })
-        : exportToJson(elements, { fileName: `${fileName}.json` });
+    const file =
+      format === "png"
+        ? await exportToPng(elements, { fileName: `${fileName}.png` })
+        : format === "svg"
+          ? exportToSvg(elements, { fileName: `${fileName}.svg` })
+          : exportToJson(elements, { fileName: `${fileName}.json` });
     downloadFile(file.blob, file.fileName);
     return true;
   },
@@ -449,7 +619,10 @@ export const boardActions = {
       0.2,
       Math.min(
         2,
-        Math.min(window.innerWidth / (bounds.width + 160), window.innerHeight / (bounds.height + 160)),
+        Math.min(
+          window.innerWidth / (bounds.width + 160),
+          window.innerHeight / (bounds.height + 160),
+        ),
       ),
     );
     viewportStore.set({
@@ -496,15 +669,17 @@ export const boardActions = {
 
   createSnapshot(name = "Checkpoint") {
     const snapshots = readSnapshots();
-    writeSnapshots([
-      {
-        id: createId("snapshot"),
-        name,
-        createdAt: Date.now(),
-        elements: cloneElements(sceneStore.get().elements),
-      },
-      ...snapshots,
-    ].slice(0, 12));
+    writeSnapshots(
+      [
+        {
+          id: createId("snapshot"),
+          name,
+          createdAt: Date.now(),
+          elements: cloneElements(sceneStore.get().elements),
+        },
+        ...snapshots,
+      ].slice(0, 12),
+    );
     return true;
   },
 
@@ -518,10 +693,372 @@ export const boardActions = {
     return true;
   },
 
+  getSnapshots() {
+    return readSnapshots();
+  },
+
+  restoreSnapshot(snapshotId: string) {
+    const snapshot = readSnapshots().find((item) => item.id === snapshotId);
+    if (!snapshot) return false;
+    historyStore.begin();
+    sceneStore.setElements(snapshot.elements);
+    selectionStore.clear();
+    historyStore.commit();
+    return true;
+  },
+
+  insertMarkdownNote() {
+    const point = getInsertionPoint();
+    const element = createElement("markdown", {
+      x: point.x,
+      y: point.y,
+      width: 340,
+      height: 240,
+    });
+    historyStore.begin();
+    sceneStore.setElements([...sceneStore.get().elements, element]);
+    selectionStore.setElementIds([element.id]);
+    historyStore.commit();
+    return true;
+  },
+
+  insertDiagramFromCode(source: string) {
+    const edges = parseDiagramEdges(source);
+    if (edges.length === 0) return false;
+
+    const names = Array.from(
+      new Set(edges.flatMap((edge) => [edge.from, edge.to])),
+    );
+    const point = getInsertionPoint();
+    const nodeByName = new Map<string, BoardElement>();
+    const columns = Math.min(
+      4,
+      Math.max(2, Math.ceil(Math.sqrt(names.length))),
+    );
+    const nodeElements = names.map((name, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      const element = createElement("rectangle", {
+        x: point.x + column * 240,
+        y: point.y + row * 150,
+        width: 180,
+        height: 84,
+        style: {
+          ...DEFAULT_ELEMENT_STYLE,
+          strokeColor: "#93c5fd",
+          backgroundColor: "#0f172a",
+          fillStyle: "solid",
+          cornerStyle: "rounded",
+        },
+      });
+      const labeled = updateElement(element, { label: name });
+      nodeByName.set(name, labeled);
+      return labeled;
+    });
+    const arrows = edges
+      .map((edge) => {
+        const start = nodeByName.get(edge.from);
+        const end = nodeByName.get(edge.to);
+        return start && end ? createBoundArrow(start, end) : null;
+      })
+      .filter((element): element is BoardElement => Boolean(element));
+    const elements = [...nodeElements, ...arrows];
+
+    historyStore.begin();
+    sceneStore.setElements([...sceneStore.get().elements, ...elements]);
+    selectionStore.setElementIds(elements.map((element) => element.id));
+    historyStore.commit();
+    return true;
+  },
+
+  connectSelectionSmart() {
+    const elements = getSelectedElements()
+      .filter((element) => !element.locked && element.type !== "arrow")
+      .sort((left, right) => {
+        const leftBounds = getElementBounds(left);
+        const rightBounds = getElementBounds(right);
+        return leftBounds.x === rightBounds.x
+          ? leftBounds.y - rightBounds.y
+          : leftBounds.x - rightBounds.x;
+      });
+    if (elements.length < 2) return false;
+    const arrows = elements
+      .slice(0, -1)
+      .map((element, index) => createBoundArrow(element, elements[index + 1]));
+
+    historyStore.begin();
+    sceneStore.setElements([...sceneStore.get().elements, ...arrows]);
+    selectionStore.setElementIds(arrows.map((element) => element.id));
+    historyStore.commit();
+    return true;
+  },
+
+  insertBezierConnector() {
+    const point = getInsertionPoint();
+    const arrow = createElement("arrow", {
+      x: point.x,
+      y: point.y,
+      width: 320,
+      height: 120,
+      routing: "curve",
+      style: {
+        ...DEFAULT_ELEMENT_STYLE,
+        strokeColor: "#22c55e",
+        fillStyle: "transparent",
+        strokeWidth: 5,
+      },
+    });
+
+    historyStore.begin();
+    sceneStore.setElements([
+      ...sceneStore.get().elements,
+      updateElement(arrow, { label: "Bezier" }),
+    ]);
+    selectionStore.setElementIds([arrow.id]);
+    historyStore.commit();
+    return true;
+  },
+
+  addWaypointToSelectedArrow() {
+    const arrow = getSelectedElements().find(
+      (element) => element.type === "arrow",
+    );
+    if (!arrow || arrow.type !== "arrow") return false;
+
+    // Ограничение: если лимит уже достигнут, прекращаем выполнение
+    const currentWaypointsCount = arrow.waypoints?.length ?? 0;
+    if (currentWaypointsCount >= MAX_WAYPOINTS) return false;
+
+    const points = [
+      { x: arrow.x, y: arrow.y },
+      ...(arrow.waypoints ?? []),
+      { x: arrow.x + arrow.width, y: arrow.y + arrow.height },
+    ];
+    const segments = points.slice(0, -1).map((start, index) => ({
+      end: points[index + 1],
+      index,
+      length: Math.hypot(
+        points[index + 1].x - start.x,
+        points[index + 1].y - start.y,
+      ),
+      start,
+    }));
+    const target = segments.sort(
+      (left, right) => right.length - left.length,
+    )[0];
+    if (!target) return false;
+    const waypoints = [...(arrow.waypoints ?? [])];
+    waypoints.splice(
+      target.index,
+      0,
+      getMidpointBetween(target.start, target.end),
+    );
+
+    historyStore.begin();
+    sceneStore.updateById(arrow.id, (element) =>
+      element.type === "arrow"
+        ? updateElement(element, { waypoints })
+        : element,
+    );
+    historyStore.commit();
+    return true;
+  },
+
+  clearSelectedArrowWaypoints() {
+    const arrow = getSelectedElements().find(
+      (element) => element.type === "arrow",
+    );
+    if (!arrow || arrow.type !== "arrow" || !arrow.waypoints?.length)
+      return false;
+    historyStore.begin();
+    sceneStore.updateById(arrow.id, (element) =>
+      element.type === "arrow"
+        ? updateElement(element, { waypoints: undefined })
+        : element,
+    );
+    historyStore.commit();
+    return true;
+  },
+
+  setSelectedArrowCornerStyle(routeCornerStyle: ArrowCornerStyle) {
+    const arrow = getSelectedElements().find(
+      (element) => element.type === "arrow",
+    );
+    if (!arrow || arrow.type !== "arrow") return false;
+    historyStore.begin();
+    sceneStore.updateById(arrow.id, (element) =>
+      element.type === "arrow"
+        ? updateElement(element, { routeCornerStyle })
+        : element,
+    );
+    historyStore.commit();
+    return true;
+  },
+
+  insertTableFromCsv(source: string) {
+    const rows = parseCsvRows(source);
+    if (rows.length === 0) return false;
+    const columns = Math.max(...rows.map((row) => row.length));
+    const cells = rows.flatMap((row) =>
+      Array.from({ length: columns }, (_, index) => row[index] ?? ""),
+    );
+    const point = getInsertionPoint();
+    const table = createElement("table", {
+      x: point.x,
+      y: point.y,
+      width: Math.max(280, columns * 140),
+      height: Math.max(120, rows.length * 48),
+      rows: rows.length,
+      columns,
+      cells,
+    });
+
+    historyStore.begin();
+    sceneStore.setElements([...sceneStore.get().elements, table]);
+    selectionStore.setElementIds([table.id]);
+    historyStore.commit();
+    return true;
+  },
+
+  searchElements(query: string): ElementSearchResult[] {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return [];
+
+    return sceneStore
+      .get()
+      .elements.map((element) => {
+        const text = getElementText(element);
+        return {
+          element,
+          text,
+        };
+      })
+      .filter((item) => item.text.toLowerCase().includes(normalizedQuery))
+      .slice(0, 24)
+      .map(({ element, text }) => ({
+        id: element.id,
+        label: text.split("\n").find(Boolean)?.slice(0, 80) || element.type,
+        meta: `${element.type} · ${element.id}`,
+      }));
+  },
+
+  focusElement(elementId: string) {
+    const element = sceneStore
+      .get()
+      .elements.find((item) => item.id === elementId);
+    if (!element) return false;
+    const bounds = getElementBounds(element);
+    selectionStore.setElementIds([element.id]);
+    viewportStore.set({
+      x:
+        bounds.x +
+        bounds.width / 2 -
+        window.innerWidth / 2 / viewportStore.get().zoom,
+      y:
+        bounds.y +
+        bounds.height / 2 -
+        window.innerHeight / 2 / viewportStore.get().zoom,
+      zoom: viewportStore.get().zoom,
+    });
+    return true;
+  },
+
+  autoLayoutSelection(mode: "flow" | "grid" | "tree" = "flow") {
+    const elements = getSelectedElements().filter(
+      (element) =>
+        !element.locked && element.type !== "arrow" && element.type !== "line",
+    );
+    if (elements.length < 2) return false;
+    const bounds = getElementsBounds(elements);
+    if (!bounds) return false;
+    const columns =
+      mode === "grid"
+        ? Math.ceil(Math.sqrt(elements.length))
+        : mode === "tree"
+          ? 2
+          : elements.length;
+    const sorted = [...elements].sort(
+      (left, right) => getElementBounds(left).x - getElementBounds(right).x,
+    );
+    const targetById = new Map<string, { x: number; y: number }>();
+
+    sorted.forEach((element, index) => {
+      const column = index % columns;
+      const row = Math.floor(index / columns);
+      targetById.set(element.id, {
+        x: bounds.x + column * 230,
+        y: bounds.y + row * 140 + (mode === "tree" && column === 1 ? 44 : 0),
+      });
+    });
+
+    historyStore.begin();
+    sceneStore.updateAll((element) => {
+      const target = targetById.get(element.id);
+      return target ? updateElement(element, target) : element;
+    });
+    historyStore.commit();
+    return true;
+  },
+
+  getFrames() {
+    return sceneStore
+      .get()
+      .elements.filter((element) => element.type === "frame")
+      .map((element) => ({
+        id: element.id,
+        name: element.name,
+      }));
+  },
+
+  exportDrawToolFile() {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const payload = {
+      format: DRAWTOOL_FILE_FORMAT,
+      version: 1,
+      savedAt: new Date().toISOString(),
+      scene: serializeScene(sceneStore.get().elements),
+      snapshots: readSnapshots(),
+    };
+    downloadFile(
+      new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      }),
+      `drawtool-project-${timestamp}.drawtool`,
+    );
+    return true;
+  },
+
+  async importDrawToolFile(file: File) {
+    const source = await file.text();
+    const parsed = JSON.parse(source) as {
+      format?: string;
+      scene?: ReturnType<typeof serializeScene>;
+      snapshots?: SnapshotItem[];
+    };
+    const elements =
+      parsed.format === DRAWTOOL_FILE_FORMAT && parsed.scene
+        ? deserializeScene(JSON.stringify(parsed.scene))
+        : deserializeScene(source);
+
+    historyStore.begin();
+    sceneStore.setElements(elements);
+    selectionStore.clear();
+    historyStore.commit();
+
+    if (Array.isArray(parsed.snapshots)) {
+      writeSnapshots(parsed.snapshots.slice(0, 12));
+    }
+
+    return true;
+  },
+
   runDiagramDiagnostics() {
     const elements = sceneStore.get().elements;
-    const emptyLabels = elements.filter((element) =>
-      ["arrow", "diamond", "advanced"].includes(element.type) && !element.label && !("title" in element),
+    const emptyLabels = elements.filter(
+      (element) =>
+        ["arrow", "diamond", "advanced"].includes(element.type) &&
+        !element.label &&
+        !("title" in element),
     ).length;
     const locked = elements.filter((element) => element.locked).length;
     const tiny = elements.filter((element) => {

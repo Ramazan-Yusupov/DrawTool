@@ -15,6 +15,7 @@ export {
   createHighlighter,
   createImage,
   createLine,
+  createMarkdown,
   createMeasure,
   createRectangle,
   createStar,
@@ -59,6 +60,7 @@ export { renderImage } from "./render/renderImage";
 
 export type {
   ArrowElement,
+  ArrowCornerStyle,
   ArrowRouting,
   AdvancedElement,
   AdvancedElementKind,
@@ -83,6 +85,7 @@ export type {
   HexagonElement,
   ImageElement,
   LineElement,
+  MarkdownElement,
   MeasureElement,
   RectangleElement,
   StarElement,

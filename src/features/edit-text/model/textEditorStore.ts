@@ -1,11 +1,16 @@
 type TextEditorState = {
   elementId: string | null;
+  mode: "label" | "text";
   wasCreated: boolean;
 };
 
 type TextEditorListener = () => void;
 
-let editorState: TextEditorState = { elementId: null, wasCreated: false };
+let editorState: TextEditorState = {
+  elementId: null,
+  mode: "text",
+  wasCreated: false,
+};
 const listeners = new Set<TextEditorListener>();
 
 function notifyListeners() {
@@ -18,7 +23,12 @@ export const textEditorStore = {
   },
 
   open(elementId: string, wasCreated = false) {
-    editorState = { elementId, wasCreated };
+    editorState = { elementId, mode: "text", wasCreated };
+    notifyListeners();
+  },
+
+  openLabel(elementId: string) {
+    editorState = { elementId, mode: "label", wasCreated: false };
     notifyListeners();
   },
 
@@ -27,7 +37,7 @@ export const textEditorStore = {
       return;
     }
 
-    editorState = { elementId: null, wasCreated: false };
+    editorState = { elementId: null, mode: "text", wasCreated: false };
     notifyListeners();
   },
 

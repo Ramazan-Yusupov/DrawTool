@@ -62,7 +62,7 @@ function drawCurveControlGuide(
   element: Parameters<typeof getElementResizeHandles>[0],
   viewport: Viewport,
 ) {
-  if (element.type !== "arrow" || element.routing !== "curve") {
+  if (element.type !== "arrow" || element.routing !== "curve" || element.waypoints?.length) {
     return;
   }
 

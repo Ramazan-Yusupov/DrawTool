@@ -14,6 +14,7 @@ import {
   SmilePlus,
   StickyNote,
   Table2,
+  WandSparkles,
   Code2,
   Workflow,
   Minus,
@@ -31,6 +32,7 @@ import {
   CalendarRange,
   DoorClosedLocked,
   Computer,
+  FileText,
   Webhook,
 } from "lucide-react";
 import type { AdvancedElementKind } from "@/entities/element";
@@ -42,6 +44,7 @@ import {
   applyCopiedStyleToSelectedElements,
   styleClipboardStore,
 } from "@/features/style-clipboard";
+import { productivityToolsStore } from "@/features/productivity-tools";
 import { IconButton, Popover } from "@/shared/ui";
 import { useMoreToolsMenuPosition } from "../model/useMoreToolsMenuPosition";
 import { MORE_SHAPE_ITEMS } from "../model/toolItems";
@@ -56,6 +59,7 @@ const BOARD_TOOLS = [
     icon: MessageSquareText,
   },
   { id: "table", label: "Таблица", shortcut: "", icon: Table2 },
+  { id: "markdown", label: "Markdown заметка", shortcut: "", icon: FileText },
   { id: "measure", label: "Линейка / измерение", shortcut: "", icon: Ruler },
   { id: "highlighter", label: "Маркер", shortcut: "", icon: Highlighter },
 ] as const;
@@ -203,6 +207,16 @@ export function MoreToolsMenu() {
                       />
                     );
                   })}
+
+                  <MoreToolsMenuItem
+                    icon={WandSparkles}
+                    label="Power tools"
+                    onClick={() => {
+                      productivityToolsStore.open();
+                      setIsOpen(false);
+                    }}
+                    variant="icon"
+                  />
 
                   <MoreToolsMenuItem
                     icon={Code2}

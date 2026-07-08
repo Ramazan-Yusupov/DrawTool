@@ -92,6 +92,13 @@ export function getQuadraticBezierPoint(
  */
 export function getArrowPathPoints(element: ArrowElement): Point[] {
   const { start, end } = getEndpoints(element);
+  const waypoints = element.waypoints?.filter(
+    (point) => Number.isFinite(point.x) && Number.isFinite(point.y),
+  );
+
+  if (waypoints?.length) {
+    return [start, ...waypoints, end];
+  }
 
   if (element.routing === "straight") {
     return [start, end];

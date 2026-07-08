@@ -232,6 +232,25 @@ export function resizeElement(
   modifiers: ResizeModifiers,
   initialFrameChildren = new Map<string, BoardElement>(),
 ) {
+  if (element.type === "arrow" && handle.startsWith("waypoint:")) {
+    const waypointIndex = Number(handle.split(":")[1]);
+    const point = modifiers.snapToGrid
+      ? snapPointToGrid(currentPoint, CANVAS_CONFIG.defaultSnapSize)
+      : currentPoint;
+
+    sceneStore.updateById(element.id, (current) => {
+      if (current.type !== "arrow") return current;
+      const waypoints = [...(current.waypoints ?? [])];
+      if (!Number.isInteger(waypointIndex) || !waypoints[waypointIndex]) {
+        return current;
+      }
+
+      waypoints[waypointIndex] = point;
+      return updateElement(current, { waypoints });
+    });
+    return;
+  }
+
   if (element.type === "arrow" && handle === "elbow") {
     const point = modifiers.snapToGrid
       ? snapPointToGrid(currentPoint, CANVAS_CONFIG.defaultSnapSize)

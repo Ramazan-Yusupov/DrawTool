@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
+  getElementCenter,
   getTextContentSize,
   getTextSize,
   TEXT_ELEMENT_PADDING,
@@ -17,9 +18,39 @@ import { toolLockStore } from "@/features/tool-lock";
 import { textEditorStore } from "../model/textEditorStore";
 
 type EditableTextElement = TextElement | StickyElement | CalloutElement;
+type EditableLabelElement = Extract<
+  BoardElement,
+  {
+    type:
+      | "arrow"
+      | "cloud"
+      | "diamond"
+      | "ellipse"
+      | "hexagon"
+      | "line"
+      | "rectangle"
+      | "star"
+      | "triangle";
+  }
+>;
 
 function isEditableTextElement(element: BoardElement | null | undefined): element is EditableTextElement {
   return element?.type === "text" || element?.type === "sticky" || element?.type === "callout";
+}
+
+function isEditableLabelElement(element: BoardElement | null | undefined): element is EditableLabelElement {
+  return Boolean(
+    element &&
+      (element.type === "rectangle" ||
+        element.type === "ellipse" ||
+        element.type === "diamond" ||
+        element.type === "triangle" ||
+        element.type === "hexagon" ||
+        element.type === "star" ||
+        element.type === "cloud" ||
+        element.type === "line" ||
+        element.type === "arrow"),
+  );
 }
 
 function cloneTextElement(element: EditableTextElement): EditableTextElement {
@@ -38,6 +69,7 @@ export function TextEditorOverlay() {
   const editorState = useSyncExternalStore(textEditorStore.subscribe, textEditorStore.get, textEditorStore.get);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const draftRef = useRef("");
+  const originalLabelRef = useRef<string | undefined>(undefined);
   const originalElementRef = useRef<EditableTextElement | null>(null);
   const isFinishingRef = useRef(false);
   const [draft, setDraft] = useState("");
@@ -46,17 +78,40 @@ export function TextEditorOverlay() {
   const viewport = useSyncExternalStore(viewportStore.subscribe, viewportStore.get, viewportStore.get);
   const element = editorState.elementId ? scene.elements.find((item) => item.id === editorState.elementId) : null;
   const editingText = isEditableTextElement(element) ? element : null;
+  const editingLabel =
+    editorState.mode === "label" && isEditableLabelElement(element)
+      ? element
+      : null;
 
   useEffect(() => {
     const elementId = editorState.elementId;
     const currentElement = elementId ? sceneStore.get().elements.find((item) => item.id === elementId) : null;
+    if (editorState.mode === "label") {
+      if (!isEditableLabelElement(currentElement)) return;
+
+      isFinishingRef.current = false;
+      originalElementRef.current = null;
+      originalLabelRef.current = currentElement.label;
+      draftRef.current = currentElement.label ?? "";
+      selectionStore.clear();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft(currentElement.label ?? "");
+
+      const frame = requestAnimationFrame(() => {
+        const textarea = textareaRef.current;
+        textarea?.focus();
+        textarea?.select();
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+
     if (!isEditableTextElement(currentElement)) return;
 
     isFinishingRef.current = false;
     originalElementRef.current = cloneTextElement(currentElement);
+    originalLabelRef.current = undefined;
     draftRef.current = currentElement.text;
     selectionStore.clear();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(currentElement.text);
 
     const frame = requestAnimationFrame(() => {
@@ -65,14 +120,31 @@ export function TextEditorOverlay() {
       textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
     });
     return () => cancelAnimationFrame(frame);
-  }, [editorState.elementId]);
+  }, [editorState.elementId, editorState.mode]);
 
-  if (!editingText) return null;
-  const editingElement = editingText;
-  const screenX = (editingElement.x - viewport.x) * viewport.zoom;
-  const screenY = (editingElement.y - viewport.y) * viewport.zoom;
-  const contentSize = getTextContentSize(draft || " ", editingElement.fontSize, editingElement.fontFamily);
-  const fontSize = editingElement.fontSize * viewport.zoom;
+  const activeElement = editingText ?? editingLabel;
+  if (!activeElement) return null;
+  const activeElementId = activeElement.id;
+  const activeElementStyle = activeElement.style;
+
+  const isLabelMode = Boolean(editingLabel);
+  const labelCenter = editingLabel ? getElementCenter(editingLabel) : null;
+  const textScreenX = editingText ? (editingText.x - viewport.x) * viewport.zoom : 0;
+  const textScreenY = editingText ? (editingText.y - viewport.y) * viewport.zoom : 0;
+  const editorFontSize = isLabelMode ? 15 : editingText?.fontSize ?? 15;
+  const editorFontFamily = isLabelMode
+    ? "Inter, ui-sans-serif, system-ui, sans-serif"
+    : editingText?.fontFamily ?? "Inter, ui-sans-serif, system-ui, sans-serif";
+  const contentSize = getTextContentSize(draft || " ", editorFontSize, editorFontFamily);
+  const fontSize = editorFontSize * viewport.zoom;
+  const labelWidth = Math.max(contentSize.width * viewport.zoom + 24, 84);
+  const labelHeight = Math.max(contentSize.height * viewport.zoom + 12, 30);
+  const labelScreenX = labelCenter
+    ? (labelCenter.x - viewport.x) * viewport.zoom - labelWidth / 2
+    : 0;
+  const labelScreenY = labelCenter
+    ? (labelCenter.y - viewport.y) * viewport.zoom - labelHeight / 2
+    : 0;
 
   function updateDraft(nextDraft: string) {
     draftRef.current = nextDraft;
@@ -97,7 +169,28 @@ export function TextEditorOverlay() {
   function commit() {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
-    const currentElement = sceneStore.get().elements.find((item) => item.id === editingElement.id);
+    const currentElement = sceneStore.get().elements.find((item) => item.id === activeElementId);
+    if (isLabelMode) {
+      if (!isEditableLabelElement(currentElement)) {
+        historyStore.cancel();
+        selectionStore.clear();
+        textEditorStore.close();
+        restoreNextToolAfterEditing();
+        return;
+      }
+
+      sceneStore.updateById(currentElement.id, (item) =>
+        isEditableLabelElement(item)
+          ? updateElement(item, { label: draftRef.current.trim() || undefined })
+          : item,
+      );
+      historyStore.commit();
+      textEditorStore.close();
+      selectionStore.setElementIds([currentElement.id]);
+      restoreNextToolAfterEditing();
+      return;
+    }
+
     if (!isEditableTextElement(currentElement)) {
       historyStore.cancel();
       selectionStore.clear();
@@ -137,12 +230,19 @@ export function TextEditorOverlay() {
     if (isFinishingRef.current) return;
     isFinishingRef.current = true;
     if (editorState.wasCreated) {
-      sceneStore.removeById(editingElement.id);
+      sceneStore.removeById(activeElementId);
       selectionStore.clear();
+    } else if (isLabelMode) {
+      sceneStore.updateById(activeElementId, (item) =>
+        isEditableLabelElement(item)
+          ? updateElement(item, { label: originalLabelRef.current })
+          : item,
+      );
+      selectionStore.setElementIds([activeElementId]);
     } else if (originalElementRef.current) {
       const originalElement = originalElementRef.current;
-      sceneStore.updateById(editingElement.id, () => cloneTextElement(originalElement));
-      selectionStore.setElementIds([editingElement.id]);
+      sceneStore.updateById(activeElementId, () => cloneTextElement(originalElement));
+      selectionStore.setElementIds([activeElementId]);
     }
     historyStore.cancel();
     textEditorStore.close();
@@ -153,7 +253,11 @@ export function TextEditorOverlay() {
     <textarea
       ref={textareaRef}
       aria-label="Редактирование текста"
-      className="absolute z-30 resize-none overflow-hidden border-0 bg-transparent p-0 outline-none"
+      className={`absolute z-30 resize-none overflow-hidden outline-none ${
+        isLabelMode
+          ? "rounded-md border border-border bg-slate-950/90 px-2 py-1 shadow-panel"
+          : "border-0 bg-transparent p-0"
+      }`}
       onBlur={commit}
       onChange={(event) => updateDraft(event.currentTarget.value)}
       onKeyDown={(event) => {
@@ -174,17 +278,17 @@ export function TextEditorOverlay() {
       }}
       spellCheck={false}
       style={{
-        left: screenX + TEXT_ELEMENT_PADDING * viewport.zoom,
-        top: screenY + TEXT_ELEMENT_PADDING * viewport.zoom,
-        width: Math.max(contentSize.width * viewport.zoom + 2, 22),
-        height: Math.max(contentSize.height * viewport.zoom + 2, fontSize * 1.25),
-        caretColor: getTextColor(editingElement),
-        color: getTextColor(editingElement),
-        fontFamily: editingElement.fontFamily,
+        left: isLabelMode ? labelScreenX : textScreenX + TEXT_ELEMENT_PADDING * viewport.zoom,
+        top: isLabelMode ? labelScreenY : textScreenY + TEXT_ELEMENT_PADDING * viewport.zoom,
+        width: isLabelMode ? labelWidth : Math.max(contentSize.width * viewport.zoom + 2, 22),
+        height: isLabelMode ? labelHeight : Math.max(contentSize.height * viewport.zoom + 2, fontSize * 1.25),
+        caretColor: isLabelMode ? activeElementStyle.strokeColor : getTextColor(activeElement as EditableTextElement),
+        color: isLabelMode ? activeElementStyle.strokeColor : getTextColor(activeElement as EditableTextElement),
+        fontFamily: editorFontFamily,
         fontSize,
         lineHeight: TEXT_LINE_HEIGHT_RATIO,
-        opacity: editingElement.style.opacity,
-        textAlign: getTextAlign(editingElement),
+        opacity: activeElementStyle.opacity,
+        textAlign: isLabelMode ? "center" : getTextAlign(activeElement as EditableTextElement),
       }}
       value={draft}
     />

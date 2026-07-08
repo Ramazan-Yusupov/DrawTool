@@ -48,6 +48,7 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
   cloud: { ...SHAPE_CAPABILITIES },
   frame: { ...SHAPE_CAPABILITIES, fill: false, corner: false },
   embed: { ...SHAPE_CAPABILITIES, corner: true },
+  markdown: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
   line: {
     ...SHAPE_CAPABILITIES,
     fill: false,

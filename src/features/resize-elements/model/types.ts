@@ -13,7 +13,8 @@ export type ResizeHandle =
   | "end"
   | "elbow"
   | "curve"
-  | "rotate";
+  | "rotate"
+  | `waypoint:${number}`;
 
 export type ResizeHandlePoint = {
   handle: ResizeHandle;

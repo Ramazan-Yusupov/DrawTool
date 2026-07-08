@@ -20,12 +20,14 @@ export type ElementType =
   | "sticker"
   | "frame"
   | "embed"
+  | "markdown"
   | "code"
   | "image";
 
 export type StrokeStyle = "solid" | "dashed" | "dotted";
 export type FillStyle = "transparent" | "solid";
 export type CornerStyle = "sharp" | "rounded";
+export type ArrowCornerStyle = "sharp" | "rounded";
 export type ArrowRouting = "straight" | "elbow" | "curve";
 export type ElbowAxis = "horizontal" | "vertical";
 export type TextAlign = "left" | "center" | "right";
@@ -69,6 +71,10 @@ export type BaseElement = {
   label?: string;
   /** Optional grouping token. Elements with the same group move/select together. */
   groupId?: string;
+  /** Lightweight user metadata for search, filtering and workflows. */
+  metadata?: Record<string, string>;
+  /** User-facing tags used by search and future filters. */
+  tags?: string[];
   /** Locked elements stay visible but cannot be selected or changed accidentally. */
   locked?: boolean;
   createdAt: number;
@@ -88,12 +94,15 @@ export type LineElement = BaseElement & { type: "line" };
 export type ArrowElement = BaseElement & {
   type: "arrow";
   routing: ArrowRouting;
+  routeCornerStyle: ArrowCornerStyle;
   elbowAxis: ElbowAxis;
   elbowOffset: number;
   /** Signed normal offset for the smooth quadratic Bézier route. */
   curveOffset: number;
   startBinding?: ElementBinding;
   endBinding?: ElementBinding;
+  /** Editable absolute route points between start and end. */
+  waypoints?: Point[];
 };
 
 export type FreeDrawElement = BaseElement & {
@@ -116,6 +125,13 @@ export type EmbedElement = BaseElement & {
   type: "embed";
   title?: string;
   url: string;
+};
+
+export type MarkdownElement = BaseElement & {
+  type: "markdown";
+  title: string;
+  content: string;
+  fontSize: number;
 };
 
 export type AdvancedElementKind =
@@ -232,6 +248,7 @@ export type BoardElement =
   | StickerElement
   | FrameElement
   | EmbedElement
+  | MarkdownElement
   | AdvancedElement
   | CodeSketchElement
   | ImageElement;

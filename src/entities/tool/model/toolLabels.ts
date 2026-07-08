@@ -18,6 +18,7 @@ export const TOOL_LABELS: Record<ToolId, string> = {
   table: "Таблица",
   frame: "Фрейм",
   embed: "Встроенная страница",
+  markdown: "Markdown заметка",
   advanced: "Premium-фигура",
   code: "Блок кода",
   text: "Текст",

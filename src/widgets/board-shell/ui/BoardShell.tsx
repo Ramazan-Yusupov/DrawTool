@@ -10,6 +10,10 @@ import { StickerPickerModal } from "@/features/add-sticker";
 import { CommandPalette } from "@/features/command-palette";
 import { editingLockStore } from "@/features/lock-editing";
 import { PremiumStudioDialog } from "@/features/premium-studio";
+import {
+  FramePresentationOverlay,
+  ProductivityToolsDialog,
+} from "@/features/productivity-tools";
 import { ProjectsSidebar } from "@/features/projects";
 import { SceneStorageControls } from "@/features/save-scene";
 import { ShortcutsDialog } from "@/features/shortcuts-help";
@@ -75,6 +79,8 @@ export function BoardShell() {
         isOpen={isPremiumStudioOpen}
         onClose={() => setIsPremiumStudioOpen(false)}
       />
+      <ProductivityToolsDialog />
+      <FramePresentationOverlay />
       <CommandPalette
         onOpenPremiumStudio={() => setIsPremiumStudioOpen(true)}
       />
