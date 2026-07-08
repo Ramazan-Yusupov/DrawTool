@@ -1,5 +1,42 @@
-const CACHE_NAME = "drawtool-shell-v1";
-const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/frontend.png"];
+const CACHE_NAME = "drawtool-shell-v2";
+const APP_SHELL = ["/manifest.webmanifest", "/frontend.png"];
+
+async function networkFirst(request, fallbackUrl = "/index.html") {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    const response = await fetch(request);
+
+    if (response.ok) {
+      await cache.put(request, response.clone());
+    }
+
+    return response;
+  } catch {
+    return (
+      (await cache.match(request)) ??
+      (fallbackUrl ? await cache.match(fallbackUrl) : undefined) ??
+      Response.error()
+    );
+  }
+}
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetch(request);
+
+  if (response.ok) {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  }
+
+  return response;
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -23,19 +60,36 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => caches.match("/index.html"));
-    }),
-  );
+  const url = new URL(event.request.url);
+
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (
+    event.request.mode === "navigate" ||
+    event.request.headers.get("accept")?.includes("text/html") ||
+    url.pathname === "/" ||
+    url.pathname.endsWith(".html")
+  ) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  if (
+    url.pathname.startsWith("/assets/") ||
+    url.pathname === "/manifest.webmanifest" ||
+    url.pathname === "/frontend.png"
+  ) {
+    event.respondWith(cacheFirst(event.request));
+  }
 });
