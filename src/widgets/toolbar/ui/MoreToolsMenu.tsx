@@ -146,7 +146,7 @@ export function MoreToolsMenu() {
           <div ref={menuRef}>
             <Popover
               aria-label="Дополнительные инструменты"
-              className="fixed z-60"
+              className="fixed z-60 mt-2"
               isOpen={isOpen}
               role="menu"
               style={menuPosition}
