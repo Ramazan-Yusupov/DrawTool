@@ -90,7 +90,7 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
   code: { ...SHAPE_CAPABILITIES, corner: true, snap: false },
   image: {
     stroke: false,
-    fill: false,
+    fill: true,
     corner: false,
     opacity: true,
     snap: false,

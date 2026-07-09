@@ -10,6 +10,10 @@ type ArrowSectionProps = {
 const MAX_WAYPOINTS = 10;
 
 export function ArrowSection({ element }: ArrowSectionProps) {
+  if (element.routing !== "straight") {
+    return null;
+  }
+
   const cornerStyle = element.routeCornerStyle ?? "sharp";
   const waypointsCount = element.waypoints?.length ?? 0;
   const isLimitReached = waypointsCount >= MAX_WAYPOINTS;

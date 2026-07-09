@@ -3,6 +3,7 @@ import {
   getArrowPathPoints,
   getElementBounds,
 } from "@/entities/element";
+import { getImageObjectRect } from "@/entities/element/lib/getImageObjectRect";
 import { roundedPolylineSvgPath } from "@/entities/element/lib/getRoundedPolylinePath";
 import type { BoardElement } from "@/entities/element";
 
@@ -72,6 +73,10 @@ function labelAlongPathSvg(label: string | undefined, points: { x: number; y: nu
   return `<g transform="translate(${placement.x} ${placement.y}) rotate(${placement.angle})"><rect x="${-width / 2}" y="${-height / 2}" width="${width}" height="${height}" fill="rgb(15 23 42)" fill-opacity="0.86" /><text x="0" y="0.5" fill="${color}" font-size="15" font-weight="700" font-family="Inter,Segoe UI,sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(value)}</text></g>`;
 }
 
+function safeSvgId(value: string) {
+  return value.replace(/[^A-Za-z0-9_-]/g, "_");
+}
+
 function elementToSvg(element: BoardElement) {
   const { x, y, width, height, style } = element;
   const bounds = getElementBounds(element);
@@ -90,10 +95,10 @@ function elementToSvg(element: BoardElement) {
       markup += textSvg(`${distance} px`, x + width / 2 - 20, y + height / 2 - 8, 12, style.strokeColor);
     }
   } else if (element.type === "arrow") {
-    if (element.routing === "curve" && !element.waypoints?.length) {
+    if (element.routing === "curve") {
       const control = getArrowCurveControlPoint(element);
       markup = `<path d="M ${element.x} ${element.y} Q ${control.x} ${control.y} ${element.x + element.width} ${element.y + element.height}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
-    } else if (element.routeCornerStyle === "rounded") {
+    } else if (element.routing === "straight" && element.routeCornerStyle === "rounded") {
       markup = `<path d="${roundedPolylineSvgPath(getArrowPathPoints(element))}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
     } else {
       const points = getArrowPathPoints(element).map((point) => `${point.x},${point.y}`).join(" ");
@@ -126,7 +131,28 @@ function elementToSvg(element: BoardElement) {
     const points = element.points.map((point) => `${point.x},${point.y}`).join(" ");
     markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-opacity="${style.opacity}" stroke-linecap="round" stroke-linejoin="round" stroke-width="${style.strokeWidth}" />`;
   } else if (element.type === "image") {
-    markup = `<image href="${escapeXml(element.src)}" x="${x}" y="${y}" width="${Math.abs(width)}" height="${Math.abs(height)}" opacity="${style.opacity}" preserveAspectRatio="none" />`;
+    const frame = {
+      x: Math.min(x, x + width),
+      y: Math.min(y, y + height),
+      width: Math.abs(width),
+      height: Math.abs(height),
+    };
+    const imageRect = getImageObjectRect(
+      frame,
+      element.originalWidth,
+      element.originalHeight,
+      element.objectFit ?? "fill",
+      element.objectPosition ?? "center",
+    );
+    const clipId = `image-clip-${safeSvgId(element.id)}`;
+    const radius = Math.min(element.cornerRadius ?? 0, frame.width / 2, frame.height / 2);
+    const clipShape = element.shape === "circle"
+      ? `<ellipse cx="${frame.x + frame.width / 2}" cy="${frame.y + frame.height / 2}" rx="${frame.width / 2}" ry="${frame.height / 2}" />`
+      : `<rect x="${frame.x}" y="${frame.y}" width="${frame.width}" height="${frame.height}" rx="${radius}" />`;
+    const background = style.fillStyle === "solid"
+      ? `<rect x="${frame.x}" y="${frame.y}" width="${frame.width}" height="${frame.height}" fill="${style.backgroundColor}" />`
+      : "";
+    markup = `<g opacity="${style.opacity}"><clipPath id="${clipId}">${clipShape}</clipPath><g clip-path="url(#${clipId})">${background}<image href="${escapeXml(element.src)}" x="${imageRect.x}" y="${imageRect.y}" width="${imageRect.width}" height="${imageRect.height}" preserveAspectRatio="none" /></g></g>`;
   } else {
     markup = `<rect x="${x}" y="${y}" width="${Math.abs(width)}" height="${Math.abs(height)}" rx="${style.cornerStyle === "rounded" ? 12 : 0}" ${common} />`;
   }

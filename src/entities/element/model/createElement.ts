@@ -20,6 +20,9 @@ import type {
   HexagonElement,
   HighlighterElement,
   ImageElement,
+  ImageObjectFit,
+  ImageObjectPosition,
+  ImageShape,
   LineElement,
   MarkdownElement,
   MeasureElement,
@@ -60,6 +63,10 @@ type FreeDrawCreateParams = BaseCreateParams & {
 
 type ImageCreateParams = BaseCreateParams & {
   fileId: string;
+  cornerRadius?: number;
+  objectFit?: ImageObjectFit;
+  objectPosition?: ImageObjectPosition;
+  shape?: ImageShape;
   src: string;
   name?: string;
   mimeType?: string;
@@ -366,6 +373,10 @@ export function createImage(params: ImageCreateParams): ImageElement {
   return {
     ...createBase<ImageElement>("image", params),
     fileId: params.fileId,
+    cornerRadius: params.cornerRadius ?? 0,
+    objectFit: params.objectFit ?? "fill",
+    objectPosition: params.objectPosition ?? "center",
+    shape: params.shape ?? "rectangle",
     src: params.src,
     name: params.name ?? "image",
     mimeType: params.mimeType ?? "image/*",

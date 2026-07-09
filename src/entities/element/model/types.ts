@@ -30,6 +30,9 @@ export type CornerStyle = "sharp" | "rounded";
 export type ArrowCornerStyle = "sharp" | "rounded";
 export type ArrowRouting = "straight" | "elbow" | "curve";
 export type ElbowAxis = "horizontal" | "vertical";
+export type ImageObjectFit = "fill" | "contain" | "cover" | "scale-down" | "none";
+export type ImageObjectPosition = "center" | "top" | "bottom" | "left" | "right";
+export type ImageShape = "rectangle" | "circle";
 export type TextAlign = "left" | "center" | "right";
 
 export type ElementStyle = {
@@ -177,6 +180,10 @@ export type CodeSketchElement = BaseElement & {
 export type ImageElement = BaseElement & {
   type: "image";
   fileId: string;
+  cornerRadius: number;
+  objectFit: ImageObjectFit;
+  objectPosition: ImageObjectPosition;
+  shape: ImageShape;
   src: string;
   name: string;
   mimeType: string;

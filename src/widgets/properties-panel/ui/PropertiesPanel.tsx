@@ -35,7 +35,11 @@ import type {
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import { useDuplicateElements } from "@/features/duplicate-elements";
-import { applyCopiedStyleToSelectedElements, copyElementStyle, styleClipboardStore } from "@/features/style-clipboard";
+import {
+  applyCopiedStyleToSelectedElements,
+  copyElementStyle,
+  styleClipboardStore,
+} from "@/features/style-clipboard";
 import { setElementLink } from "@/features/manage-link";
 import { updateTableCell, updateTableStructure } from "@/features/edit-table";
 import {
@@ -59,12 +63,12 @@ import {
 } from "@/features/rotate-elements";
 import { ArrowSection } from "./ArrowSection";
 import { EmbedSection } from "./EmbedSection";
+import { ImageSection } from "./ImageSection";
 import { ElementTitleSection, hasOwnTitle } from "./ElementTitleSection";
 import { LinkSection } from "./LinkSection";
 import { MarkdownSection } from "./MarkdownSection";
 import { PremiumSection } from "./PremiumSection";
 import { TableSection } from "./TableSection";
-import { TagsSection } from "./TagsSection";
 import { usePropertiesPanel } from "../model/usePropertiesPanel";
 
 const ARROW_ROUTING_ITEMS = [
@@ -114,7 +118,9 @@ type StyleTarget = {
   type: BoardElement["type"] | "tool";
 };
 
-function isAdvancedElement(element: BoardElement | null): element is AdvancedElement {
+function isAdvancedElement(
+  element: BoardElement | null,
+): element is AdvancedElement {
   return Boolean(element && element.type === "code" && "kind" in element);
 }
 
@@ -233,7 +239,10 @@ export function PropertiesPanel() {
       mutateScene(() => {
         sceneStore.updateById(primaryElement.id, (element) =>
           element.type === "arrow"
-            ? updateElement(element, { routing })
+            ? updateElement(element, {
+                routing,
+                ...(routing === "straight" ? {} : { waypoints: undefined }),
+              })
             : element,
         );
       });
@@ -428,9 +437,10 @@ export function PropertiesPanel() {
             </section>
           )}
 
-          {primaryElement?.type === "arrow" && (
-            <ArrowSection element={primaryElement} />
-          )}
+          {primaryElement?.type === "arrow" &&
+            primaryElement.routing === "straight" && (
+              <ArrowSection element={primaryElement} />
+            )}
 
           {capabilities.text && (
             <section className="space-y-3 border-t border-border pt-4">
@@ -474,14 +484,22 @@ export function PropertiesPanel() {
             <EmbedSection url={primaryElement.url} onChange={changeEmbedUrl} />
           )}
 
+          {primaryElement?.type === "image" && (
+            <ImageSection element={primaryElement} />
+          )}
+
           {primaryElement?.type === "markdown" && (
             <MarkdownSection element={primaryElement} />
           )}
 
           {primaryElement?.type === "table" && (
             <TableSection
-              onChangeCell={(cellIndex, value) => updateTableCell(primaryElement.id, cellIndex, value)}
-              onChangeStructure={(rows, columns) => updateTableStructure(primaryElement.id, rows, columns)}
+              onChangeCell={(cellIndex, value) =>
+                updateTableCell(primaryElement.id, cellIndex, value)
+              }
+              onChangeStructure={(rows, columns) =>
+                updateTableStructure(primaryElement.id, rows, columns)
+              }
               table={primaryElement}
             />
           )}
@@ -491,10 +509,11 @@ export function PropertiesPanel() {
           )}
 
           {primaryElement && (
-            <LinkSection link={primaryElement.link} onChange={changeElementLink} />
+            <LinkSection
+              link={primaryElement.link}
+              onChange={changeElementLink}
+            />
           )}
-
-          {primaryElement && <TagsSection element={primaryElement} />}
 
           {primaryElement && (
             <section className="space-y-3 border-t border-border pt-4">

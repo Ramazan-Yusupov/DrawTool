@@ -824,8 +824,8 @@ export const boardActions = {
       (element) => element.type === "arrow",
     );
     if (!arrow || arrow.type !== "arrow") return false;
+    if (arrow.routing !== "straight") return false;
 
-    // Ограничение: если лимит уже достигнут, прекращаем выполнение
     const currentWaypointsCount = arrow.waypoints?.length ?? 0;
     if (currentWaypointsCount >= MAX_WAYPOINTS) return false;
 
@@ -857,7 +857,7 @@ export const boardActions = {
     historyStore.begin();
     sceneStore.updateById(arrow.id, (element) =>
       element.type === "arrow"
-        ? updateElement(element, { waypoints })
+        ? updateElement(element, { waypoints: waypoints.slice(0, MAX_WAYPOINTS) })
         : element,
     );
     historyStore.commit();
@@ -885,6 +885,7 @@ export const boardActions = {
       (element) => element.type === "arrow",
     );
     if (!arrow || arrow.type !== "arrow") return false;
+    if (arrow.routing !== "straight") return false;
     historyStore.begin();
     sceneStore.updateById(arrow.id, (element) =>
       element.type === "arrow"

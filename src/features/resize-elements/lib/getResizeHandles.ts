@@ -72,12 +72,14 @@ export function getElementResizeHandles(
         result.push({ handle: "elbow", point: toWorldPoint(element, bendPoint) });
       }
 
-      element.waypoints?.forEach((waypoint, index) => {
-        result.push({
-          handle: `waypoint:${index}`,
-          point: toWorldPoint(element, waypoint),
+      if (element.routing === "straight") {
+        element.waypoints?.forEach((waypoint, index) => {
+          result.push({
+            handle: `waypoint:${index}`,
+            point: toWorldPoint(element, waypoint),
+          });
         });
-      });
+      }
 
       if (element.routing === "curve") {
         result.push({

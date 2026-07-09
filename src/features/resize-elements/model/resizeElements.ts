@@ -232,7 +232,11 @@ export function resizeElement(
   modifiers: ResizeModifiers,
   initialFrameChildren = new Map<string, BoardElement>(),
 ) {
-  if (element.type === "arrow" && handle.startsWith("waypoint:")) {
+  if (
+    element.type === "arrow" &&
+    element.routing === "straight" &&
+    handle.startsWith("waypoint:")
+  ) {
     const waypointIndex = Number(handle.split(":")[1]);
     const point = modifiers.snapToGrid
       ? snapPointToGrid(currentPoint, CANVAS_CONFIG.defaultSnapSize)
@@ -248,6 +252,10 @@ export function resizeElement(
       waypoints[waypointIndex] = point;
       return updateElement(current, { waypoints });
     });
+    return;
+  }
+
+  if (element.type === "arrow" && handle.startsWith("waypoint:")) {
     return;
   }
 

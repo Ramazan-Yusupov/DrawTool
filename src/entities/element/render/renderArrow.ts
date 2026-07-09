@@ -89,7 +89,7 @@ function getArrowHeadAngle(element: ArrowElement) {
   const points = getArrowPathPoints(element);
   const previousPoint = points.at(-2);
 
-  if (element.waypoints?.length && previousPoint) {
+  if (element.routing === "straight" && element.waypoints?.length && previousPoint) {
     return Math.atan2(end.y - previousPoint.y, end.x - previousPoint.x);
   }
 
@@ -154,10 +154,14 @@ export function renderArrow(
   context.beginPath();
   context.moveTo(start.x, start.y);
 
-  if (element.routing === "curve" && !element.waypoints?.length) {
+  if (element.routing === "curve") {
     const control = getArrowCurveControlPoint(element);
     context.quadraticCurveTo(control.x, control.y, end.x, end.y);
-  } else if (element.routeCornerStyle === "rounded" && points.length > 2) {
+  } else if (
+    element.routing === "straight" &&
+    element.routeCornerStyle === "rounded" &&
+    points.length > 2
+  ) {
     renderRoundedPolyline(context, points);
   } else {
     points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
