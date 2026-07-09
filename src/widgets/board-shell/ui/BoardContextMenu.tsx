@@ -12,7 +12,6 @@ import {
   Focus,
   Group,
   Image,
-  Link2,
   Lock,
   LockOpen,
   PackagePlus,
@@ -58,7 +57,11 @@ export function BoardContextMenu({
   top,
 }: BoardContextMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const scene = useSyncExternalStore(sceneStore.subscribe, sceneStore.get, sceneStore.get);
+  const scene = useSyncExternalStore(
+    sceneStore.subscribe,
+    sceneStore.get,
+    sceneStore.get,
+  );
   const selection = useSyncExternalStore(
     selectionStore.subscribeElementIds,
     selectionStore.get,
@@ -70,15 +73,19 @@ export function BoardContextMenu({
   const showLabelAction = selectedElements.some(canUseLabel);
   const showAlignActions = selectedElements.length >= 2;
   const showDistributeActions = selectedElements.length >= 3;
-  const hasSelectedFrame = selectedElements.some((element) => element.type === "frame");
+  const hasSelectedFrame = selectedElements.some(
+    (element) => element.type === "frame",
+  );
   const hasGroupSelection = selectedElements.length >= 2;
-  const hasGroupedSelection = selectedElements.some((element) => element.groupId);
+  const hasGroupedSelection = selectedElements.some(
+    (element) => element.groupId,
+  );
   const hasSelection = selectedElements.length > 0;
   const itemClass =
     "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-text hover:bg-control";
   const width = 256;
   const gutter = 8;
-  const maxHeight = Math.min(296, window.innerHeight - gutter * 2);
+  const maxHeight = Math.min(310, window.innerHeight - gutter * 2);
   const menuLeft = Math.max(
     gutter,
     Math.min(left, window.innerWidth - width - gutter),
@@ -133,7 +140,10 @@ export function BoardContextMenu({
           <Button
             className={itemClass}
             onClick={() => {
-              const label = window.prompt("Подпись для выбранных элементов", "");
+              const label = window.prompt(
+                "Подпись для выбранных элементов",
+                "",
+              );
               if (label !== null)
                 run(() => boardActions.setSelectionLabel(label));
             }}
@@ -307,14 +317,6 @@ export function BoardContextMenu({
             </Button>
           </>
         )}
-        <Button
-          className={itemClass}
-          onClick={() => run(boardActions.copyReadonlyShareLink)}
-          type="button"
-        >
-          <Link2 size={16} />
-          <span>Readonly link</span>
-        </Button>
         <Button
           className={`${itemClass} text-red-500! hover:bg-red-500/15 hover:text-red-200`}
           onClick={() => run(deleteSelectedElements)}
