@@ -43,6 +43,8 @@ type SelectionInteraction =
       pointerId: number;
       arrowEndpoint?: "start" | "end";
       arrowId?: string;
+      arrowWaypoint?: boolean;
+      arrowWaypointIndex?: number;
       binding?: ElementBinding;
     }
   | {
@@ -72,6 +74,7 @@ function getPointerAngle(point: Point, center: Point) {
 function canEditLabelOnCanvas(element: { type: string }) {
   return (
     element.type === "rectangle" ||
+    element.type === "badge" ||
     element.type === "ellipse" ||
     element.type === "diamond" ||
     element.type === "triangle" ||
@@ -81,6 +84,15 @@ function canEditLabelOnCanvas(element: { type: string }) {
     element.type === "line" ||
     element.type === "arrow"
   );
+}
+
+function getWaypointHandleIndex(handle: string) {
+  if (!handle.startsWith("waypoint:")) {
+    return undefined;
+  }
+
+  const index = Number(handle.split(":")[1]);
+  return Number.isInteger(index) ? index : undefined;
 }
 
 export function useSelectElements() {
@@ -132,9 +144,13 @@ export function useSelectElements() {
     }
 
     const zoom = viewportStore.get().zoom;
-    const rotationHandle = getElementRotationHandle(selectedElement, 30 / zoom);
+    const rotationHandle =
+      selectedElement.type === "arrow"
+        ? null
+        : getElementRotationHandle(selectedElement, 30 / zoom);
 
     if (
+      rotationHandle &&
       Math.hypot(
         point.x - rotationHandle.point.x,
         point.y - rotationHandle.point.y,
@@ -167,8 +183,12 @@ export function useSelectElements() {
     const zoom = viewportStore.get().zoom;
 
     if (selectedElement) {
-      const rotationHandle = getElementRotationHandle(selectedElement, 30 / zoom);
+      const rotationHandle =
+        selectedElement.type === "arrow"
+          ? null
+          : getElementRotationHandle(selectedElement, 30 / zoom);
       const isRotationHandle =
+        rotationHandle &&
         Math.hypot(point.x - rotationHandle.point.x, point.y - rotationHandle.point.y) <=
         11 / zoom;
 
@@ -195,6 +215,7 @@ export function useSelectElements() {
       : null;
 
     if (selectedElement && handle) {
+      const waypointIndex = getWaypointHandleIndex(handle);
       historyStore.begin();
       event.currentTarget.setPointerCapture(event.pointerId);
       resize.startResize(selectedElement.id, handle, point);
@@ -202,8 +223,19 @@ export function useSelectElements() {
       interactionRef.current = {
         mode: "resize",
         pointerId: event.pointerId,
-        ...(selectedElement.type === "arrow" && (handle === "start" || handle === "end")
-          ? { arrowEndpoint: handle, arrowId: selectedElement.id }
+        ...(selectedElement.type === "arrow"
+          ? {
+              ...(handle === "start" || handle === "end"
+                ? { arrowEndpoint: handle, arrowId: selectedElement.id }
+                : {}),
+              ...(handle.startsWith("waypoint:")
+                ? {
+                    arrowId: selectedElement.id,
+                    arrowWaypoint: true,
+                    arrowWaypointIndex: waypointIndex,
+                  }
+                : {}),
+            }
           : {}),
       };
       return;
@@ -290,12 +322,14 @@ export function useSelectElements() {
 
     if (interaction.mode === "resize") {
       let resizePoint = point;
+      let snappedToElementBoundary = false;
 
-      if (interaction.arrowEndpoint && interaction.arrowId) {
+      if (interaction.arrowId && (interaction.arrowEndpoint || interaction.arrowWaypoint)) {
         const candidate = getArrowEndpointBinding(point, interaction.arrowId);
 
         if (candidate) {
           resizePoint = candidate.anchorPoint;
+          snappedToElementBoundary = true;
           interaction.binding = candidate.binding;
           arrowBindingIndicatorStore.set({
             targetId: candidate.targetId,
@@ -308,7 +342,8 @@ export function useSelectElements() {
       }
 
       resize.updateResize(resizePoint, {
-        snapToGrid: event.ctrlKey || event.metaKey,
+        snapToGrid:
+          !snappedToElementBoundary && (event.ctrlKey || event.metaKey),
         keepAspectRatio: event.shiftKey,
         resizeFromCenter: event.altKey,
       });
@@ -355,6 +390,26 @@ export function useSelectElements() {
             })
           : element,
       );
+    }
+
+    if (
+      interaction.mode === "resize" &&
+      interaction.arrowWaypoint &&
+      interaction.arrowId &&
+      interaction.arrowWaypointIndex !== undefined
+    ) {
+      sceneStore.updateById(interaction.arrowId, (element) => {
+        if (element.type !== "arrow") {
+          return element;
+        }
+
+        const waypointBindings = [...(element.waypointBindings ?? [])];
+        waypointBindings.length = element.waypoints?.length ?? 0;
+        waypointBindings[interaction.arrowWaypointIndex!] =
+          interaction.binding ?? null;
+
+        return updateElement(element, { waypointBindings });
+      });
     }
 
     const finishedMove = move.finishMove();

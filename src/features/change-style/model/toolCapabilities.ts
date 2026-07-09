@@ -44,6 +44,7 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
   diamond: { ...SHAPE_CAPABILITIES },
   triangle: { ...SHAPE_CAPABILITIES },
   hexagon: { ...SHAPE_CAPABILITIES },
+  badge: { ...SHAPE_CAPABILITIES, corner: false },
   star: { ...SHAPE_CAPABILITIES },
   cloud: { ...SHAPE_CAPABILITIES },
   frame: { ...SHAPE_CAPABILITIES, fill: false, corner: false },

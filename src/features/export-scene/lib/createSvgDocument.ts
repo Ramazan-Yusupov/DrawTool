@@ -62,7 +62,12 @@ function getPathLabelPlacement(points: { x: number; y: number }[]) {
   return null;
 }
 
-function labelAlongPathSvg(label: string | undefined, points: { x: number; y: number }[], color: string) {
+function labelAlongPathSvg(
+  label: string | undefined,
+  points: { x: number; y: number }[],
+  color: string,
+  withBackground = false,
+) {
   const value = label?.trim();
   const placement = value ? getPathLabelPlacement(points) : null;
 
@@ -70,7 +75,16 @@ function labelAlongPathSvg(label: string | undefined, points: { x: number; y: nu
 
   const width = Math.max(24, value.length * 8 + 14);
   const height = 24;
-  return `<g transform="translate(${placement.x} ${placement.y}) rotate(${placement.angle})"><rect x="${-width / 2}" y="${-height / 2}" width="${width}" height="${height}" fill="rgb(15 23 42)" fill-opacity="0.86" /><text x="0" y="0.5" fill="${color}" font-size="15" font-weight="700" font-family="Inter,Segoe UI,sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(value)}</text></g>`;
+  const background = withBackground
+    ? `<rect x="${-width / 2}" y="${-height / 2}" width="${width}" height="${height}" fill="rgb(15 23 42)" fill-opacity="0.86" />`
+    : "";
+  return `<g transform="translate(${placement.x} ${placement.y}) rotate(${placement.angle})">${background}<text x="0" y="0.5" fill="${color}" font-size="15" font-weight="700" font-family="Inter,Segoe UI,sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(value)}</text></g>`;
+}
+
+function badgeLabelFontSize(label: string, width: number, height: number) {
+  const maxByHeight = Math.max(11, height - 24);
+  const maxByWidth = Math.max(11, (width - 48) / Math.max(label.length * 0.55, 1));
+  return Math.max(11, Math.min(maxByHeight, maxByWidth));
 }
 
 function safeSvgId(value: string) {
@@ -104,7 +118,13 @@ function elementToSvg(element: BoardElement) {
       const points = getArrowPathPoints(element).map((point) => `${point.x},${point.y}`).join(" ");
       markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" marker-end="url(#arrowhead)" />`;
     }
-    markup += labelAlongPathSvg(element.label, getArrowPathPoints(element), style.strokeColor);
+    markup += labelAlongPathSvg(element.label, getArrowPathPoints(element), style.strokeColor, true);
+  } else if (element.type === "badge") {
+    const value = element.label?.trim() || "Badge";
+    const radius = Math.abs(height) / 2;
+    const fontSize = badgeLabelFontSize(value, Math.abs(width), Math.abs(height));
+    markup = `<rect x="${x}" y="${y}" width="${Math.abs(width)}" height="${Math.abs(height)}" rx="${radius}" ${common} />`;
+    markup += `<text x="${x + Math.abs(width) / 2}" y="${y + Math.abs(height) / 2}" fill="${style.strokeColor}" font-size="${fontSize}" font-weight="700" font-family="Inter,Segoe UI,sans-serif" text-anchor="middle" dominant-baseline="middle">${escapeXml(value)}</text>`;
   } else if (element.type === "text") {
     markup = textSvg(element.text, x + 6, y + 4, element.fontSize, style.strokeColor);
   } else if (element.type === "sticky") {

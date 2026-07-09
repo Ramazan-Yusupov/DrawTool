@@ -10,8 +10,61 @@ function equal(a: number, b: number) {
   return Math.abs(a - b) < EPSILON;
 }
 
-function getBoundTarget(binding: ElementBinding | undefined, byId: Map<string, BoardElement>) {
+function getBoundTarget(binding: ElementBinding | null | undefined, byId: Map<string, BoardElement>) {
   return binding ? byId.get(binding.elementId) : undefined;
+}
+
+function syncArrowWaypoints(
+  arrow: ArrowElement,
+  byId: Map<string, BoardElement>,
+) {
+  if (
+    arrow.routing !== "straight" ||
+    !arrow.waypoints?.length ||
+    !arrow.waypointBindings?.length
+  ) {
+    return {
+      waypointBindings:
+        arrow.routing === "straight" &&
+        arrow.waypoints?.length &&
+        arrow.waypointBindings?.length
+          ? arrow.waypointBindings
+          : undefined,
+      waypoints: arrow.waypoints,
+    };
+  }
+
+  let changed = false;
+  const waypointBindings = arrow.waypoints.map(
+    (_, index) => arrow.waypointBindings?.[index] ?? null,
+  );
+  const waypoints = arrow.waypoints.map((waypoint, index) => {
+    const binding = waypointBindings[index];
+    const target = getBoundTarget(binding, byId);
+
+    if (!binding || !target) {
+      if (binding && !target) {
+        waypointBindings[index] = null;
+        changed = true;
+      }
+
+      return waypoint;
+    }
+
+    const nextWaypoint = getArrowBindingAnchor(target, binding, waypoint);
+    changed ||=
+      !equal(nextWaypoint.x, waypoint.x) || !equal(nextWaypoint.y, waypoint.y);
+
+    return nextWaypoint;
+  });
+
+  return {
+    waypointBindings:
+      changed || waypointBindings.length !== arrow.waypointBindings.length
+        ? waypointBindings
+        : arrow.waypointBindings,
+    waypoints: changed ? waypoints : arrow.waypoints,
+  };
 }
 
 function syncArrow(arrow: ArrowElement, byId: Map<string, BoardElement>): ArrowElement {
@@ -29,12 +82,15 @@ function syncArrow(arrow: ArrowElement, byId: Map<string, BoardElement>): ArrowE
   const refinedStart = startTarget && arrow.startBinding
     ? getArrowBindingAnchor(startTarget, arrow.startBinding, end)
     : start;
+  const syncedWaypoints = syncArrowWaypoints(arrow, byId);
 
   if (
     equal(refinedStart.x, arrow.x) &&
     equal(refinedStart.y, arrow.y) &&
     equal(end.x, arrow.x + arrow.width) &&
-    equal(end.y, arrow.y + arrow.height)
+    equal(end.y, arrow.y + arrow.height) &&
+    syncedWaypoints.waypoints === arrow.waypoints &&
+    syncedWaypoints.waypointBindings === arrow.waypointBindings
   ) {
     return arrow;
   }
@@ -45,6 +101,8 @@ function syncArrow(arrow: ArrowElement, byId: Map<string, BoardElement>): ArrowE
     y: refinedStart.y,
     width: end.x - refinedStart.x,
     height: end.y - refinedStart.y,
+    waypointBindings: syncedWaypoints.waypointBindings,
+    waypoints: syncedWaypoints.waypoints,
   };
 }
 

@@ -4,6 +4,7 @@ export type ShapeToolId =
   | "diamond"
   | "triangle"
   | "hexagon"
+  | "badge"
   | "star"
   | "cloud"
   | "line"

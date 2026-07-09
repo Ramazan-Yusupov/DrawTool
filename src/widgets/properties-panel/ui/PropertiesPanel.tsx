@@ -234,7 +234,9 @@ export function PropertiesPanel() {
           element.type === "arrow"
             ? updateElement(element, {
                 routing,
-                ...(routing === "straight" ? {} : { waypoints: undefined }),
+                ...(routing === "straight"
+                  ? {}
+                  : { waypointBindings: undefined, waypoints: undefined }),
               })
             : element,
         );
@@ -501,7 +503,7 @@ export function PropertiesPanel() {
             <PremiumSection element={primaryElement} />
           )}
 
-          {primaryElement && (
+          {primaryElement && primaryElement.type !== "arrow" && (
             <section className="space-y-3 border-t border-border pt-4">
               <div className="flex items-center gap-2 text-sm font-medium text-text">
                 <RotateCw size={17} />

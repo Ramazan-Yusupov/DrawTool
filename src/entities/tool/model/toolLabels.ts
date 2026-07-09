@@ -8,6 +8,7 @@ export const TOOL_LABELS: Record<ToolId, string> = {
   diamond: "Ромб",
   triangle: "Треугольник",
   hexagon: "Шестиугольник",
+  badge: "Badge",
   star: "Звезда",
   cloud: "Облако",
   line: "Линия",

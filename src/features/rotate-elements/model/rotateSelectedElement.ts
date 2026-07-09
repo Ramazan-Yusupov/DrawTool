@@ -25,7 +25,7 @@ export function rotateSelectedElementBy(deltaAngle: number) {
     .get()
     .elements.find((item) => item.id === elementId);
 
-  if (!element) {
+  if (!element || element.type === "arrow") {
     return false;
   }
 
@@ -52,7 +52,7 @@ export function setSelectedElementRotation(angle: number) {
     .get()
     .elements.find((item) => item.id === elementId);
 
-  if (!element || getElementRotation(element) === angle) {
+  if (!element || element.type === "arrow" || getElementRotation(element) === angle) {
     return false;
   }
 

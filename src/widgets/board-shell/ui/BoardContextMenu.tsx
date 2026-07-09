@@ -39,6 +39,7 @@ type BoardContextMenuProps = {
 function canUseLabel(element: BoardElement) {
   return (
     element.type === "rectangle" ||
+    element.type === "badge" ||
     element.type === "ellipse" ||
     element.type === "diamond" ||
     element.type === "triangle" ||

@@ -249,8 +249,18 @@ export function resizeElement(
         return current;
       }
 
+      const waypointBindings = [...(current.waypointBindings ?? [])];
       waypoints[waypointIndex] = point;
-      return updateElement(current, { waypoints });
+      if (waypointBindings.length > 0) {
+        waypointBindings.length = waypoints.length;
+        waypointBindings[waypointIndex] = null;
+      }
+
+      return updateElement(current, {
+        waypointBindings:
+          waypointBindings.length > 0 ? waypointBindings : undefined,
+        waypoints,
+      });
     });
     return;
   }

@@ -39,6 +39,7 @@ export const TOOL_BY_SHORTCUT: Readonly<Record<string, ToolId>> = {
   u: "hexagon",
   v: "selection",
   x: "freedraw",
+  y: "badge",
 };
 
 export function getToolFromShortcut(key: string): ToolId | null {

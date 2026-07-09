@@ -30,6 +30,10 @@ function drawRotationHandle(
   element: Parameters<typeof getElementRotationHandle>[0],
   viewport: Viewport,
 ) {
+  if (element.type === "arrow") {
+    return;
+  }
+
   const bounds = getElementBounds(element);
   const center = getElementCenter(element);
   const angle = getElementRotation(element);

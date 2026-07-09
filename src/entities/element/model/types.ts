@@ -6,6 +6,7 @@ export type ElementType =
   | "diamond"
   | "triangle"
   | "hexagon"
+  | "badge"
   | "star"
   | "cloud"
   | "line"
@@ -89,6 +90,7 @@ export type EllipseElement = BaseElement & { type: "ellipse" };
 export type DiamondElement = BaseElement & { type: "diamond" };
 export type TriangleElement = BaseElement & { type: "triangle" };
 export type HexagonElement = BaseElement & { type: "hexagon" };
+export type BadgeElement = BaseElement & { type: "badge" };
 export type StarElement = BaseElement & { type: "star" };
 export type CloudElement = BaseElement & { type: "cloud" };
 export type LineElement = BaseElement & { type: "line" };
@@ -105,6 +107,8 @@ export type ArrowElement = BaseElement & {
   endBinding?: ElementBinding;
   /** Editable absolute route points between start and end. */
   waypoints?: Point[];
+  /** Optional bindings for each waypoint. Null keeps array indexes aligned. */
+  waypointBindings?: Array<ElementBinding | null>;
 };
 
 export type FreeDrawElement = BaseElement & {
@@ -234,6 +238,7 @@ export type BoardElement =
   | DiamondElement
   | TriangleElement
   | HexagonElement
+  | BadgeElement
   | StarElement
   | CloudElement
   | LineElement

@@ -44,6 +44,7 @@ const CLICK_DEFAULT_SIZES: Partial<Record<ShapeToolId, { width: number; height: 
   markdown: { width: 340, height: 240 },
   code: { width: 360, height: 220 },
   advanced: { width: 320, height: 220 },
+  badge: { width: 240, height: 96 },
 };
 
 function getElementAtPoint(point: Point, excludedId: string) {
@@ -77,6 +78,7 @@ function isShapeTool(toolId: ToolId): toolId is ShapeToolId {
     "diamond",
     "triangle",
     "hexagon",
+    "badge",
     "star",
     "cloud",
     "frame",

@@ -23,6 +23,7 @@ type EditableLabelElement = Extract<
   {
     type:
       | "arrow"
+      | "badge"
       | "cloud"
       | "diamond"
       | "ellipse"
@@ -41,7 +42,8 @@ function isEditableTextElement(element: BoardElement | null | undefined): elemen
 function isEditableLabelElement(element: BoardElement | null | undefined): element is EditableLabelElement {
   return Boolean(
     element &&
-      (element.type === "rectangle" ||
+      (element.type === "badge" ||
+        element.type === "rectangle" ||
         element.type === "ellipse" ||
         element.type === "diamond" ||
         element.type === "triangle" ||
@@ -126,6 +128,7 @@ export function TextEditorOverlay() {
   if (!activeElement) return null;
   const activeElementId = activeElement.id;
   const activeElementStyle = activeElement.style;
+  const isArrowLabelMode = editingLabel?.type === "arrow";
 
   const isLabelMode = Boolean(editingLabel);
   const labelCenter = editingLabel ? getElementCenter(editingLabel) : null;
@@ -255,7 +258,9 @@ export function TextEditorOverlay() {
       aria-label="Редактирование текста"
       className={`absolute z-30 resize-none overflow-hidden outline-none ${
         isLabelMode
-          ? "rounded-md border border-border bg-slate-950/90 px-2 py-1 shadow-panel"
+          ? isArrowLabelMode
+            ? "rounded-md border border-border bg-slate-950/90 px-2 py-1 shadow-panel"
+            : "border-0 bg-transparent p-0"
           : "border-0 bg-transparent p-0"
       }`}
       onBlur={commit}

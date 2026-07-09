@@ -142,6 +142,13 @@ export const MORE_SHAPE_ITEMS: readonly ToolbarItem[] = [
     icon: Hexagon,
   },
   {
+    id: "badge",
+    label: "Badge",
+    shortcut: "Y",
+    shortcutHint: "Y",
+    icon: Square,
+  },
+  {
     id: "star",
     label: "Звезда",
     shortcut: "S",

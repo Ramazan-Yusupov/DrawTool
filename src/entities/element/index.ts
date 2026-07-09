@@ -2,6 +2,7 @@ export { DEFAULT_ELEMENT_STYLE } from "./model/constants";
 export {
   createAdvanced,
   createArrow,
+  createBadge,
   createCallout,
   createCloud,
   createCodeSketch,
@@ -63,6 +64,7 @@ export type {
   ArrowRouting,
   AdvancedElement,
   AdvancedElementKind,
+  BadgeElement,
   BaseElement,
   BoardElement,
   CalloutElement,

@@ -17,7 +17,7 @@ import { createId } from "@/shared/lib";
 const TOOL_IDS = new Set<ToolId>([
   "pan", "selection", "text", "freedraw", "highlighter", "eyedropper",
   "eraser", "laser", "lasso", "code", "image", "rectangle", "ellipse", "diamond",
-  "triangle", "hexagon", "star", "cloud", "line", "arrow", "measure", "sticky",
+  "triangle", "hexagon", "badge", "star", "cloud", "line", "arrow", "measure", "sticky",
   "callout", "table", "frame", "embed",
 ]);
 

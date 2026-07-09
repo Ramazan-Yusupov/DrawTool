@@ -67,6 +67,7 @@ function getSelectedElements() {
 function canUseLabel(element: BoardElement) {
   return (
     element.type === "rectangle" ||
+    element.type === "badge" ||
     element.type === "ellipse" ||
     element.type === "diamond" ||
     element.type === "triangle" ||
@@ -864,16 +865,22 @@ export const boardActions = {
     )[0];
     if (!target) return false;
     const waypoints = [...(arrow.waypoints ?? [])];
+    const waypointBindings = [...(arrow.waypointBindings ?? [])];
     waypoints.splice(
       target.index,
       0,
       getMidpointBetween(target.start, target.end),
     );
+    waypointBindings.length = arrow.waypoints?.length ?? 0;
+    waypointBindings.splice(target.index, 0, null);
 
     historyStore.begin();
     sceneStore.updateById(arrow.id, (element) =>
       element.type === "arrow"
-        ? updateElement(element, { waypoints: waypoints.slice(0, MAX_WAYPOINTS) })
+        ? updateElement(element, {
+            waypointBindings: waypointBindings.slice(0, MAX_WAYPOINTS),
+            waypoints: waypoints.slice(0, MAX_WAYPOINTS),
+          })
         : element,
     );
     historyStore.commit();
@@ -889,7 +896,10 @@ export const boardActions = {
     historyStore.begin();
     sceneStore.updateById(arrow.id, (element) =>
       element.type === "arrow"
-        ? updateElement(element, { waypoints: undefined })
+        ? updateElement(element, {
+            waypointBindings: undefined,
+            waypoints: undefined,
+          })
         : element,
     );
     historyStore.commit();

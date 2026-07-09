@@ -28,11 +28,6 @@ function renderLineLabel(
   context.textAlign = "center";
   context.textBaseline = "middle";
 
-  const metrics = context.measureText(label);
-  const width = metrics.width + 14;
-  const height = 24;
-  context.fillStyle = "rgb(15 23 42 / 86%)";
-  context.fillRect(-width / 2, -height / 2, width, height);
   context.fillStyle = element.style.strokeColor;
   context.fillText(label, 0, 0.5);
   context.restore();

@@ -13,7 +13,12 @@ export function deserializeScene(source: string): BoardElement[] {
 
   return parsed.elements.map((element) => ({
     ...element,
-    angle: typeof element.angle === "number" ? element.angle : 0,
+    angle:
+      element.type === "arrow"
+        ? 0
+        : typeof element.angle === "number"
+          ? element.angle
+          : 0,
     ...(element.type === "arrow"
       ? {
           routing:
@@ -30,6 +35,17 @@ export function deserializeScene(source: string): BoardElement[] {
           waypoints:
             element.routing === "straight" && Array.isArray(element.waypoints)
               ? element.waypoints.slice(0, MAX_ARROW_WAYPOINTS)
+              : undefined,
+          waypointBindings:
+            element.routing === "straight" &&
+            Array.isArray(element.waypoints) &&
+            Array.isArray(element.waypointBindings)
+              ? element.waypointBindings
+                  .slice(
+                    0,
+                    Math.min(element.waypoints.length, MAX_ARROW_WAYPOINTS),
+                  )
+                  .map((binding) => binding ?? null)
               : undefined,
         }
       : {}),

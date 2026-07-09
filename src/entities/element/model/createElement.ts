@@ -6,6 +6,7 @@ import type {
   ArrowRouting,
   AdvancedElementKind,
   AdvancedElement,
+  BadgeElement,
   BoardElement,
   CalloutElement,
   CloudElement,
@@ -255,6 +256,24 @@ export function createTriangle(params: BaseCreateParams): TriangleElement {
 export function createHexagon(params: BaseCreateParams): HexagonElement {
   return createBase<HexagonElement>("hexagon", params);
 }
+export function createBadge(params: BaseCreateParams): BadgeElement {
+  return {
+    ...createBase<BadgeElement>("badge", {
+      ...params,
+      width: params.width ?? 240,
+      height: params.height ?? 96,
+      style: {
+        strokeColor: "#9333ea",
+        backgroundColor: "#f3e8ff",
+        fillStyle: "transparent",
+        cornerStyle: "rounded",
+        strokeWidth: 5,
+        ...params.style,
+      },
+    }),
+    label: "Badge",
+  };
+}
 export function createStar(params: BaseCreateParams): StarElement {
   return createBase<StarElement>("star", params);
 }
@@ -475,6 +494,7 @@ export function createElement(
     case "diamond": return createDiamond(params);
     case "triangle": return createTriangle(params);
     case "hexagon": return createHexagon(params);
+    case "badge": return createBadge(params);
     case "star": return createStar(params);
     case "cloud": return createCloud(params);
     case "line": return createLine(params);

@@ -3,6 +3,7 @@ import { getElementRotation } from "../lib/getElementRotation";
 import type { BoardElement } from "../model/types";
 import { renderAdvanced } from "./renderAdvanced";
 import { renderArrow } from "./renderArrow";
+import { renderBadge } from "./renderBadge";
 import { renderCloud } from "./renderCloud";
 import { renderCallout } from "./renderCallout";
 import { renderCodeSketch } from "./renderCodeSketch";
@@ -34,6 +35,7 @@ function shouldRenderLabel(element: BoardElement) {
       element.type !== "embed" &&
       element.type !== "markdown" &&
       element.type !== "frame" &&
+      element.type !== "badge" &&
       element.type !== "arrow" &&
       element.type !== "line" &&
       element.type !== "measure" &&
@@ -64,17 +66,7 @@ function renderElementLabel(
     ? element.style.strokeColor
     : element.style.strokeColor;
 
-  const metrics = context.measureText(label);
-  const paddingX = 6;
-  const paddingY = 3;
   context.globalAlpha = Math.min(1, element.style.opacity + 0.15);
-  context.fillStyle = "rgb(15 23 42 / 78%)";
-  context.fillRect(
-    center.x - metrics.width / 2 - paddingX,
-    center.y - fontSize / 2 - paddingY,
-    metrics.width + paddingX * 2,
-    fontSize + paddingY * 2,
-  );
   context.fillStyle = element.style.strokeColor;
   context.fillText(label, center.x, center.y + 0.5);
   context.restore();
@@ -99,6 +91,9 @@ function renderUnrotated(
       return;
     case "hexagon":
       renderHexagon(context, element);
+      return;
+    case "badge":
+      renderBadge(context, element);
       return;
     case "star":
       renderStar(context, element);
