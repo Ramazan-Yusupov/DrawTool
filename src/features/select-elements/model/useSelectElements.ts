@@ -14,7 +14,7 @@ import {
 } from "@/entities/element";
 import type { ElementBinding } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { sceneStore } from "@/entities/scene";
+import { getFrameDescendantIds, sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
@@ -101,9 +101,26 @@ export function useSelectElements() {
   const resize = useResizeElements();
 
   function findTopElement(point: Point) {
-    return [...sceneStore.get().elements]
+    const elements = sceneStore.get().elements;
+    const hitElement = [...elements]
       .reverse()
       .find((element) => !element.locked && hitTestElement(element, point));
+
+    if (hitElement?.type !== "frame") {
+      return hitElement;
+    }
+
+    const descendantIds = getFrameDescendantIds(hitElement.id, elements);
+    const childHit = [...elements]
+      .reverse()
+      .find(
+        (element) =>
+          descendantIds.has(element.id) &&
+          !element.locked &&
+          hitTestElement(element, point),
+      );
+
+    return childHit ?? hitElement;
   }
 
   function getArrowEndpointBinding(point: Point, arrowId: string) {
