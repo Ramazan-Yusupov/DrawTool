@@ -1,14 +1,10 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
-import {
-  TOOL_SETTINGS_CAPABILITIES,
-  ToolSettingsModal,
-} from "@/features/change-style";
+import { TOOL_SETTINGS_CAPABILITIES } from "@/features/change-style";
 import { TextEditorOverlay } from "@/features/edit-text";
 import { CommandPalette } from "@/features/command-palette";
 import { editingLockStore } from "@/features/lock-editing";
-import { PremiumStudioDialog } from "@/features/premium-studio";
 import {
   FramePresentationOverlay,
   ProductivityToolsDialog,
@@ -35,8 +31,6 @@ const UTILITY_TOOLS_WITHOUT_PROPERTIES = new Set([
 export function BoardShell() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isLayersOpen, setIsLayersOpen] = useState(false);
-  const [isPremiumStudioOpen, setIsPremiumStudioOpen] = useState(false);
-  const [isToolSettingsOpen, setIsToolSettingsOpen] = useState(false);
 
   useBoardRenderer(canvasRef);
 
@@ -73,27 +67,15 @@ export function BoardShell() {
       <BoardSelectionFrame />
 
       <TextEditorOverlay />
-      <PremiumStudioDialog
-        isOpen={isPremiumStudioOpen}
-        onClose={() => setIsPremiumStudioOpen(false)}
-      />
       <ProductivityToolsDialog />
       <FramePresentationOverlay />
-      <CommandPalette
-        onOpenPremiumStudio={() => setIsPremiumStudioOpen(true)}
-      />
+      <CommandPalette />
       <ShortcutsDialog />
-      <ToolSettingsModal
-        isOpen={isToolSettingsOpen}
-        onClose={() => setIsToolSettingsOpen(false)}
-      />
       <ProjectsSidebar />
 
       <UndoRedoButtons />
       <SceneStorageControls
         isLayersOpen={isLayersOpen}
-        onOpenToolSettings={() => setIsToolSettingsOpen(true)}
-        onOpenPremiumStudio={() => setIsPremiumStudioOpen(true)}
         onToggleLayers={() => setIsLayersOpen((open) => !open)}
       />
       <Toolbar />

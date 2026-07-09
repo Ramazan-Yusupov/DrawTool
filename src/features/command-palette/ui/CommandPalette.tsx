@@ -4,11 +4,7 @@ import { productivityToolsStore } from "@/features/productivity-tools";
 import { commandPaletteStore } from "../model/commandPaletteStore";
 import { Button, Modal } from "@/shared/ui";
 
-type CommandPaletteProps = {
-  onOpenPremiumStudio: () => void;
-};
-
-export function CommandPalette({ onOpenPremiumStudio }: CommandPaletteProps) {
+export function CommandPalette() {
   const isOpen = useSyncExternalStore(
     commandPaletteStore.subscribe,
     commandPaletteStore.get,
@@ -16,7 +12,6 @@ export function CommandPalette({ onOpenPremiumStudio }: CommandPaletteProps) {
   );
   const [query, setQuery] = useState("");
   const commands = [
-    { label: "Open Premium Studio", run: onOpenPremiumStudio },
     { label: "Open Power Tools", run: productivityToolsStore.open },
     { label: "Search elements", run: productivityToolsStore.open },
     { label: "Export .drawtool file", run: boardActions.exportDrawToolFile },

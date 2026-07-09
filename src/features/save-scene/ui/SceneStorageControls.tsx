@@ -8,9 +8,7 @@ import {
   Link2,
   MoreHorizontal,
   PackageOpen,
-  Sparkles,
   Save,
-  Settings2,
   Trash2,
 } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -46,15 +44,11 @@ const FILE_MENU_WIDTH = 240;
 
 type SceneStorageControlsProps = {
   isLayersOpen?: boolean;
-  onOpenToolSettings?: () => void;
-  onOpenPremiumStudio?: () => void;
   onToggleLayers?: () => void;
 };
 
 export function SceneStorageControls({
   isLayersOpen = false,
-  onOpenPremiumStudio,
-  onOpenToolSettings,
   onToggleLayers,
 }: SceneStorageControlsProps) {
   const fileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -215,30 +209,6 @@ export function SceneStorageControls({
                     size={17}
                   />
                   <span>Слои</span>
-                </Button>
-
-                <Button
-                  className={menuButtonClass}
-                  onClick={() => {
-                    onOpenToolSettings?.();
-                    fileMenu.close();
-                  }}
-                  type="button"
-                >
-                  <Settings2 aria-hidden size={17} />
-                  <span>Настройки инструмента</span>
-                </Button>
-
-                <Button
-                  className={menuButtonClass}
-                  onClick={() => {
-                    onOpenPremiumStudio?.();
-                    fileMenu.close();
-                  }}
-                  type="button"
-                >
-                  <Sparkles aria-hidden size={17} />
-                  <span>Premium Studio</span>
                 </Button>
 
                 <Button
