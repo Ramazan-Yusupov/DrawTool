@@ -40,7 +40,6 @@ import {
   copyElementStyle,
   styleClipboardStore,
 } from "@/features/style-clipboard";
-import { setElementLink } from "@/features/manage-link";
 import { updateTableCell, updateTableStructure } from "@/features/edit-table";
 import {
   canChangeElementsLayer,
@@ -65,7 +64,6 @@ import { ArrowSection } from "./ArrowSection";
 import { EmbedSection } from "./EmbedSection";
 import { ImageSection } from "./ImageSection";
 import { ElementTitleSection, hasOwnTitle } from "./ElementTitleSection";
-import { LinkSection } from "./LinkSection";
 import { MarkdownSection } from "./MarkdownSection";
 import { PremiumSection } from "./PremiumSection";
 import { TableSection } from "./TableSection";
@@ -227,11 +225,6 @@ export function PropertiesPanel() {
         element.type === "embed" ? updateElement(element, { url }) : element,
       );
     });
-  }
-
-  function changeElementLink(value: string) {
-    if (!primaryElement) return;
-    setElementLink(primaryElement.id, value);
   }
 
   function changeArrowRouting(routing: ArrowRouting) {
@@ -506,13 +499,6 @@ export function PropertiesPanel() {
 
           {isAdvancedElement(primaryElement) && (
             <PremiumSection element={primaryElement} />
-          )}
-
-          {primaryElement && (
-            <LinkSection
-              link={primaryElement.link}
-              onChange={changeElementLink}
-            />
           )}
 
           {primaryElement && (
