@@ -71,9 +71,6 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
   callout: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
   table: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
   measure: { ...SHAPE_CAPABILITIES, fill: false, corner: false },
-  sticker: {
-    stroke: false, fill: false, corner: false, opacity: true, snap: true, text: false, arrowRouting: false,
-  },
   eyedropper: {
     stroke: false, fill: false, corner: false, opacity: false, snap: false, text: false, arrowRouting: false,
   },

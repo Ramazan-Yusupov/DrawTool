@@ -7,7 +7,7 @@ export type BoardLayer = {
 };
 
 const LAYER_LABELS: Record<BoardElement["type"], string> = {
-  arrow: "Стрелка", cloud: "Облако", code: "Код", image: "Изображение", diamond: "Ромб", ellipse: "Эллипс", embed: "Встроенная страница", frame: "Фрейм", freedraw: "Карандаш", highlighter: "Маркер", sticky: "Стикер", callout: "Комментарий", markdown: "Markdown заметка", measure: "Измерение", table: "Таблица", sticker: "Иконка / стикер", hexagon: "Шестиугольник", line: "Линия", rectangle: "Прямоугольник", star: "Звезда", text: "Текст", triangle: "Треугольник",
+  arrow: "Стрелка", cloud: "Облако", code: "Код", image: "Изображение", diamond: "Ромб", ellipse: "Эллипс", embed: "Встроенная страница", frame: "Фрейм", freedraw: "Карандаш", highlighter: "Маркер", sticky: "Стикер", callout: "Комментарий", markdown: "Markdown заметка", measure: "Измерение", table: "Таблица", hexagon: "Шестиугольник", line: "Линия", rectangle: "Прямоугольник", star: "Звезда", text: "Текст", triangle: "Треугольник",
 };
 
 /** Returns topmost-first layer rows for the active layer navigation panel. */

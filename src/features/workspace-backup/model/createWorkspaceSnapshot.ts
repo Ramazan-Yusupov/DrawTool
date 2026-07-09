@@ -4,7 +4,6 @@ import {
   DRAWTOOL_WORKSPACE_VERSION,
 } from "@/entities/workspace";
 import type { DrawToolWorkspace } from "@/entities/workspace";
-import { stickerSettingsStore } from "@/features/add-sticker";
 import { toolSettingsStore } from "@/features/change-style";
 import { projectStore } from "@/features/projects";
 import { createId } from "@/shared/lib";
@@ -29,7 +28,6 @@ export async function createWorkspaceSnapshot(
     preferences: {
       activeTool: toolStore.get(),
       toolSettingsByTool: toolSettingsStore.getAll(),
-      stickerContent: stickerSettingsStore.get().content,
     },
   };
 }

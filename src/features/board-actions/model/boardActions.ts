@@ -221,7 +221,6 @@ function getElementText(element: BoardElement) {
     return withMeta(`${element.title}\n${element.body.join("\n")}`);
   if (element.type === "code")
     return withMeta(`${element.title}\n${element.language}\n${element.code}`);
-  if (element.type === "sticker") return withMeta(element.content);
   if (element.type === "image") return withMeta(element.name);
   return withMeta(element.type);
 }

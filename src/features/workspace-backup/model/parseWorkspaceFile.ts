@@ -15,7 +15,7 @@ import { MAX_PROJECTS } from "@/features/projects";
 import { createId } from "@/shared/lib";
 
 const TOOL_IDS = new Set<ToolId>([
-  "pan", "selection", "text", "freedraw", "highlighter", "sticker", "eyedropper",
+  "pan", "selection", "text", "freedraw", "highlighter", "eyedropper",
   "eraser", "laser", "lasso", "code", "image", "rectangle", "ellipse", "diamond",
   "triangle", "hexagon", "star", "cloud", "line", "arrow", "measure", "sticky",
   "callout", "table", "frame", "embed",
@@ -65,7 +65,6 @@ function parsePreferences(value: unknown): WorkspacePreferences {
   const fallback: WorkspacePreferences = {
     activeTool: "selection",
     toolSettingsByTool: {},
-    stickerContent: "✨",
   };
   if (!isObject(value)) return fallback;
 
@@ -84,9 +83,6 @@ function parsePreferences(value: unknown): WorkspacePreferences {
       ? value.activeTool as ToolId
       : fallback.activeTool,
     toolSettingsByTool: settingsByTool,
-    stickerContent: typeof value.stickerContent === "string" && value.stickerContent.trim()
-      ? value.stickerContent.slice(0, 32)
-      : fallback.stickerContent,
   };
 }
 

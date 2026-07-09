@@ -125,8 +125,6 @@ function elementToSvg(element: BoardElement) {
     for (let r = 1; r < element.rows; r += 1) grid += `<line x1="${bounds.x}" y1="${bounds.y + r * cellHeight}" x2="${bounds.x + bounds.width}" y2="${bounds.y + r * cellHeight}" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />`;
     element.cells.forEach((cell, index) => { const r = Math.floor(index / element.columns); const c = index % element.columns; grid += textSvg(cell, bounds.x + c * cellWidth + 8, bounds.y + r * cellHeight + 8, 14, "#e2e8f0", cellWidth - 14); });
     markup = grid;
-  } else if (element.type === "sticker") {
-    markup = `<text x="${bounds.x + bounds.width / 2}" y="${bounds.y + bounds.height * 0.78}" text-anchor="middle" font-size="${element.fontSize}" opacity="${style.opacity}">${escapeXml(element.content)}</text>`;
   } else if (element.type === "freedraw" || element.type === "highlighter") {
     const points = element.points.map((point) => `${point.x},${point.y}`).join(" ");
     markup = `<polyline points="${points}" fill="none" stroke="${style.strokeColor}" stroke-opacity="${style.opacity}" stroke-linecap="round" stroke-linejoin="round" stroke-width="${style.strokeWidth}" />`;

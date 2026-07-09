@@ -24,7 +24,6 @@ export const TOOL_LABELS: Record<ToolId, string> = {
   text: "Текст",
   freedraw: "Карандаш",
   highlighter: "Маркер",
-  sticker: "Иконки и стикеры",
   eyedropper: "Пипетка стиля",
   eraser: "Ластик",
   laser: "Лазерная указка",

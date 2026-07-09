@@ -28,7 +28,6 @@ import type {
   MeasureElement,
   RectangleElement,
   StarElement,
-  StickerElement,
   StickyElement,
   TableElement,
   TextAlign,
@@ -454,19 +453,6 @@ export function createTable(params: BaseCreateParams & { rows?: number; columns?
   };
 }
 
-export function createSticker(params: BaseCreateParams & { content?: string; fontSize?: number }): StickerElement {
-  const fontSize = params.fontSize ?? 48;
-  return {
-    ...createBase<StickerElement>("sticker", {
-      ...params,
-      width: params.width ?? fontSize,
-      height: params.height ?? fontSize,
-      style: { ...params.style, strokeColor: params.style?.strokeColor ?? "#f8fafc" },
-    }),
-    content: params.content ?? "✨",
-    fontSize,
-  };
-}
 
 export function createElement(
   type: Exclude<ElementType, "image"> | "advanced",
@@ -505,6 +491,5 @@ export function createElement(
     case "sticky": return createSticky(params);
     case "callout": return createCallout(params);
     case "table": return createTable(params);
-    case "sticker": return createSticker(params);
   }
 }

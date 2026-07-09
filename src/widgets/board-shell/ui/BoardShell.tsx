@@ -6,7 +6,6 @@ import {
   ToolSettingsModal,
 } from "@/features/change-style";
 import { TextEditorOverlay } from "@/features/edit-text";
-import { StickerPickerModal } from "@/features/add-sticker";
 import { CommandPalette } from "@/features/command-palette";
 import { editingLockStore } from "@/features/lock-editing";
 import { PremiumStudioDialog } from "@/features/premium-studio";
@@ -74,7 +73,6 @@ export function BoardShell() {
       <BoardSelectionFrame />
 
       <TextEditorOverlay />
-      <StickerPickerModal />
       <PremiumStudioDialog
         isOpen={isPremiumStudioOpen}
         onClose={() => setIsPremiumStudioOpen(false)}

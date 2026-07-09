@@ -29,6 +29,25 @@ function isVisible(
   );
 }
 
+function renderElementWithEditorState(
+  context: CanvasRenderingContext2D,
+  element: BoardElement,
+  editingLabelId: string | null,
+) {
+  if (element.id !== editingLabelId) {
+    renderElement(context, element);
+    return;
+  }
+
+  renderElement(context, {
+    ...element,
+    style: {
+      ...element.style,
+      opacity: element.style.opacity * 0.5,
+    },
+  });
+}
+
 /**
  * Frames are containers. Their direct descendants are clipped to the inner
  * rectangle, so moving/resizing a Frame cannot reveal content outside it.
@@ -40,6 +59,7 @@ function renderFrameChildren(
   visibleBounds: ReturnType<typeof getVisibleBounds>,
   renderTextPass: boolean,
   editingTextId: string | null,
+  editingLabelId: string | null,
 ) {
   const children = childrenByParentId.get(frame.id) ?? [];
   const content = getFrameContentBounds(frame);
@@ -58,7 +78,7 @@ function renderFrameChildren(
 
     if (child.type === "frame") {
       if (!renderTextPass) {
-        renderElement(context, child);
+        renderElementWithEditorState(context, child, editingLabelId);
         renderFrameChildren(
           context,
           child,
@@ -66,6 +86,7 @@ function renderFrameChildren(
           visibleBounds,
           renderTextPass,
           editingTextId,
+          editingLabelId,
         );
       } else {
         renderFrameChildren(
@@ -75,16 +96,14 @@ function renderFrameChildren(
           visibleBounds,
           renderTextPass,
           editingTextId,
+          editingLabelId,
         );
       }
       return;
     }
 
-    if (
-      (child.type === "text") === renderTextPass &&
-      child.id !== editingTextId
-    ) {
-      renderElement(context, child);
+    if ((child.type === "text") === renderTextPass) {
+      renderElementWithEditorState(context, child, editingLabelId);
     }
   });
 
@@ -94,7 +113,9 @@ function renderFrameChildren(
 export function renderScene({ context, viewport, size }: RenderSceneParams) {
   const visibleBounds = getVisibleBounds(viewport, size);
   const { elements } = sceneStore.get();
-  const editingTextId = textEditorStore.get().elementId;
+  const editorState = textEditorStore.get();
+  const editingTextId = editorState.mode === "text" ? editorState.elementId : null;
+  const editingLabelId = editorState.mode === "label" ? editorState.elementId : null;
   const ids = new Set(elements.map((element) => element.id));
   const childrenByParentId = new Map<string, BoardElement[]>();
 
@@ -120,7 +141,7 @@ export function renderScene({ context, viewport, size }: RenderSceneParams) {
     if (element.id === editingTextId) return;
     if (element.type === "text") return;
 
-    renderElement(context, element);
+    renderElementWithEditorState(context, element, editingLabelId);
 
     if (element.type === "frame") {
       renderFrameChildren(
@@ -130,6 +151,7 @@ export function renderScene({ context, viewport, size }: RenderSceneParams) {
         visibleBounds,
         false,
         editingTextId,
+        editingLabelId,
       );
     }
   });
@@ -139,7 +161,9 @@ export function renderScene({ context, viewport, size }: RenderSceneParams) {
     if (!isVisible(getElementBounds(element), visibleBounds)) return;
 
     if (element.type === "text") {
-      if (element.id !== editingTextId) renderElement(context, element);
+      if (element.id !== editingTextId) {
+        renderElementWithEditorState(context, element, editingLabelId);
+      }
       return;
     }
 
@@ -151,6 +175,7 @@ export function renderScene({ context, viewport, size }: RenderSceneParams) {
         visibleBounds,
         true,
         editingTextId,
+        editingLabelId,
       );
     }
   });

@@ -17,7 +17,6 @@ export type ElementType =
   | "callout"
   | "measure"
   | "table"
-  | "sticker"
   | "frame"
   | "embed"
   | "markdown"
@@ -228,12 +227,6 @@ export type TableElement = BaseElement & {
   cells: string[];
 };
 
-/** Emoji or symbol sticker. Symbols are deliberately portable in scene JSON. */
-export type StickerElement = BaseElement & {
-  type: "sticker";
-  content: string;
-  fontSize: number;
-};
 
 export type BoardElement =
   | RectangleElement
@@ -252,7 +245,6 @@ export type BoardElement =
   | CalloutElement
   | MeasureElement
   | TableElement
-  | StickerElement
   | FrameElement
   | EmbedElement
   | MarkdownElement

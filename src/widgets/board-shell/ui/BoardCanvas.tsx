@@ -12,7 +12,6 @@ import { useLaserPointer } from "@/features/laser-pointer";
 import { useLassoSelect } from "@/features/lasso-select";
 import { editingLockStore } from "@/features/lock-editing";
 import { useSelectElements } from "@/features/select-elements";
-import { useStickerTool } from "@/features/add-sticker";
 import { useEyedropper } from "@/features/style-clipboard";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
@@ -69,7 +68,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
   const lassoEvents = useLassoSelect();
   const selectionEvents = useSelectElements();
   const textEvents = useTextTool();
-  const stickerEvents = useStickerTool();
   const eyedropperEvents = useEyedropper();
 
   useCanvasWheel(canvasRef);
@@ -118,9 +116,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       return textEvents.onPointerDown(event);
     }
 
-    if (activeTool === "sticker") {
-      return stickerEvents.onPointerDown(event);
-    }
 
     if (activeTool === "eyedropper") {
       return eyedropperEvents.onPointerDown(event);
@@ -191,7 +186,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       toolOwner === "draw" ||
       (!hasFixedOwner &&
         activeTool !== "text" &&
-        activeTool !== "sticker" &&
         activeTool !== "eyedropper" &&
         activeTool !== "pan")
     ) {
@@ -234,7 +228,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       toolOwner === "draw" ||
       (!hasFixedOwner &&
         activeTool !== "text" &&
-        activeTool !== "sticker" &&
         activeTool !== "eyedropper" &&
         activeTool !== "pan")
     ) {
@@ -296,7 +289,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     if (
       toolOwner === "draw" ||
       (!hasFixedOwner &&
-        activeTool !== "sticker" &&
         activeTool !== "eyedropper" &&
         activeTool !== "pan")
     ) {

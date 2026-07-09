@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { sceneStore } from "@/entities/scene";
 import { toolStore } from "@/entities/tool";
 import { viewportStore } from "@/entities/viewport";
-import { stickerSettingsStore } from "@/features/add-sticker";
 import { toolSettingsStore } from "@/features/change-style";
 import { projectStore } from "@/features/projects";
 import { debounce } from "@/shared/lib";
@@ -23,7 +22,6 @@ export function useWorkspaceAutoSave() {
       projectStore.subscribe(persist),
       toolStore.subscribe(persist),
       toolSettingsStore.subscribe(persist),
-      stickerSettingsStore.subscribe(persist),
     ];
 
     function flush() {

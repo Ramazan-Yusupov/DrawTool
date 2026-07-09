@@ -27,7 +27,6 @@ export type WorkspaceProject = {
 export type WorkspacePreferences = {
   activeTool: ToolId;
   toolSettingsByTool: Partial<Record<ToolId, PersistedToolSettings>>;
-  stickerContent: string;
 };
 
 export type DrawToolWorkspace = {

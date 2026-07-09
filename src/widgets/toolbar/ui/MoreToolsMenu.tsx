@@ -11,7 +11,6 @@ import {
   Paintbrush,
   Pipette,
   Ruler,
-  SmilePlus,
   StickyNote,
   Table2,
   WandSparkles,
@@ -39,7 +38,6 @@ import type { AdvancedElementKind } from "@/entities/element";
 import { toolStore } from "@/entities/tool";
 import { advancedShapeStore } from "@/features/advanced-shapes";
 import { ImageUploadMenuItem } from "@/features/add-image";
-import { stickerSettingsStore } from "@/features/add-sticker";
 import {
   applyCopiedStyleToSelectedElements,
   styleClipboardStore,
@@ -230,15 +228,6 @@ export function MoreToolsMenu() {
                     variant="icon"
                   />
 
-                  <MoreToolsMenuItem
-                    icon={SmilePlus}
-                    label="Иконки и стикеры"
-                    onClick={() => {
-                      stickerSettingsStore.openPicker();
-                      setIsOpen(false);
-                    }}
-                    variant="icon"
-                  />
 
                   <MoreToolsMenuItem
                     icon={Pipette}

@@ -24,7 +24,6 @@ export type ToolId =
   | "text"
   | "freedraw"
   | "highlighter"
-  | "sticker"
   | "eyedropper"
   | "eraser"
   | "laser"

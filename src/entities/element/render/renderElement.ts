@@ -12,7 +12,6 @@ import { renderEmbed } from "./renderEmbed";
 import { renderFrame } from "./renderFrame";
 import { renderFreeDraw } from "./renderFreeDraw";
 import { renderMeasure } from "./renderMeasure";
-import { renderSticker } from "./renderSticker";
 import { renderSticky } from "./renderSticky";
 import { renderTable } from "./renderTable";
 import { renderHexagon } from "./renderHexagon";
@@ -118,9 +117,6 @@ function renderUnrotated(
       return;
     case "table":
       renderTable(context, element);
-      return;
-    case "sticker":
-      renderSticker(context, element);
       return;
     case "embed":
       renderEmbed(context, element);
