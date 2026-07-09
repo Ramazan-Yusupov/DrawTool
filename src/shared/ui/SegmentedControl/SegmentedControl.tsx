@@ -23,8 +23,10 @@ export function SegmentedControl<T extends string>({
   onChange,
 }: SegmentedControlProps<T>) {
   return (
-    <fieldset className="m-0 border-0 p-0">
-      <legend className="mb-2 text-xs font-medium text-text-muted">{label}</legend>
+    <fieldset className="my-3 border-0 p-0">
+      <legend className="mb-2 text-xs font-medium text-text-muted">
+        {label}
+      </legend>
 
       <div className="grid grid-flow-col auto-cols-fr gap-1 rounded-lg">
         {items.map((item) => {
