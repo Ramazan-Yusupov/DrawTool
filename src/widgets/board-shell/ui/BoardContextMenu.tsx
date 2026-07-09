@@ -21,6 +21,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { boardActions } from "@/features/board-actions";
+import { componentLibraryDialogStore } from "@/features/component-library";
 import { Button, Divider, Popover } from "@/shared/ui";
 import { deleteSelectedElements } from "@/features/delete-elements";
 import { sceneStore } from "@/entities/scene";
@@ -289,11 +290,11 @@ export function BoardContextMenu({
         )}
         <Button
           className={itemClass}
-          onClick={() => run(boardActions.insertLatestLibraryItem)}
+          onClick={() => run(componentLibraryDialogStore.open)}
           type="button"
         >
           <PackageOpen size={16} />
-          <span>Вставить из библиотеки</span>
+          <span>Компоненты</span>
         </Button>
 
         {hasSelectedFrame && (

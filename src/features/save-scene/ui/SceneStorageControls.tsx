@@ -15,6 +15,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { resetScene } from "@/entities/scene";
 import { boardActions } from "@/features/board-actions";
+import { componentLibraryDialogStore } from "@/features/component-library";
 import { projectStore } from "@/features/projects";
 import { shortcutsHelpStore } from "@/features/shortcuts-help";
 import {
@@ -228,14 +229,13 @@ export function SceneStorageControls({
                 <Button
                   className={menuButtonClass}
                   onClick={() => {
-                    const ok = boardActions.insertLatestLibraryItem();
-                    notify(ok ? "Компонент вставлен" : "Библиотека пуста");
+                    componentLibraryDialogStore.open();
                     fileMenu.close();
                   }}
                   type="button"
                 >
                   <PackageOpen aria-hidden size={17} />
-                  <span>Вставить компонент</span>
+                  <span>Компоненты</span>
                 </Button>
 
                 <Button

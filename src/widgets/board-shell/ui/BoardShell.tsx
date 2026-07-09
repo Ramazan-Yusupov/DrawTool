@@ -4,6 +4,7 @@ import { toolStore } from "@/entities/tool";
 import { TOOL_SETTINGS_CAPABILITIES } from "@/features/change-style";
 import { TextEditorOverlay } from "@/features/edit-text";
 import { CommandPalette } from "@/features/command-palette";
+import { ComponentLibraryDialog } from "@/features/component-library";
 import { editingLockStore } from "@/features/lock-editing";
 import {
   FramePresentationOverlay,
@@ -70,6 +71,7 @@ export function BoardShell() {
       <ProductivityToolsDialog />
       <FramePresentationOverlay />
       <CommandPalette />
+      <ComponentLibraryDialog />
       <ShortcutsDialog />
       <ProjectsSidebar />
 

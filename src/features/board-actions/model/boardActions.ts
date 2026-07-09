@@ -26,7 +26,7 @@ type ClipboardPayload = {
   elements: BoardElement[];
 };
 
-type LibraryItem = {
+export type LibraryItem = {
   id: string;
   name: string;
   elements: BoardElement[];
@@ -584,9 +584,17 @@ export const boardActions = {
     return true;
   },
 
-  insertLatestLibraryItem() {
-    const [item] = readLibrary();
+  getLibraryItems() {
+    return readLibrary().map((item) => ({
+      ...item,
+      elements: cloneElements(item.elements),
+    }));
+  },
+
+  insertLibraryItem(itemId: string) {
+    const item = readLibrary().find((libraryItem) => libraryItem.id === itemId);
     if (!item) return false;
+
     const elements = normalizeInsertedElements(item.elements, 48);
     historyStore.begin();
     sceneStore.setElements([...sceneStore.get().elements, ...elements]);
