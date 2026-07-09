@@ -1,7 +1,7 @@
-import { useState, useSyncExternalStore } from "react";
-import { Layers3, PackageOpen } from "lucide-react";
+import { useReducer, useState, useSyncExternalStore } from "react";
+import { Layers3, PackageOpen, Trash2 } from "lucide-react";
 import { boardActions, type LibraryItem } from "@/features/board-actions";
-import { Button, Modal } from "@/shared/ui";
+import { Button, IconButton, Modal } from "@/shared/ui";
 import { componentLibraryDialogStore } from "../model/componentLibraryDialogStore";
 
 function formatCreatedAt(value: number) {
@@ -28,9 +28,11 @@ function getElementCountLabel(count: number) {
 
 function ComponentCard({
   item,
+  onDelete,
   onInsert,
 }: {
   item: LibraryItem;
+  onDelete: (item: LibraryItem) => void;
   onInsert: (itemId: string) => void;
 }) {
   return (
@@ -52,13 +54,25 @@ function ComponentCard({
         </div>
       </div>
 
-      <Button
-        className="shrink-0 rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-slate-950 transition-opacity hover:opacity-90"
-        onClick={() => onInsert(item.id)}
-        type="button"
-      >
-        Вставить
-      </Button>
+      <div className="flex shrink-0 items-center gap-2">
+        <IconButton
+          aria-label={`Удалить компонент «${item.name.trim() || "Без названия"}»`}
+          className="grid size-9 place-items-center rounded-lg border border-transparent text-text-muted transition-colors hover:border-red-500/25 hover:bg-red-500/15 hover:text-red-300"
+          onClick={() => onDelete(item)}
+          title="Удалить компонент"
+          type="button"
+        >
+          <Trash2 aria-hidden size={16} />
+        </IconButton>
+
+        <Button
+          className="rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-slate-950 transition-opacity hover:opacity-90"
+          onClick={() => onInsert(item.id)}
+          type="button"
+        >
+          Вставить
+        </Button>
+      </div>
     </article>
   );
 }
@@ -70,6 +84,7 @@ export function ComponentLibraryDialog() {
     componentLibraryDialogStore.get,
   );
   const [status, setStatus] = useState<string | null>(null);
+  const [, refreshLibrary] = useReducer((revision: number) => revision + 1, 0);
   const items = isOpen ? boardActions.getLibraryItems() : [];
 
   function close() {
@@ -85,6 +100,20 @@ export function ComponentLibraryDialog() {
     }
 
     close();
+  }
+
+  function remove(item: LibraryItem) {
+    const name = item.name.trim() || "Без названия";
+    if (!window.confirm(`Удалить компонент «${name}»?`)) return;
+
+    const deleted = boardActions.deleteLibraryItem(item.id);
+    if (!deleted) {
+      setStatus("Не удалось удалить компонент.");
+      return;
+    }
+
+    setStatus(null);
+    refreshLibrary();
   }
 
   return (
@@ -105,7 +134,12 @@ export function ComponentLibraryDialog() {
         {items.length > 0 ? (
           <div className="max-h-[min(56dvh,560px)] space-y-2 overflow-y-auto overscroll-contain pr-1">
             {items.map((item) => (
-              <ComponentCard item={item} key={item.id} onInsert={insert} />
+              <ComponentCard
+                item={item}
+                key={item.id}
+                onDelete={remove}
+                onInsert={insert}
+              />
             ))}
           </div>
         ) : (

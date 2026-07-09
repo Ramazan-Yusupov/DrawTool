@@ -603,6 +603,15 @@ export const boardActions = {
     return true;
   },
 
+  deleteLibraryItem(itemId: string) {
+    const items = readLibrary();
+    const nextItems = items.filter((item) => item.id !== itemId);
+    if (nextItems.length === items.length) return false;
+
+    writeLibrary(nextItems);
+    return true;
+  },
+
   async exportSelectedFrame(format: "png" | "svg" | "json") {
     const frame = getSelectedFrame();
     if (!frame) return false;
