@@ -26,6 +26,7 @@ import {
   ListCollapse,
   CreditCard,
   LayoutTemplate,
+  LibraryBig,
   SquareKanban,
   SquareDashedKanban,
   CalendarRange,
@@ -43,6 +44,7 @@ import {
   styleClipboardStore,
 } from "@/features/style-clipboard";
 import { productivityToolsStore } from "@/features/productivity-tools";
+import { shapeLibraryDialogStore } from "@/features/shape-library";
 import { IconButton, Popover } from "@/shared/ui";
 import { useMoreToolsMenuPosition } from "../model/useMoreToolsMenuPosition";
 import { MORE_SHAPE_ITEMS } from "../model/toolItems";
@@ -205,6 +207,16 @@ export function MoreToolsMenu() {
                       />
                     );
                   })}
+
+                  <MoreToolsMenuItem
+                    icon={LibraryBig}
+                    label="Shape Library"
+                    onClick={() => {
+                      shapeLibraryDialogStore.open();
+                      setIsOpen(false);
+                    }}
+                    variant="icon"
+                  />
 
                   <MoreToolsMenuItem
                     icon={WandSparkles}

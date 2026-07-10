@@ -3,14 +3,22 @@ import type { Point } from "@/shared/types";
 type LaserState = {
   points: Point[];
   active: boolean;
+  fadeProgress: number;
   version: number;
 };
 
 type LaserListener = () => void;
 
-let state: LaserState = { points: [], active: false, version: 0 };
+let state: LaserState = {
+  points: [],
+  active: false,
+  fadeProgress: 0,
+  version: 0,
+};
 const listeners = new Set<LaserListener>();
-let clearTimer: number | null = null;
+let fadeFrame: number | null = null;
+
+const FADE_DURATION_MS = 560;
 
 function notify() {
   listeners.forEach((listener) => listener());
@@ -21,11 +29,26 @@ function set(next: Omit<LaserState, "version">) {
   notify();
 }
 
-function cancelClearTimer() {
-  if (clearTimer !== null) {
-    window.clearTimeout(clearTimer);
-    clearTimer = null;
+function cancelFadeAnimation() {
+  if (fadeFrame !== null) {
+    window.cancelAnimationFrame(fadeFrame);
+    fadeFrame = null;
   }
+}
+
+function animateFade(startedAt: number) {
+  fadeFrame = window.requestAnimationFrame((now) => {
+    const progress = Math.min((now - startedAt) / FADE_DURATION_MS, 1);
+
+    if (progress >= 1) {
+      fadeFrame = null;
+      set({ points: [], active: false, fadeProgress: 0 });
+      return;
+    }
+
+    set({ points: state.points, active: false, fadeProgress: progress });
+    animateFade(startedAt);
+  });
 }
 
 export const laserPointerStore = {
@@ -34,8 +57,8 @@ export const laserPointerStore = {
   },
 
   start(point: Point) {
-    cancelClearTimer();
-    set({ points: [point], active: true });
+    cancelFadeAnimation();
+    set({ points: [point], active: true, fadeProgress: 0 });
   },
 
   add(point: Point) {
@@ -48,7 +71,11 @@ export const laserPointerStore = {
       return;
     }
 
-    set({ points: [...state.points.slice(-40), point], active: true });
+    set({
+      points: [...state.points.slice(-40), point],
+      active: true,
+      fadeProgress: 0,
+    });
   },
 
   finish() {
@@ -56,17 +83,14 @@ export const laserPointerStore = {
       return;
     }
 
-    set({ points: state.points, active: false });
-    cancelClearTimer();
-    clearTimer = window.setTimeout(() => {
-      clearTimer = null;
-      set({ points: [], active: false });
-    }, 720);
+    cancelFadeAnimation();
+    set({ points: state.points, active: false, fadeProgress: 0 });
+    animateFade(performance.now());
   },
 
   clear() {
-    cancelClearTimer();
-    set({ points: [], active: false });
+    cancelFadeAnimation();
+    set({ points: [], active: false, fadeProgress: 0 });
   },
 
   subscribe(listener: LaserListener) {

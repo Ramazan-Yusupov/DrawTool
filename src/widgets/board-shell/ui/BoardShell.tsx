@@ -12,6 +12,7 @@ import {
 } from "@/features/productivity-tools";
 import { ProjectsSidebar } from "@/features/projects";
 import { SceneStorageControls } from "@/features/save-scene";
+import { ShapeLibraryDialog } from "@/features/shape-library";
 import { ShortcutsDialog } from "@/features/shortcuts-help";
 import { UndoRedoButtons } from "@/features/undo-redo";
 import { LayersPanel } from "@/widgets/layers-panel";
@@ -72,6 +73,7 @@ export function BoardShell() {
       <FramePresentationOverlay />
       <CommandPalette />
       <ComponentLibraryDialog />
+      <ShapeLibraryDialog />
       <ShortcutsDialog />
       <ProjectsSidebar />
 
