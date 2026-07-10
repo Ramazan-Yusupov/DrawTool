@@ -74,6 +74,8 @@ export type BaseElement = {
   label?: string;
   /** Optional grouping token. Elements with the same group move/select together. */
   groupId?: string;
+  /** Optional visual layer. Missing values are normalized to the default layer. */
+  layerId?: string;
   /** Lightweight user metadata for search, filtering and workflows. */
   metadata?: Record<string, string>;
   /** User-facing tags used by search and future filters. */

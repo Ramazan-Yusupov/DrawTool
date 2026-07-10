@@ -1,10 +1,16 @@
 import {
   createArrowBinding,
+  canUseElementLabel,
   findArrowBindingTarget,
   getArrowBindingAnchor,
   hitTestElement,
 } from "@/entities/element";
-import { getFrameDescendantIds, sceneStore } from "@/entities/scene";
+import type { BoardElement } from "@/entities/element";
+import {
+  getFrameDescendantIds,
+  getSelectableSceneElements,
+  sceneStore,
+} from "@/entities/scene";
 import { viewportStore } from "@/entities/viewport";
 import type { Point, Rect } from "@/shared/types";
 
@@ -23,19 +29,8 @@ export function getPointerAngle(point: Point, center: Point) {
   return Math.atan2(point.y - center.y, point.x - center.x);
 }
 
-export function canEditLabelOnCanvas(element: { type: string }) {
-  return (
-    element.type === "rectangle" ||
-    element.type === "badge" ||
-    element.type === "ellipse" ||
-    element.type === "diamond" ||
-    element.type === "triangle" ||
-    element.type === "hexagon" ||
-    element.type === "star" ||
-    element.type === "cloud" ||
-    element.type === "line" ||
-    element.type === "arrow"
-  );
+export function canEditLabelOnCanvas(element: BoardElement) {
+  return canUseElementLabel(element);
 }
 
 export function getWaypointHandleIndex(handle: string) {
@@ -48,7 +43,8 @@ export function getWaypointHandleIndex(handle: string) {
 }
 
 export function findTopSelectableElement(point: Point) {
-  const elements = sceneStore.get().elements;
+  const scene = sceneStore.get();
+  const elements = getSelectableSceneElements(scene);
   const hitElement = [...elements]
     .reverse()
     .find((element) => !element.locked && hitTestElement(element, point));
@@ -72,7 +68,7 @@ export function findTopSelectableElement(point: Point) {
 
 export function getArrowEndpointBinding(point: Point, arrowId: string) {
   const target = findArrowBindingTarget(
-    sceneStore.get().elements,
+    getSelectableSceneElements(sceneStore.get()),
     point,
     arrowId,
     ARROW_BINDING_RADIUS / viewportStore.get().zoom,

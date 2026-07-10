@@ -1,4 +1,5 @@
-import { deserializeScene, serializeScene } from "@/entities/scene";
+import { deserializeSceneState, serializeScene } from "@/entities/scene";
+import { sceneStore } from "@/entities/scene";
 import type { BoardElement } from "@/entities/element";
 import type { SnapshotItem } from "./storage";
 
@@ -10,7 +11,11 @@ export function createDrawToolFile(elements: BoardElement[], snapshots: Snapshot
     format: DRAWTOOL_FILE_FORMAT,
     version: 1,
     savedAt: new Date().toISOString(),
-    scene: serializeScene(elements),
+    scene: serializeScene(
+      elements,
+      sceneStore.get().layers,
+      sceneStore.get().activeLayerId,
+    ),
     snapshots,
   };
 
@@ -28,13 +33,14 @@ export function parseDrawToolFile(source: string) {
     scene?: ReturnType<typeof serializeScene>;
     snapshots?: SnapshotItem[];
   };
-  const elements =
+  const scene =
     parsed.format === DRAWTOOL_FILE_FORMAT && parsed.scene
-      ? deserializeScene(JSON.stringify(parsed.scene))
-      : deserializeScene(source);
+      ? deserializeSceneState(JSON.stringify(parsed.scene))
+      : deserializeSceneState(source);
 
   return {
-    elements,
+    elements: scene.elements,
+    scene,
     snapshots: Array.isArray(parsed.snapshots)
       ? parsed.snapshots.slice(0, 12)
       : undefined,

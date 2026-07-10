@@ -54,6 +54,12 @@ export {
 } from "./lib/getTextSize";
 export { hitTestElement } from "./lib/hitTestElement";
 export { normalizeElement } from "./lib/normalizeElement";
+export {
+  canUseConnectorAnchors,
+  canUseElementLabel,
+  canUseElementTitle,
+  getElementCapabilities,
+} from "./lib/elementCapabilities";
 
 export { renderElement } from "./render/renderElement";
 export { renderImage } from "./render/renderImage";
@@ -100,3 +106,4 @@ export type {
   TextElement,
   TriangleElement,
 } from "./model/types";
+export type { ElementCapabilities } from "./lib/elementCapabilities";

@@ -19,11 +19,11 @@ let cachedState: HistoryState = {
 const listeners = new Set<HistoryListener>();
 
 function createSnapshot(): HistorySnapshot {
-  return createHistoryEntry(sceneStore.get().elements);
+  return createHistoryEntry(sceneStore.get());
 }
 
 function snapshotsMatch(left: HistorySnapshot, right: HistorySnapshot) {
-  return JSON.stringify(left.elements) === JSON.stringify(right.elements);
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function updateCachedState() {

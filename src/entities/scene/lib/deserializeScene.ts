@@ -1,15 +1,22 @@
 import type { BoardElement } from "@/entities/element";
-import { validateScene } from "./validateScene";
+import type { SceneState } from "../model/types";
+import { getSceneValidationIssues, validateScene } from "./validateScene";
 
 const MAX_ARROW_WAYPOINTS = 10;
 
-/** Parses a DrawTool JSON scene and applies safe defaults for older scenes. */
-export function deserializeScene(source: string): BoardElement[] {
+function parseScene(source: string) {
   const parsed: unknown = JSON.parse(source);
 
   if (!validateScene(parsed)) {
-    throw new Error("Файл не похож на сцену DrawTool.");
+    const [firstIssue] = getSceneValidationIssues(parsed);
+    throw new Error(firstIssue ?? "Файл не похож на сцену DrawTool.");
   }
+
+  return parsed;
+}
+
+function deserializeElements(source: string): BoardElement[] {
+  const parsed = parseScene(source);
 
   return parsed.elements.map((element) => ({
     ...element,
@@ -94,4 +101,21 @@ export function deserializeScene(source: string): BoardElement[] {
       : {}),
     style: { ...element.style },
   }));
+}
+
+/** Parses a DrawTool JSON scene and applies safe defaults for older scenes. */
+export function deserializeScene(source: string): BoardElement[] {
+  return deserializeElements(source);
+}
+
+export function deserializeSceneState(
+  source: string,
+): Omit<SceneState, "version"> {
+  const parsed = parseScene(source);
+
+  return {
+    activeLayerId: parsed.activeLayerId ?? "",
+    elements: deserializeElements(source),
+    layers: parsed.layers ?? [],
+  };
 }

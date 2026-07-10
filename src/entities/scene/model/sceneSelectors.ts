@@ -23,3 +23,34 @@ export function getSceneElementsByType<T extends BoardElement["type"]>(
 ) {
   return scene.elements.filter((element) => element.type === type);
 }
+
+export function getSceneLayerById(scene: SceneState, layerId: string) {
+  return scene.layers.find((layer) => layer.id === layerId) ?? null;
+}
+
+export function getActiveSceneLayer(scene: SceneState) {
+  return getSceneLayerById(scene, scene.activeLayerId) ?? scene.layers[0] ?? null;
+}
+
+export function isElementLayerVisible(scene: SceneState, element: BoardElement) {
+  const layer = getSceneLayerById(scene, element.layerId ?? scene.activeLayerId);
+  return layer?.visible ?? true;
+}
+
+export function isElementLayerLocked(scene: SceneState, element: BoardElement) {
+  const layer = getSceneLayerById(scene, element.layerId ?? scene.activeLayerId);
+  return layer?.locked ?? false;
+}
+
+export function getVisibleSceneElements(scene: SceneState) {
+  return scene.elements.filter((element) => isElementLayerVisible(scene, element));
+}
+
+export function getSelectableSceneElements(scene: SceneState) {
+  return scene.elements.filter(
+    (element) =>
+      isElementLayerVisible(scene, element) &&
+      !isElementLayerLocked(scene, element) &&
+      !element.locked,
+  );
+}

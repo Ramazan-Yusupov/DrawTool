@@ -1,6 +1,7 @@
 import type { BoardElement } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import { attachAllFrameChildren, sceneStore } from "@/entities/scene";
+import type { SceneLayer } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { createViewport, viewportStore } from "@/entities/viewport";
 import { createId } from "@/shared/lib";
@@ -46,10 +47,18 @@ function cloneElements(elements: BoardElement[]) {
   return JSON.parse(JSON.stringify(elements)) as BoardElement[];
 }
 
+function cloneLayers(layers: SceneLayer[] | undefined) {
+  return layers
+    ? (JSON.parse(JSON.stringify(layers)) as SceneLayer[])
+    : undefined;
+}
+
 function createProjectRecord(
   name: string,
   elements: BoardElement[] = [],
   viewport = createViewport(),
+  layers?: SceneLayer[],
+  activeLayerId?: string,
 ): DrawToolProject {
   const now = Date.now();
 
@@ -58,7 +67,9 @@ function createProjectRecord(
     name: name.trim() || "Новый проект",
     createdAt: now,
     updatedAt: now,
+    activeLayerId,
     elements: cloneElements(elements),
+    layers: cloneLayers(layers),
     viewport: { ...viewport },
   };
 }
@@ -80,7 +91,11 @@ function setActiveProjectId(id: string | null) {
 
 function applyProjectToScene(project: DrawToolProject) {
   const elements = attachAllFrameChildren(project.elements);
-  sceneStore.setElements(elements);
+  sceneStore.setScene({
+    activeLayerId: project.activeLayerId ?? "",
+    elements,
+    layers: project.layers ?? [],
+  });
   viewportStore.set(project.viewport ?? createViewport());
   selectionStore.clear();
   historyStore.clear();
@@ -168,7 +183,9 @@ export const projectStore = {
 
       await putProject({
         ...current,
+        activeLayerId: sceneStore.get().activeLayerId,
         elements: cloneElements(elements),
+        layers: cloneLayers(sceneStore.get().layers),
         viewport: { ...viewport },
         updatedAt: Date.now(),
       });

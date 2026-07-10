@@ -1,4 +1,5 @@
 import type { BoardElement } from "@/entities/element";
+import type { SceneLayer } from "@/entities/scene";
 import type { Viewport } from "@/entities/viewport";
 import {
   deleteIndexedRecord,
@@ -17,9 +18,16 @@ function cloneViewport(viewport: Viewport): Viewport {
   return { ...viewport };
 }
 
+function cloneLayers(layers: SceneLayer[] | undefined) {
+  return layers
+    ? (JSON.parse(JSON.stringify(layers)) as SceneLayer[])
+    : undefined;
+}
+
 function cloneProject(project: DrawToolProject): DrawToolProject {
   return {
     ...project,
+    layers: cloneLayers(project.layers),
     elements: cloneElements(project.elements),
     viewport: cloneViewport(project.viewport),
   };

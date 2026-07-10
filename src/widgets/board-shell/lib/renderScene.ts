@@ -3,7 +3,7 @@ import {
   renderElement,
 } from "@/entities/element";
 import type { BoardElement, FrameElement } from "@/entities/element";
-import { getFrameContentBounds } from "@/entities/scene";
+import { getFrameContentBounds, getVisibleSceneElements } from "@/entities/scene";
 import { getVisibleBounds } from "@/entities/viewport";
 import { sceneStore } from "@/entities/scene";
 import { textEditorStore } from "@/features/edit-text/model/textEditorStore";
@@ -112,7 +112,8 @@ function renderFrameChildren(
 
 export function renderScene({ context, viewport, size }: RenderSceneParams) {
   const visibleBounds = getVisibleBounds(viewport, size);
-  const { elements } = sceneStore.get();
+  const scene = sceneStore.get();
+  const elements = getVisibleSceneElements(scene);
   const editorState = textEditorStore.get();
   const editingTextId = editorState.mode === "text" ? editorState.elementId : null;
   const editingLabelId = editorState.mode === "label" ? editorState.elementId : null;

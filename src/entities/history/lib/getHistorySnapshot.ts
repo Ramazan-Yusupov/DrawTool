@@ -1,9 +1,11 @@
-import type { BoardElement } from "@/entities/element";
+import type { SceneState } from "@/entities/scene";
 import type { HistorySnapshot } from "../model/types";
 
 /** Creates an immutable copy that can safely be placed in undo/redo history. */
-export function getHistorySnapshot(elements: BoardElement[]): HistorySnapshot {
+export function getHistorySnapshot(scene: SceneState): HistorySnapshot {
   return {
-    elements: JSON.parse(JSON.stringify(elements)) as BoardElement[],
+    activeLayerId: scene.activeLayerId,
+    elements: JSON.parse(JSON.stringify(scene.elements)) as HistorySnapshot["elements"],
+    layers: JSON.parse(JSON.stringify(scene.layers)) as HistorySnapshot["layers"],
   };
 }

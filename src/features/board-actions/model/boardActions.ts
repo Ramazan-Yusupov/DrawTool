@@ -554,10 +554,10 @@ export const boardActions = {
   },
 
   async importDrawToolFile(file: File) {
-    const { elements, snapshots } = parseDrawToolFile(await file.text());
+    const { scene, snapshots } = parseDrawToolFile(await file.text());
 
     historyStore.begin();
-    sceneStore.setElements(elements);
+    sceneStore.setScene(scene);
     selectionStore.clear();
     historyStore.commit();
 

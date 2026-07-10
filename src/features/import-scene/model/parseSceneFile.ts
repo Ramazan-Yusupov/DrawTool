@@ -1,4 +1,4 @@
-import { deserializeScene } from "@/entities/scene";
+import { deserializeSceneState } from "@/entities/scene";
 
 /** Reads and validates a .json DrawTool scene before it touches the active board. */
 export async function parseSceneFile(file: File) {
@@ -6,5 +6,5 @@ export async function parseSceneFile(file: File) {
     throw new Error("Выберите JSON-файл сцены DrawTool.");
   }
 
-  return deserializeScene(await file.text());
+  return deserializeSceneState(await file.text());
 }

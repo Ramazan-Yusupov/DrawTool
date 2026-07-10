@@ -1,4 +1,4 @@
-import type { BoardElement } from "@/entities/element";
+import { canUseElementLabel, type BoardElement } from "@/entities/element";
 import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 
@@ -15,16 +15,5 @@ export function getElementsByIds(elementIds: string[]) {
 }
 
 export function canUseLabel(element: BoardElement) {
-  return (
-    element.type === "rectangle" ||
-    element.type === "badge" ||
-    element.type === "ellipse" ||
-    element.type === "diamond" ||
-    element.type === "triangle" ||
-    element.type === "hexagon" ||
-    element.type === "star" ||
-    element.type === "cloud" ||
-    element.type === "line" ||
-    element.type === "arrow"
-  );
+  return canUseElementLabel(element);
 }
