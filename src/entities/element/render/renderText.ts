@@ -9,6 +9,10 @@ export function renderText(
   const { style } = element;
   const bounds = getElementBounds(element);
   const lineHeight = Math.round(element.fontSize * TEXT_LINE_HEIGHT_RATIO);
+  const lines = element.text.split("\n");
+  const contentHeight = lines.length * lineHeight;
+  const firstLineCenterY =
+    bounds.y + (bounds.height - contentHeight) / 2 + lineHeight / 2;
   const contentLeft = bounds.x + TEXT_ELEMENT_PADDING;
   const contentRight = bounds.x + bounds.width - TEXT_ELEMENT_PADDING;
 
@@ -16,7 +20,7 @@ export function renderText(
   context.globalAlpha = style.opacity;
   context.fillStyle = style.strokeColor;
   context.font = `${element.fontSize}px ${element.fontFamily}`;
-  context.textBaseline = "top";
+  context.textBaseline = "middle";
   context.textAlign = element.textAlign;
 
   const anchorX =
@@ -26,11 +30,11 @@ export function renderText(
         ? contentRight
         : contentLeft;
 
-  element.text.split("\n").forEach((line, index) => {
+  lines.forEach((line, index) => {
     context.fillText(
       line || " ",
       anchorX,
-      bounds.y + TEXT_ELEMENT_PADDING + index * lineHeight,
+      firstLineCenterY + index * lineHeight,
     );
   });
 

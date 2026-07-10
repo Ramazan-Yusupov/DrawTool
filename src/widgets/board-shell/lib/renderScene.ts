@@ -45,7 +45,7 @@ function renderElementWithEditorState(
       ...element.style,
       opacity: element.style.opacity * 0.5,
     },
-  });
+  }, { hideLabel: true });
 }
 
 /**

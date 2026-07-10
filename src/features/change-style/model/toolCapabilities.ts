@@ -2,6 +2,9 @@ import type { ToolId } from "@/entities/tool";
 
 export type ToolStyleCapabilities = {
   stroke: boolean;
+  strokeControls?: boolean;
+  strokeLabel?: string;
+  strokeColorLabel?: string;
   fill: boolean;
   corner: boolean;
   opacity: boolean;
@@ -115,6 +118,9 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
   },
   text: {
     stroke: true,
+    strokeControls: false,
+    strokeLabel: "Цвет текста",
+    strokeColorLabel: "Цвет текста",
     fill: false,
     corner: false,
     opacity: true,

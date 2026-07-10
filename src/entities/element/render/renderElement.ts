@@ -24,6 +24,10 @@ import { renderStar } from "./renderStar";
 import { renderText } from "./renderText";
 import { renderTriangle } from "./renderTriangle";
 
+type RenderElementOptions = {
+  hideLabel?: boolean;
+};
+
 function shouldRenderLabel(element: BoardElement) {
   return Boolean(
     element.label &&
@@ -75,6 +79,7 @@ function renderElementLabel(
 function renderUnrotated(
   context: CanvasRenderingContext2D,
   element: BoardElement,
+  options: RenderElementOptions = {},
 ) {
   switch (element.type) {
     case "rectangle":
@@ -93,7 +98,7 @@ function renderUnrotated(
       renderHexagon(context, element);
       return;
     case "badge":
-      renderBadge(context, element);
+      renderBadge(context, element, { hideLabel: options.hideLabel });
       return;
     case "star":
       renderStar(context, element);
@@ -130,13 +135,13 @@ function renderUnrotated(
       renderImageElement(context, element);
       return;
     case "line":
-      renderLine(context, element);
+      renderLine(context, options.hideLabel ? { ...element, label: undefined } : element);
       return;
     case "measure":
       renderMeasure(context, element);
       return;
     case "arrow":
-      renderArrow(context, element);
+      renderArrow(context, options.hideLabel ? { ...element, label: undefined } : element);
       return;
     case "freedraw":
     case "highlighter":
@@ -152,12 +157,15 @@ function renderUnrotated(
 export function renderElement(
   context: CanvasRenderingContext2D,
   element: BoardElement,
+  options: RenderElementOptions = {},
 ) {
   const angle = getElementRotation(element);
 
   if (angle === 0) {
-    renderUnrotated(context, element);
-    renderElementLabel(context, element);
+    renderUnrotated(context, element, options);
+    if (!options.hideLabel) {
+      renderElementLabel(context, element);
+    }
     return;
   }
 
@@ -166,7 +174,9 @@ export function renderElement(
   context.translate(center.x, center.y);
   context.rotate(angle);
   context.translate(-center.x, -center.y);
-  renderUnrotated(context, element);
-  renderElementLabel(context, element);
+  renderUnrotated(context, element, options);
+  if (!options.hideLabel) {
+    renderElementLabel(context, element);
+  }
   context.restore();
 }

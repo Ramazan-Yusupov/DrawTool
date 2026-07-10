@@ -54,31 +54,37 @@ export function ToolStyleSection({
   capabilities,
   onChange,
 }: ToolStyleSectionProps) {
+  const showStrokeControls = capabilities.strokeControls ?? true;
+
   return (
     <div className="space-y-5 scrollbar-none">
       {capabilities.stroke && (
-        <StyleControl label="Контур">
+        <StyleControl label={capabilities.strokeLabel ?? "Контур"}>
           <div className="flex flex-col gap-3">
             <ColorPalette
-              label="Цвет контура"
+              label={capabilities.strokeColorLabel ?? "Цвет контура"}
               onChange={(strokeColor) => onChange({ strokeColor })}
               options={STROKE_COLORS}
               value={style.strokeColor}
             />
 
-            <SegmentedControl
-              items={STROKE_WIDTHS}
-              label="Толщина линии"
-              onChange={(value) => onChange({ strokeWidth: Number(value) })}
-              value={String(style.strokeWidth) as "1" | "2" | "4"}
-            />
+            {showStrokeControls && (
+              <>
+                <SegmentedControl
+                  items={STROKE_WIDTHS}
+                  label="Толщина линии"
+                  onChange={(value) => onChange({ strokeWidth: Number(value) })}
+                  value={String(style.strokeWidth) as "1" | "2" | "4"}
+                />
 
-            <SegmentedControl<StrokeStyle>
-              items={STROKE_STYLES}
-              label="Стиль линии"
-              onChange={(strokeStyle) => onChange({ strokeStyle })}
-              value={style.strokeStyle}
-            />
+                <SegmentedControl<StrokeStyle>
+                  items={STROKE_STYLES}
+                  label="Стиль линии"
+                  onChange={(strokeStyle) => onChange({ strokeStyle })}
+                  value={style.strokeStyle}
+                />
+              </>
+            )}
           </div>
         </StyleControl>
       )}

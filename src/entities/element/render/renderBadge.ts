@@ -6,6 +6,10 @@ import { drawRoundedRectPath } from "./drawRoundedRectPath";
 const BADGE_HORIZONTAL_PADDING = 24;
 const BADGE_VERTICAL_PADDING = 12;
 
+type RenderBadgeOptions = {
+  hideLabel?: boolean;
+};
+
 function getBadgeFontSize(
   context: CanvasRenderingContext2D,
   label: string,
@@ -30,10 +34,11 @@ function getBadgeFontSize(
 export function renderBadge(
   context: CanvasRenderingContext2D,
   element: BadgeElement,
+  options: RenderBadgeOptions = {},
 ) {
   const bounds = getElementBounds(element);
   const { style } = element;
-  const label = element.label?.trim() || "Badge";
+  const label = options.hideLabel ? "" : element.label?.trim() || "Badge";
   const radius = bounds.height / 2;
 
   context.save();
@@ -58,6 +63,10 @@ export function renderBadge(
 
   context.stroke();
   context.setLineDash([]);
+  if (!label) {
+    context.restore();
+    return;
+  }
   context.font = `700 ${getBadgeFontSize(context, label, bounds.width, bounds.height)}px Inter, ui-sans-serif, system-ui, sans-serif`;
   context.fillStyle = style.strokeColor;
   context.textAlign = "center";
