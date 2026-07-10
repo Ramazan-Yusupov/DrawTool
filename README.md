@@ -37,6 +37,45 @@
 - Экспорт сцены в JSON и импорт JSON-файла.
 - Адаптивный интерфейс для desktop, планшетов и мобильных устройств.
 
+## План улучшений инструментов
+
+Этот список нужен, чтобы улучшать инструменты последовательно и не терять мелкие хвосты после новых функций.
+
+### Core tools
+
+- `Selection` — selection, resize, rotate, group/ungroup, align/distribute, lock/unlock, context menu applicability.
+- `Pan` — плавность перемещения холста, Space-hold режим, mobile/touch поведение.
+- `Rectangle` — label, fill/stroke/corner, resize rotated handles, export parity.
+- `Diamond` — label, hit-test по форме, resize rotated handles, connector anchors.
+- `Ellipse` — label, hit-test по форме, connector anchors, export parity.
+- `Arrow` — routing, waypoints, магнит к границе фигур, label along path, SVG parity.
+- `Line` — label along line, vertical label rotation, endpoint handles, SVG parity.
+- `Freedraw` — толщина, цвет, сглаживание, hit-test path, export parity.
+- `Text` — стабильный editor overlay, font size, align, color, no line-only controls.
+- `Eraser` — удаление drag/click, locked protection, undo batching.
+
+### More tools
+
+- `Frame` — children, auto-attach, resize children, export frame, click priority for children.
+- `Embed` — title/url editing, preview card, link open behavior.
+- `Image` — crop/object-fit, circle/rounded shape, original size, export/import persistence.
+- `Sticky` — editable text, font size, fill/stroke/corner, frame behavior.
+- `Callout` — editable text, font size, target binding, connector sync.
+- `Table` — rows/columns/cells, font size, resize/export/import parity.
+- `Markdown` — title/content/font size, markdown rendering, export parity.
+- `Measure` — readonly measurement label, endpoint handles, no unrelated text controls.
+- `Highlighter` — marker thickness/color/opacity, smooth path, no fill-only noise.
+- `Code` — title/code/language editing, monospace preview, export parity.
+- `Triangle`, `Hexagon`, `Badge`, `Star`, `Cloud` — label/style/resize/hit-test/export parity.
+- `Eyedropper` — style pick source, copied-style preview, apply-style availability.
+- `Laser` — transient pointer path, no scene persistence, clear on escape/tool switch.
+- `Lasso` — freeform selection, additive selection, locked/group behavior.
+
+### Premium shapes
+
+- `Swimlane`, `BPMN task/event/gateway`, `UML class/actor`, `ERD table/relation`, `Kanban board`, `Timeline`, `Mind map`, `Cloud service`, `Wireframe`, `Smart connector`, `Section/Zone`, `Flow step`, `Status badge`, `Annotation pin`, `Template stamp`, `API endpoint`, `Database`, `Org card`.
+- Для каждого premium shape: редактируемый `title`, структурированный `body`, отсутствие лишнего `label`, правильные context-menu actions, export/import parity.
+
 ## Технологии
 
 - React

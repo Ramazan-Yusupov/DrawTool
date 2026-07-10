@@ -56,6 +56,21 @@ export function deserializeScene(source: string): BoardElement[] {
           fontSize: typeof element.fontSize === "number" ? element.fontSize : 15,
         }
       : {}),
+    ...(element.type === "table"
+      ? {
+          fontSize: typeof element.fontSize === "number" ? element.fontSize : 14,
+        }
+      : {}),
+    ...(element.type === "code" && !("kind" in element)
+      ? {
+          title: typeof element.title === "string" ? element.title : "Code sketch",
+          code:
+            typeof element.code === "string"
+              ? element.code
+              : "function component() {\n  return <main />;\n}",
+          language: typeof element.language === "string" ? element.language : "tsx",
+        }
+      : {}),
     ...(element.type === "image"
       ? {
           cornerRadius:

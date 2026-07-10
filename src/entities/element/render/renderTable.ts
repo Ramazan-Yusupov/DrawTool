@@ -30,7 +30,7 @@ export function renderTable(context: CanvasRenderingContext2D, element: TableEle
     context.stroke();
   }
 
-  context.font = '14px Inter, "Segoe UI", sans-serif';
+  context.font = `${element.fontSize}px Inter, "Segoe UI", sans-serif`;
   context.textBaseline = "middle";
   context.fillStyle = "#e2e8f0";
   for (let row = 0; row < rows; row += 1) {

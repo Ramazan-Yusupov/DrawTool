@@ -12,6 +12,7 @@ import {
   Pencil,
   Square,
   Star,
+  Tickets,
   Triangle,
   Type,
 } from "lucide-react";
@@ -146,7 +147,7 @@ export const MORE_SHAPE_ITEMS: readonly ToolbarItem[] = [
     label: "Badge",
     shortcut: "Y",
     shortcutHint: "Y",
-    icon: Square,
+    icon: Tickets,
   },
   {
     id: "star",

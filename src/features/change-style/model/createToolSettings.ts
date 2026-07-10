@@ -7,7 +7,7 @@ export function createToolSettings(): ToolSettings {
     style: { ...DEFAULT_ELEMENT_STYLE },
     snapToGrid: false,
     snapSize: CANVAS_CONFIG.defaultSnapSize,
-    arrowRouting: "elbow",
+    arrowRouting: "straight",
     fontSize: 24,
     fontFamily: '"Segoe Print", "Comic Sans MS", cursive',
     textAlign: "left",

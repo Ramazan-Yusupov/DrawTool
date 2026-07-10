@@ -55,6 +55,10 @@ export function ToolStyleSection({
   onChange,
 }: ToolStyleSectionProps) {
   const showStrokeControls = capabilities.strokeControls ?? true;
+  const showStrokeWidthControls =
+    showStrokeControls && (capabilities.strokeWidthControls ?? true);
+  const showStrokeStyleControls =
+    showStrokeControls && (capabilities.strokeStyleControls ?? true);
 
   return (
     <div className="space-y-5 scrollbar-none">
@@ -68,21 +72,27 @@ export function ToolStyleSection({
               value={style.strokeColor}
             />
 
-            {showStrokeControls && (
+            {(showStrokeWidthControls || showStrokeStyleControls) && (
               <>
-                <SegmentedControl
-                  items={STROKE_WIDTHS}
-                  label="Толщина линии"
-                  onChange={(value) => onChange({ strokeWidth: Number(value) })}
-                  value={String(style.strokeWidth) as "1" | "2" | "4"}
-                />
+                {showStrokeWidthControls && (
+                  <SegmentedControl
+                    items={STROKE_WIDTHS}
+                    label="Толщина линии"
+                    onChange={(value) =>
+                      onChange({ strokeWidth: Number(value) })
+                    }
+                    value={String(style.strokeWidth) as "1" | "2" | "4"}
+                  />
+                )}
 
-                <SegmentedControl<StrokeStyle>
-                  items={STROKE_STYLES}
-                  label="Стиль линии"
-                  onChange={(strokeStyle) => onChange({ strokeStyle })}
-                  value={style.strokeStyle}
-                />
+                {showStrokeStyleControls && (
+                  <SegmentedControl<StrokeStyle>
+                    items={STROKE_STYLES}
+                    label="Стиль линии"
+                    onChange={(strokeStyle) => onChange({ strokeStyle })}
+                    value={style.strokeStyle}
+                  />
+                )}
               </>
             )}
           </div>

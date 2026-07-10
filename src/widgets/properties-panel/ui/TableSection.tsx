@@ -6,10 +6,16 @@ import { NumberField } from "@/shared/ui";
 type TableSectionProps = {
   table: TableElement;
   onChangeCell: (index: number, value: string) => void;
+  onChangeFontSize: (fontSize: number) => void;
   onChangeStructure: (rows: number, columns: number) => void;
 };
 
-export function TableSection({ table, onChangeCell, onChangeStructure }: TableSectionProps) {
+export function TableSection({
+  table,
+  onChangeCell,
+  onChangeFontSize,
+  onChangeStructure,
+}: TableSectionProps) {
   const [cellIndex, setCellIndex] = useState(0);
   const safeCellIndex = Math.min(cellIndex, table.cells.length - 1);
   const cells = useMemo(() => table.cells.map((cell, index) => ({ value: index, label: `Ячейка ${Math.floor(index / table.columns) + 1}:${(index % table.columns) + 1}${cell ? ` — ${cell.slice(0, 18)}` : ""}` })), [table.cells, table.columns]);
@@ -20,6 +26,15 @@ export function TableSection({ table, onChangeCell, onChangeStructure }: TableSe
         <NumberField label="Строки" max={24} min={1} onChange={(rows) => onChangeStructure(rows, table.columns)} step={1} value={table.rows} />
         <NumberField label="Столбцы" max={24} min={1} onChange={(columns) => onChangeStructure(table.rows, columns)} step={1} value={table.columns} />
       </div>
+      <NumberField
+        label="Размер текста"
+        max={36}
+        min={8}
+        onChange={onChangeFontSize}
+        step={1}
+        suffix="px"
+        value={table.fontSize}
+      />
       <label className="grid gap-1 text-xs font-medium text-text-muted">
         Ячейка
         <select className="h-9 rounded-md border border-border bg-control px-2 text-xs text-text outline-none focus:border-accent" onChange={(event) => setCellIndex(Number(event.currentTarget.value))} value={safeCellIndex}>

@@ -39,3 +39,13 @@ export function updateTableCell(tableId: string, cellIndex: number, value: strin
   sceneStore.updateById(tableId, (element) => element.type === "table" ? updateElement(element, { cells }) : element);
   return historyStore.commit();
 }
+
+export function updateTableFontSize(tableId: string, fontSize: number) {
+  const current = sceneStore.get().elements.find((element) => element.id === tableId);
+  if (!current || current.type !== "table" || current.fontSize === fontSize) return false;
+  historyStore.begin();
+  sceneStore.updateById(tableId, (element) =>
+    element.type === "table" ? updateElement(element, { fontSize }) : element,
+  );
+  return historyStore.commit();
+}

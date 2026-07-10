@@ -3,6 +3,8 @@ import type { ToolId } from "@/entities/tool";
 export type ToolStyleCapabilities = {
   stroke: boolean;
   strokeControls?: boolean;
+  strokeWidthControls?: boolean;
+  strokeStyleControls?: boolean;
   strokeLabel?: string;
   strokeColorLabel?: string;
   fill: boolean;
@@ -10,6 +12,7 @@ export type ToolStyleCapabilities = {
   opacity: boolean;
   snap: boolean;
   text: boolean;
+  textAlign?: boolean;
   arrowRouting: boolean;
 };
 
@@ -70,11 +73,21 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
     ...SHAPE_CAPABILITIES,
     fill: false,
     corner: false,
+    strokeLabel: "Маркер",
+    strokeColorLabel: "Цвет маркера",
+    strokeStyleControls: false,
   },
-  sticky: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
-  callout: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
+  sticky: { ...SHAPE_CAPABILITIES, corner: true, snap: true, text: true, textAlign: false },
+  callout: { ...SHAPE_CAPABILITIES, corner: true, snap: true, text: true, textAlign: false },
   table: { ...SHAPE_CAPABILITIES, corner: true, snap: true },
-  measure: { ...SHAPE_CAPABILITIES, fill: false, corner: false },
+  measure: {
+    ...SHAPE_CAPABILITIES,
+    fill: false,
+    corner: false,
+    strokeLabel: "Линейка",
+    strokeColorLabel: "Цвет линейки",
+    strokeStyleControls: false,
+  },
   eyedropper: {
     stroke: false, fill: false, corner: false, opacity: false, snap: false, text: false, arrowRouting: false,
   },
@@ -126,6 +139,7 @@ export const TOOL_SETTINGS_CAPABILITIES: Record<ToolId, ToolStyleCapabilities> =
     opacity: true,
     snap: true,
     text: true,
+    textAlign: true,
     arrowRouting: false,
   },
 };

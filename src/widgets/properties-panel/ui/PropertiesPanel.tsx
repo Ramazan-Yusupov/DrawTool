@@ -1,25 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  ArrowRightLeft,
-  BringToFront,
-  CaseSensitive,
-  Copy,
-  Paintbrush,
-  Pipette,
-  MoveDown,
-  MoveUp,
-  Route,
-  Spline,
-  RotateCw,
-  SendToBack,
-  Settings2,
-  SlidersHorizontal,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { cn } from "@/shared/lib";
 import {
   getElementRotation,
@@ -40,7 +20,11 @@ import {
   copyElementStyle,
   styleClipboardStore,
 } from "@/features/style-clipboard";
-import { updateTableCell, updateTableStructure } from "@/features/edit-table";
+import {
+  updateTableCell,
+  updateTableFontSize,
+  updateTableStructure,
+} from "@/features/edit-table";
 import {
   canChangeElementsLayer,
   reorderElementsByLayer,
@@ -53,7 +37,7 @@ import {
   TOOL_SETTINGS_CAPABILITIES,
   toolSettingsStore,
 } from "@/features/change-style";
-import { Button, IconButton, NumberField, SegmentedControl } from "@/shared/ui";
+import { Button, IconButton } from "@/shared/ui";
 import { useChangeStyle } from "@/features/change-style/model/useChangeStyle";
 import { useDeleteElements } from "@/features/delete-elements";
 import {
@@ -61,55 +45,19 @@ import {
   setSelectedElementRotation,
 } from "@/features/rotate-elements";
 import { ArrowSection } from "./ArrowSection";
+import { ArrowRoutingSection } from "./ArrowRoutingSection";
+import { CodeSection } from "./CodeSection";
 import { EmbedSection } from "./EmbedSection";
 import { ImageSection } from "./ImageSection";
 import { ElementTitleSection, hasOwnTitle } from "./ElementTitleSection";
 import { MarkdownSection } from "./MarkdownSection";
 import { PremiumSection } from "./PremiumSection";
+import { PropertiesPanelHeader } from "./PropertiesPanelHeader";
+import { RotationSection } from "./RotationSection";
+import { SelectionActionsSection } from "./SelectionActionsSection";
 import { TableSection } from "./TableSection";
+import { TextOptionsSection } from "./TextOptionsSection";
 import { usePropertiesPanel } from "../model/usePropertiesPanel";
-
-const ARROW_ROUTING_ITEMS = [
-  {
-    label: "Прямая стрелка",
-    value: "straight",
-    icon: ArrowRightLeft,
-    iconOnly: true,
-  },
-  {
-    label: "Сгибающаяся стрелка",
-    value: "elbow",
-    icon: Route,
-    iconOnly: true,
-  },
-  {
-    label: "Плавная сгибающаяся стрелка",
-    value: "curve",
-    icon: Spline,
-    iconOnly: true,
-  },
-] as const;
-
-const TEXT_ALIGN_ITEMS = [
-  {
-    label: "Выровнять по левому краю",
-    value: "left",
-    icon: AlignLeft,
-    iconOnly: true,
-  },
-  {
-    label: "Выровнять по центру",
-    value: "center",
-    icon: AlignCenter,
-    iconOnly: true,
-  },
-  {
-    label: "Выровнять по правому краю",
-    value: "right",
-    icon: AlignRight,
-    iconOnly: true,
-  },
-] as const;
 
 type StyleTarget = {
   style: ElementStyle;
@@ -120,6 +68,24 @@ function isAdvancedElement(
   element: BoardElement | null,
 ): element is AdvancedElement {
   return Boolean(element && element.type === "code" && "kind" in element);
+}
+
+function isCodeSketchElement(
+  element: BoardElement | null,
+): element is Extract<BoardElement, { type: "code"; code: string }> {
+  return Boolean(element && element.type === "code" && !("kind" in element));
+}
+
+function hasTextSize(element: BoardElement | null): element is Extract<
+  BoardElement,
+  { type: "text" | "sticky" | "callout" }
+> {
+  return Boolean(
+    element &&
+      (element.type === "text" ||
+        element.type === "sticky" ||
+        element.type === "callout"),
+  );
 }
 
 export function PropertiesPanel() {
@@ -248,18 +214,39 @@ export function PropertiesPanel() {
     toolSettingsStore.setArrowRouting(settingsTool, routing);
   }
 
+  function toggleArrowElbowAxis() {
+    if (primaryElement?.type !== "arrow") {
+      return;
+    }
+
+    mutateScene(() => {
+      sceneStore.updateById(primaryElement.id, (element) =>
+        element.type === "arrow"
+          ? updateElement(element, {
+              elbowAxis:
+                element.elbowAxis === "horizontal" ? "vertical" : "horizontal",
+            })
+          : element,
+      );
+    });
+  }
+
   function changeTextOptions(patch: {
     fontSize?: number;
     textAlign?: TextAlign;
   }) {
-    if (primaryElement?.type === "text") {
+    if (hasTextSize(primaryElement)) {
       mutateScene(() => {
         sceneStore.updateById(primaryElement.id, (element) => {
-          if (element.type !== "text") {
+          if (!hasTextSize(element)) {
             return element;
           }
 
           const fontSize = patch.fontSize ?? element.fontSize;
+
+          if (element.type !== "text") {
+            return updateElement(element, { fontSize });
+          }
 
           const size = getTextSize(
             element.text || " ",
@@ -286,7 +273,7 @@ export function PropertiesPanel() {
       return;
     }
 
-    toolSettingsStore.setTextOptions("text", {
+    toolSettingsStore.setTextOptions(settingsTool, {
       fontSize: patch.fontSize ?? toolSettings.fontSize,
       fontFamily: toolSettings.fontFamily,
       textAlign: patch.textAlign ?? toolSettings.textAlign,
@@ -313,15 +300,6 @@ export function PropertiesPanel() {
     mutateScene(() => {
       sceneStore.setElements(nextElements);
     });
-  }
-
-  function getLayerButtonClass(isAvailable: boolean) {
-    return cn(
-      "grid h-9 place-items-center rounded-md transition-colors",
-      isAvailable
-        ? "bg-control text-text hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-        : "cursor-not-allowed bg-control/60 text-text-muted/50",
-    );
   }
 
   return (
@@ -353,28 +331,15 @@ export function PropertiesPanel() {
           isCompactPanelOpen ? "max-lg:block" : "max-lg:hidden",
         )}
       >
-        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
-          <SlidersHorizontal className="text-accent" size={17} />
-
-          <div className="min-w-0 flex-1">
-            <p className="m-0 text-sm font-semibold text-text">{title}</p>
-
-            <p className="m-0 text-xs text-text-muted">
-              {primaryElement
-                ? "Изменения применяются сразу"
-                : "Стиль следующих объектов"}
-            </p>
-          </div>
-
-          <IconButton
-            aria-label="Закрыть настройки"
-            className="grid size-10 place-items-center rounded-lg text-text-muted transition-colors hover:bg-control hover:text-text lg:hidden"
-            onClick={() => setIsCompactPanelOpen(false)}
-            type="button"
-          >
-            <X aria-hidden size={19} />
-          </IconButton>
-        </div>
+        <PropertiesPanelHeader
+          onClose={() => setIsCompactPanelOpen(false)}
+          subtitle={
+            primaryElement
+              ? "Изменения применяются сразу"
+              : "Стиль следующих объектов"
+          }
+          title={title}
+        />
 
         <div className="space-y-5">
           {(capabilities.stroke ||
@@ -389,47 +354,19 @@ export function PropertiesPanel() {
           )}
 
           {capabilities.arrowRouting && (
-            <section className="space-y-3 border-t border-border pt-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-text">
-                <ArrowRightLeft size={16} />
-                Тип стрелки
-              </div>
-
-              <SegmentedControl<ArrowRouting>
-                items={ARROW_ROUTING_ITEMS}
-                label="Маршрут"
-                onChange={changeArrowRouting}
-                value={
-                  primaryElement?.type === "arrow"
-                    ? primaryElement.routing
-                    : toolSettings.arrowRouting
-                }
-              />
-
-              {primaryElement?.type === "arrow" &&
-                primaryElement.routing === "elbow" && (
-                  <Button
-                    className="mt-2 w-full rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
-                    onClick={() =>
-                      mutateScene(() => {
-                        sceneStore.updateById(primaryElement.id, (element) =>
-                          element.type === "arrow"
-                            ? updateElement(element, {
-                                elbowAxis:
-                                  element.elbowAxis === "horizontal"
-                                    ? "vertical"
-                                    : "horizontal",
-                              })
-                            : element,
-                        );
-                      })
-                    }
-                    type="button"
-                  >
-                    Поменять направление сгиба
-                  </Button>
-                )}
-            </section>
+            <ArrowRoutingSection
+              onChange={changeArrowRouting}
+              onToggleElbowAxis={toggleArrowElbowAxis}
+              routing={
+                primaryElement?.type === "arrow"
+                  ? primaryElement.routing
+                  : toolSettings.arrowRouting
+              }
+              showElbowAxisToggle={
+                primaryElement?.type === "arrow" &&
+                primaryElement.routing === "elbow"
+              }
+            />
           )}
 
           {primaryElement?.type === "arrow" &&
@@ -438,37 +375,20 @@ export function PropertiesPanel() {
             )}
 
           {capabilities.text && (
-            <section className="space-y-3 border-t border-border pt-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-text">
-                <CaseSensitive size={18} />
-                Текст
-              </div>
-
-              <NumberField
-                label="Размер шрифта"
-                max={120}
-                min={12}
-                onChange={(fontSize) => changeTextOptions({ fontSize })}
-                step={1}
-                suffix="px"
-                value={
-                  primaryElement?.type === "text"
-                    ? primaryElement.fontSize
-                    : toolSettings.fontSize
-                }
-              />
-
-              <SegmentedControl<TextAlign>
-                items={TEXT_ALIGN_ITEMS}
-                label="Выравнивание"
-                onChange={(textAlign) => changeTextOptions({ textAlign })}
-                value={
-                  primaryElement?.type === "text"
-                    ? primaryElement.textAlign
-                    : toolSettings.textAlign
-                }
-              />
-            </section>
+            <TextOptionsSection
+              fontSize={
+                hasTextSize(primaryElement)
+                  ? primaryElement.fontSize
+                  : toolSettings.fontSize
+              }
+              onChange={changeTextOptions}
+              showAlign={capabilities.textAlign ?? true}
+              textAlign={
+                primaryElement?.type === "text"
+                  ? primaryElement.textAlign
+                  : toolSettings.textAlign
+              }
+            />
           )}
 
           {hasOwnTitle(primaryElement) && (
@@ -487,10 +407,17 @@ export function PropertiesPanel() {
             <MarkdownSection element={primaryElement} />
           )}
 
+          {isCodeSketchElement(primaryElement) && (
+            <CodeSection element={primaryElement} />
+          )}
+
           {primaryElement?.type === "table" && (
             <TableSection
               onChangeCell={(cellIndex, value) =>
                 updateTableCell(primaryElement.id, cellIndex, value)
+              }
+              onChangeFontSize={(fontSize) =>
+                updateTableFontSize(primaryElement.id, fontSize)
               }
               onChangeStructure={(rows, columns) =>
                 updateTableStructure(primaryElement.id, rows, columns)
@@ -504,130 +431,30 @@ export function PropertiesPanel() {
           )}
 
           {primaryElement && primaryElement.type !== "arrow" && (
-            <section className="space-y-3 border-t border-border pt-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-text">
-                <RotateCw size={17} />
-                Поворот
-              </div>
-
-              <NumberField
-                label="Угол"
-                max={360}
-                min={-360}
-                onChange={(degrees) =>
-                  setSelectedElementRotation(degreesToRadians(degrees))
-                }
-                step={1}
-                suffix="°"
-                value={Math.round(
-                  (getElementRotation(primaryElement) * 180) / Math.PI,
-                )}
-              />
-            </section>
+            <RotationSection
+              angleRadians={getElementRotation(primaryElement)}
+              onChange={(degrees) =>
+                setSelectedElementRotation(degreesToRadians(degrees))
+              }
+            />
           )}
 
           {selectedElements.length > 0 && (
-            <section className="space-y-3 border-t border-border pt-4">
-              <p className="m-0 text-xs font-medium text-text-muted">
-                Действия
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted"
-                  onClick={duplicateSelection}
-                  title="Дублировать выбранные объекты"
-                  type="button"
-                >
-                  <Copy aria-hidden size={15} />
-                  Копия
-                </Button>
-
-                <Button
-                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted"
-                  onClick={() => {
-                    const source = primaryElement ?? selectedElements[0];
-                    if (source) copyElementStyle(source);
-                  }}
-                  title="Скопировать стиль выбранного объекта"
-                  type="button"
-                >
-                  <Pipette aria-hidden size={15} />
-                  Стиль
-                </Button>
-
-                <Button
-                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-control text-xs text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={!styleClipboard.style}
-                  onClick={applyCopiedStyleToSelectedElements}
-                  title="Применить скопированный стиль к выбранным объектам"
-                  type="button"
-                >
-                  <Paintbrush aria-hidden size={15} />
-                  Вставить
-                </Button>
-
-                <Button
-                  className="flex h-9 items-center justify-center gap-2 rounded-md bg-red-500/20 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/30 hover:text-red-700 active:scale-[0.98] active:bg-red-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50"
-                  onClick={deleteSelection}
-                  title="Удалить выбранные объекты"
-                  type="button"
-                >
-                  <Trash2 aria-hidden size={15} />
-                  Удалить
-                </Button>
-              </div>
-
-              <p className="m-0 pt-1 text-xs font-medium text-text-muted">
-                Порядок слоёв
-              </p>
-
-              <div className="grid grid-cols-4 gap-1">
-                <IconButton
-                  aria-label="На задний слой"
-                  className={getLayerButtonClass(canSendToBack)}
-                  disabled={!canSendToBack}
-                  onClick={() => changeLayer("back")}
-                  title="Поместить под все объекты этого слоя"
-                  type="button"
-                >
-                  <SendToBack size={16} />
-                </IconButton>
-
-                <IconButton
-                  aria-label="Ниже на один слой"
-                  className={getLayerButtonClass(canMoveBackward)}
-                  disabled={!canMoveBackward}
-                  onClick={() => changeLayer("backward")}
-                  title="Переместить на один слой ниже"
-                  type="button"
-                >
-                  <MoveDown size={16} />
-                </IconButton>
-
-                <IconButton
-                  aria-label="Выше на один слой"
-                  className={getLayerButtonClass(canMoveForward)}
-                  disabled={!canMoveForward}
-                  onClick={() => changeLayer("forward")}
-                  title="Переместить на один слой выше"
-                  type="button"
-                >
-                  <MoveUp size={16} />
-                </IconButton>
-
-                <IconButton
-                  aria-label="На передний слой"
-                  className={getLayerButtonClass(canBringToFront)}
-                  disabled={!canBringToFront}
-                  onClick={() => changeLayer("front")}
-                  title="Поместить поверх всех объектов этого слоя"
-                  type="button"
-                >
-                  <BringToFront size={16} />
-                </IconButton>
-              </div>
-            </section>
+            <SelectionActionsSection
+              canApplyStyle={Boolean(styleClipboard.style)}
+              canBringToFront={canBringToFront}
+              canMoveBackward={canMoveBackward}
+              canMoveForward={canMoveForward}
+              canSendToBack={canSendToBack}
+              onApplyStyle={applyCopiedStyleToSelectedElements}
+              onChangeLayer={changeLayer}
+              onCopyStyle={() => {
+                const source = primaryElement ?? selectedElements[0];
+                if (source) copyElementStyle(source);
+              }}
+              onDeleteSelection={deleteSelection}
+              onDuplicateSelection={duplicateSelection}
+            />
           )}
         </div>
       </aside>

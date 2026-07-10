@@ -4,17 +4,13 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import {
-  createArrowBinding,
-  findArrowBindingTarget,
-  getArrowBindingAnchor,
   getElementCenter,
   getElementRotation,
-  hitTestElement,
   updateElement,
 } from "@/entities/element";
 import type { ElementBinding } from "@/entities/element";
 import { historyStore } from "@/entities/history";
-import { getFrameDescendantIds, sceneStore } from "@/entities/scene";
+import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { textEditorStore } from "@/features/edit-text";
 import { editingLockStore } from "@/features/lock-editing";
@@ -30,10 +26,16 @@ import {
 } from "@/features/resize-elements";
 import { viewportStore } from "@/entities/viewport";
 import { normalizeAngleDelta } from "@/shared/lib";
-import type { Point, Rect } from "@/shared/types";
+import type { Point } from "@/shared/types";
 import { selectByArea } from "./selectByArea";
-
-const ARROW_BINDING_RADIUS = 18;
+import {
+  canEditLabelOnCanvas,
+  findTopSelectableElement,
+  getArrowEndpointBinding,
+  getPointerAngle,
+  getWaypointHandleIndex,
+  normalizeRect,
+} from "./selectionInteractionUtils";
 
 type SelectionInteraction =
   | { mode: "area"; pointerId: number; startPoint: Point; append: boolean }
@@ -58,88 +60,10 @@ type SelectionInteraction =
     }
   | null;
 
-function normalizeRect(start: Point, end: Point): Rect {
-  return {
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    width: Math.abs(end.x - start.x),
-    height: Math.abs(end.y - start.y),
-  };
-}
-
-function getPointerAngle(point: Point, center: Point) {
-  return Math.atan2(point.y - center.y, point.x - center.x);
-}
-
-function canEditLabelOnCanvas(element: { type: string }) {
-  return (
-    element.type === "rectangle" ||
-    element.type === "badge" ||
-    element.type === "ellipse" ||
-    element.type === "diamond" ||
-    element.type === "triangle" ||
-    element.type === "hexagon" ||
-    element.type === "star" ||
-    element.type === "cloud" ||
-    element.type === "line" ||
-    element.type === "arrow"
-  );
-}
-
-function getWaypointHandleIndex(handle: string) {
-  if (!handle.startsWith("waypoint:")) {
-    return undefined;
-  }
-
-  const index = Number(handle.split(":")[1]);
-  return Number.isInteger(index) ? index : undefined;
-}
-
 export function useSelectElements() {
   const interactionRef = useRef<SelectionInteraction>(null);
   const move = useMoveElements();
   const resize = useResizeElements();
-
-  function findTopElement(point: Point) {
-    const elements = sceneStore.get().elements;
-    const hitElement = [...elements]
-      .reverse()
-      .find((element) => !element.locked && hitTestElement(element, point));
-
-    if (hitElement?.type !== "frame") {
-      return hitElement;
-    }
-
-    const descendantIds = getFrameDescendantIds(hitElement.id, elements);
-    const childHit = [...elements]
-      .reverse()
-      .find(
-        (element) =>
-          descendantIds.has(element.id) &&
-          !element.locked &&
-          hitTestElement(element, point),
-      );
-
-    return childHit ?? hitElement;
-  }
-
-  function getArrowEndpointBinding(point: Point, arrowId: string) {
-    const target = findArrowBindingTarget(
-      sceneStore.get().elements,
-      point,
-      arrowId,
-      ARROW_BINDING_RADIUS / viewportStore.get().zoom,
-    );
-
-    if (!target) {
-      return undefined;
-    }
-
-    const binding = createArrowBinding(target, point);
-    const anchorPoint = getArrowBindingAnchor(target, binding, point);
-
-    return { anchorPoint, binding, targetId: target.id };
-  }
 
   function updateSelectionCursor(
     event: ReactPointerEvent<HTMLCanvasElement>,
@@ -258,7 +182,7 @@ export function useSelectElements() {
       return;
     }
 
-    const hitElement = findTopElement(point);
+    const hitElement = findTopSelectableElement(point);
 
     if (hitElement) {
       if ((event.ctrlKey || event.metaKey) && hitElement.link) {
@@ -453,7 +377,7 @@ export function useSelectElements() {
       return;
     }
 
-    const hitElement = findTopElement(getWorldPointerPosition(event));
+    const hitElement = findTopSelectableElement(getWorldPointerPosition(event));
     if (hitElement?.type === "text" || hitElement?.type === "sticky" || hitElement?.type === "callout") {
       selectionStore.setElementIds([hitElement.id]);
       historyStore.begin();

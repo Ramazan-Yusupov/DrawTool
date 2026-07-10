@@ -229,6 +229,7 @@ export type TableElement = BaseElement & {
   rows: number;
   columns: number;
   cells: string[];
+  fontSize: number;
 };
 
 

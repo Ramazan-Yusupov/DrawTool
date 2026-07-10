@@ -1,13 +1,3 @@
-import {
-  Download,
-  FilePlus2,
-  FileUp,
-  FolderOpen,
-  ImageDown,
-  LoaderCircle,
-  Replace,
-  Unplug,
-} from "lucide-react";
 import { useRef, useState, useSyncExternalStore } from "react";
 import { sceneStore } from "@/entities/scene";
 import {
@@ -21,25 +11,20 @@ import {
   downloadSceneFile,
   restoreSceneFromFile,
 } from "@/features/save-scene/model/saveSceneFile";
-import { Button, ConfirmDialog, Modal, Panel } from "@/shared/ui";
+import { ConfirmDialog, Modal } from "@/shared/ui";
 import type { DrawToolWorkspace } from "@/entities/workspace";
 import { parseWorkspaceFile } from "../model/parseWorkspaceFile";
 import { workspacePersistenceStore } from "../model/workspacePersistenceStore";
 import { downloadWorkspaceExport } from "../model/workspaceTransfer";
+import { WorkspaceBackupFolderPanel } from "./WorkspaceBackupFolderPanel";
+import { WorkspaceExportPanel } from "./WorkspaceExportPanel";
+import { WorkspaceFolderConflictModal } from "./WorkspaceFolderConflictModal";
+import { WorkspaceImportPanel } from "./WorkspaceImportPanel";
 
 type WorkspaceDataModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
-
-function formatSavedAt(value: string | null) {
-  if (!value) return "ещё не сохранялось";
-  return new Intl.DateTimeFormat("ru-RU", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(value));
-}
 
 export function WorkspaceDataModal({
   isOpen,
@@ -168,204 +153,38 @@ export function WorkspaceDataModal({
         title="Хранилище и резервные копии"
       >
         <div className="space-y-4">
-          <Panel className="rounded-2xl border border-border/90 bg-control/28 p-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="m-0 text-sm font-semibold text-text">
-                  Backup-папка
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-text-muted">
-                  {storage.isConnected
-                    ? `Подключена: ${storage.folderName}. Последнее сохранение: ${formatSavedAt(storage.lastSavedAt)}.`
-                    : "Создайте пустую папку, например DrawTool, и выберите её: приложение само создаст workspace-файл и папку backups."}
-                </p>
-              </div>
-              {storage.isConnected ? (
-                <span className="shrink-0 rounded-full bg-emerald-400/15 px-2 py-1 text-[11px] font-medium text-emerald-300">
-                  Подключена
-                </span>
-              ) : null}
-            </div>
+          <WorkspaceBackupFolderPanel
+            onConnectFolder={() => void handleConnectFolder()}
+            onCreateBackup={() =>
+              void runAction(async () => {
+                await workspacePersistenceStore.createBackup();
+              })
+            }
+            onDisconnectFolder={() =>
+              void workspacePersistenceStore.disconnectFolder()
+            }
+            onReconnectFolder={() =>
+              void workspacePersistenceStore.reconnectPersistedFolder()
+            }
+            storage={storage}
+          />
 
-            {!storage.isSupported ? (
-              <p className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/10 px-2.5 py-2 text-xs leading-5 text-amber-200">
-                Выбор папки доступен в Chrome и Edge на компьютере. В этом
-                браузере используйте экспорт JSON.
-              </p>
-            ) : (
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                <Button
-                  className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                  disabled={storage.isBusy}
-                  onClick={() => void handleConnectFolder()}
-                  type="button"
-                >
-                  {storage.isBusy ? (
-                    <LoaderCircle
-                      aria-hidden
-                      className="animate-spin"
-                      size={16}
-                    />
-                  ) : (
-                    <FolderOpen aria-hidden size={16} />
-                  )}
-                  {storage.isConnected ? "Сменить папку" : "Выбрать папку"}
-                </Button>
-                {storage.status === "access-needed" ? (
-                  <Button
-                    className="rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                    disabled={storage.isBusy}
-                    onClick={() =>
-                      void workspacePersistenceStore.reconnectPersistedFolder()
-                    }
-                    type="button"
-                  >
-                    Разрешить доступ
-                  </Button>
-                ) : null}
-                {storage.isConnected ? (
-                  <Button
-                    className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                    disabled={storage.isBusy}
-                    onClick={() =>
-                      void runAction(async () => {
-                        await workspacePersistenceStore.createBackup();
-                      })
-                    }
-                    type="button"
-                  >
-                    <Download aria-hidden size={16} />
-                    Создать backup
-                  </Button>
-                ) : null}
-                {storage.isConnected ? (
-                  <Button
-                    className="flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm text-text-muted hover:bg-red-500/10 hover:text-red-300"
-                    disabled={storage.isBusy}
-                    onClick={() =>
-                      void workspacePersistenceStore.disconnectFolder()
-                    }
-                    type="button"
-                  >
-                    <Unplug aria-hidden size={16} />
-                    Отключить
-                  </Button>
-                ) : null}
-              </div>
-            )}
-            {storage.message ? (
-              <p className="mt-3 text-xs text-red-300">{storage.message}</p>
-            ) : null}
-          </Panel>
+          <WorkspaceExportPanel
+            onDownloadGraphic={(format) => void downloadGraphic(format)}
+            onDownloadScene={downloadSceneFile}
+            onDownloadWorkspace={() => void downloadWorkspaceExport()}
+            projectCount={projects.projects.length}
+          />
 
-          <Panel className="rounded-2xl border border-border/90 bg-control/28 p-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
-            <h3 className="m-0 text-sm font-semibold text-text">Экспорт</h3>
-            <p className="mt-1 text-xs leading-5 text-text-muted">
-              Сцена — это только текущая доска. Полный backup включает все{" "}
-              {projects.projects.length} проектов, viewport и настройки
-              инструментов.
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                onClick={downloadSceneFile}
-                type="button"
-              >
-                <Download aria-hidden size={16} /> Текущий проект JSON
-              </Button>
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                onClick={() => void downloadWorkspaceExport()}
-                type="button"
-              >
-                <Download aria-hidden size={16} /> Все проекты и настройки
-              </Button>
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                onClick={() => void downloadGraphic("png")}
-                type="button"
-              >
-                <ImageDown aria-hidden size={16} /> Скачать PNG
-              </Button>
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                onClick={() => void downloadGraphic("svg")}
-                type="button"
-              >
-                <ImageDown aria-hidden size={16} /> Скачать SVG
-              </Button>
-            </div>
-          </Panel>
-
-          <Panel className="rounded-2xl border border-border/90 bg-control/28 p-3 shadow-[inset_0_1px_0_rgb(255_255_255_/_3%)]">
-            <h3 className="m-0 text-sm font-semibold text-text">Импорт</h3>
-            <p className="mt-1 text-xs leading-5 text-text-muted">
-              Выберите, добавить ли отдельную сцену новым проектом, заменить
-              активную доску или восстановить всю рабочую область.
-            </p>
-            <input
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(event) =>
-                void handleNewProjectImport(event.currentTarget.files?.[0])
-              }
-              ref={newProjectInputRef}
-              type="file"
-            />
-            <input
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(event) =>
-                void handleReplaceScene(event.currentTarget.files?.[0])
-              }
-              ref={replaceSceneInputRef}
-              type="file"
-            />
-            <input
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(event) =>
-                void handleWorkspaceImport(event.currentTarget.files?.[0])
-              }
-              ref={workspaceInputRef}
-              type="file"
-            />
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                disabled={isReading}
-                onClick={() => newProjectInputRef.current?.click()}
-                type="button"
-              >
-                <FilePlus2 aria-hidden size={16} /> Импортировать как новый
-              </Button>
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-                disabled={isReading}
-                onClick={() => replaceSceneInputRef.current?.click()}
-                type="button"
-              >
-                <Replace aria-hidden size={16} /> Заменить текущую доску
-              </Button>
-              <Button
-                className="flex items-center justify-center gap-2 rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted sm:col-span-2"
-                disabled={isReading}
-                onClick={() => workspaceInputRef.current?.click()}
-                type="button"
-              >
-                {isReading ? (
-                  <LoaderCircle
-                    aria-hidden
-                    className="animate-spin"
-                    size={16}
-                  />
-                ) : (
-                  <FileUp aria-hidden size={16} />
-                )}{" "}
-                Импортировать все проекты и настройки
-              </Button>
-            </div>
-          </Panel>
+          <WorkspaceImportPanel
+            isReading={isReading}
+            newProjectInputRef={newProjectInputRef}
+            onImportNewProject={(file) => void handleNewProjectImport(file)}
+            onImportWorkspace={(file) => void handleWorkspaceImport(file)}
+            onReplaceScene={(file) => void handleReplaceScene(file)}
+            replaceSceneInputRef={replaceSceneInputRef}
+            workspaceInputRef={workspaceInputRef}
+          />
 
           {notice ? (
             <p className="m-0 rounded-lg border border-border bg-panel px-3 py-2 text-xs text-text">
@@ -395,45 +214,22 @@ export function WorkspaceDataModal({
         title="Импортировать резервную копию?"
       />
 
-      <Modal
-        isOpen={folderWorkspace !== null}
+      <WorkspaceFolderConflictModal
         onClose={() => setFolderWorkspace(null)}
-        title="В папке найдена рабочая область"
-      >
-        <p className="m-0 text-sm leading-6 text-text-muted">
-          В папке есть backup с {folderWorkspace?.projects.length ?? 0}{" "}
-          проектами. Открыть его или перезаписать папку текущими данными
-          DrawTool?
-        </p>
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <Button
-            className="rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white hover:brightness-110"
-            onClick={() => {
-              const workspace = folderWorkspace;
-              setFolderWorkspace(null);
-              if (workspace)
-                void runAction(async () => {
-                  await workspacePersistenceStore.restoreWorkspace(workspace);
-                });
-            }}
-            type="button"
-          >
-            Открыть данные из папки
-          </Button>
-          <Button
-            className="rounded-xl bg-control px-3 py-2 text-sm text-text hover:bg-surface-muted"
-            onClick={() => {
-              setFolderWorkspace(null);
-              void runAction(async () => {
-                await workspacePersistenceStore.overwriteConnectedFolder();
-              });
-            }}
-            type="button"
-          >
-            Перезаписать папку
-          </Button>
-        </div>
-      </Modal>
+        onOpenWorkspace={(workspace) => {
+          setFolderWorkspace(null);
+          void runAction(async () => {
+            await workspacePersistenceStore.restoreWorkspace(workspace);
+          });
+        }}
+        onOverwriteFolder={() => {
+          setFolderWorkspace(null);
+          void runAction(async () => {
+            await workspacePersistenceStore.overwriteConnectedFolder();
+          });
+        }}
+        workspace={folderWorkspace}
+      />
     </>
   );
 }

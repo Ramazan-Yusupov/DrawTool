@@ -29,6 +29,31 @@ const TEMPLATE_PRESETS: Partial<Record<AdvancedElement["kind"], string[]>> = {
   "org-card": ["Role", "Owner", "Contact"],
 };
 
+const BODY_FIELD_LABELS: Partial<Record<AdvancedElement["kind"], string[]>> = {
+  swimlane: ["Lane 1", "Lane 2", "Lane 3"],
+  "bpmn-task": ["Owner", "Input", "Output"],
+  "bpmn-event": ["Event note"],
+  "bpmn-gateway": ["Yes path", "No path"],
+  "uml-class": ["Property", "Method"],
+  "uml-actor": ["Role / system"],
+  "erd-table": ["Field 1", "Field 2", "Field 3"],
+  "kanban-board": ["Column 1", "Column 2", "Column 3"],
+  timeline: ["Milestone 1", "Milestone 2", "Milestone 3"],
+  "mindmap-node": ["Branch 1", "Branch 2", "Branch 3"],
+  "cloud-service": ["Service 1", "Service 2", "Service 3"],
+  wireframe: ["Header", "Content", "CTA"],
+  "smart-connector": ["Source", "Target", "Rule"],
+  "section-zone": ["Scope", "Owner", "Status"],
+  "erd-relationship": ["Source key", "Target key"],
+  "flow-step": ["Step text", "Outcome"],
+  "status-badge": ["Status 1", "Status 2", "Status 3"],
+  "annotation-pin": ["Annotation text"],
+  "template-stamp": ["Description", "Usage"],
+  "api-endpoint": ["Request", "Response", "Auth"],
+  "database-cylinder": ["Table 1", "Table 2", "Table 3"],
+  "org-card": ["Role", "Owner", "Contact"],
+};
+
 function updateAdvancedElement(
   elementId: string,
   patch: Partial<Pick<AdvancedElement, "body" | "title">>,
@@ -42,9 +67,23 @@ function updateAdvancedElement(
   historyStore.commit();
 }
 
+function getBodyFieldLabels(element: AdvancedElement) {
+  const labels = BODY_FIELD_LABELS[element.kind] ?? [];
+  const count = Math.max(labels.length, element.body.length, 1);
+
+  return Array.from({ length: count }, (_, index) => labels[index] ?? `Строка ${index + 1}`);
+}
+
+function updateBodyItem(element: AdvancedElement, index: number, value: string) {
+  const body = [...element.body];
+  body[index] = value;
+  updateAdvancedElement(element.id, { body });
+}
+
 export function PremiumSection({ element }: PremiumSectionProps) {
   const bodyText = element.body.join("\n");
   const preset = TEMPLATE_PRESETS[element.kind];
+  const bodyFieldLabels = getBodyFieldLabels(element);
 
   return (
     <section className="space-y-3 border-t border-border pt-4">
@@ -68,12 +107,56 @@ export function PremiumSection({ element }: PremiumSectionProps) {
         />
       </label>
 
-      <label className="block space-y-1">
-        <span className="text-xs font-medium text-text-muted">
-          Содержимое
-        </span>
+      <div className="space-y-2">
+        <p className="m-0 text-xs font-medium text-text-muted">Структура</p>
+
+        {bodyFieldLabels.map((label, index) => (
+          <label className="block space-y-1" key={`${element.kind}-${index}`}>
+            <span className="text-xs text-text-muted">{label}</span>
+            <input
+              className="h-9 w-full rounded-md border border-border bg-control px-2 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-accent"
+              onChange={(event) =>
+                updateBodyItem(element, index, event.currentTarget.value)
+              }
+              value={element.body[index] ?? ""}
+            />
+          </label>
+        ))}
+
+        <div className="grid grid-cols-2 gap-1.5">
+          <Button
+            className="rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted"
+            onClick={() =>
+              updateAdvancedElement(element.id, {
+                body: [...element.body, ""],
+              })
+            }
+            type="button"
+          >
+            + строка
+          </Button>
+
+          <Button
+            className="rounded-md border border-border bg-control px-2 py-2 text-xs text-text transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={element.body.length <= 1}
+            onClick={() =>
+              updateAdvancedElement(element.id, {
+                body: element.body.slice(0, -1),
+              })
+            }
+            type="button"
+          >
+            - строка
+          </Button>
+        </div>
+      </div>
+
+      <details className="rounded-md border border-border bg-control/40 px-2 py-2">
+        <summary className="cursor-pointer text-xs font-medium text-text-muted">
+          Редактировать списком
+        </summary>
         <textarea
-          className="min-h-24 w-full resize-y rounded-md border border-border bg-control px-2 py-2 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-accent"
+          className="mt-2 min-h-24 w-full resize-y rounded-md border border-border bg-control px-2 py-2 text-sm text-text outline-none transition-colors placeholder:text-text-muted focus:border-accent"
           onChange={(event) =>
             updateAdvancedElement(element.id, {
               body: event.currentTarget.value
@@ -84,7 +167,7 @@ export function PremiumSection({ element }: PremiumSectionProps) {
           }
           value={bodyText}
         />
-      </label>
+      </details>
 
       {preset && (
         <Button

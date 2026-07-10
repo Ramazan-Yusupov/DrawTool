@@ -7,7 +7,7 @@ import {
   hitTestElement,
   updateElement,
 } from "@/entities/element";
-import type { ElementBinding } from "@/entities/element";
+import type { BoardElement, ElementBinding } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import type { ShapeToolId, ToolId } from "@/entities/tool";
 import { toolStore } from "@/entities/tool";
@@ -109,6 +109,94 @@ function isTooSmall(width: number, height: number, toolId: ShapeToolId) {
   );
 }
 
+function resizeClickCreatedElement(element: BoardElement, drawing: DrawingState) {
+  if (!isTooSmall(element.width, element.height, drawing.toolId)) {
+    return;
+  }
+
+  const defaultSize = CLICK_DEFAULT_SIZES[drawing.toolId];
+
+  if (!defaultSize) {
+    sceneStore.removeById(element.id);
+    return;
+  }
+
+  sceneStore.updateById(element.id, (current) =>
+    updateElement(current, {
+      x:
+        drawing.toolId === "callout"
+          ? drawing.startPoint.x + 42
+          : drawing.startPoint.x,
+      y:
+        drawing.toolId === "callout"
+          ? drawing.startPoint.y + 34
+          : drawing.startPoint.y,
+      width: defaultSize.width,
+      height: defaultSize.height,
+    }),
+  );
+}
+
+function getSceneElement(elementId: string) {
+  return sceneStore.get().elements.find((element) => element.id === elementId);
+}
+
+function finalizeArrowBindings(element: BoardElement, drawing: DrawingState) {
+  if (element.type !== "arrow") {
+    return;
+  }
+
+  sceneStore.updateById(element.id, (current) =>
+    current.type === "arrow"
+      ? updateElement(current, {
+          startBinding: drawing.startBinding,
+          endBinding: drawing.endBinding,
+        })
+      : current,
+  );
+}
+
+function attachCalloutTarget(element: BoardElement, drawing: DrawingState) {
+  if (element.type !== "callout") {
+    return;
+  }
+
+  const target = getElementAtPoint(drawing.startPoint, element.id);
+
+  if (!target) {
+    return;
+  }
+
+  sceneStore.updateById(element.id, (current) =>
+    current.type === "callout"
+      ? updateElement(current, { targetId: target.id })
+      : current,
+  );
+}
+
+function attachElementToFrame(element: BoardElement) {
+  if (element.type === "frame") {
+    sceneStore.setElements(attachFrameChildren(sceneStore.get().elements, element.id));
+    return;
+  }
+
+  const parentFrame = findContainingFrame(element, sceneStore.get().elements);
+
+  if (parentFrame) {
+    sceneStore.updateById(element.id, (current) =>
+      updateElement(current, { parentId: parentFrame.id }),
+    );
+  }
+}
+
+function selectCreatedElement(elementId: string) {
+  selectionStore.setElementIds([elementId]);
+
+  if (!toolLockStore.get()) {
+    toolStore.set("selection");
+  }
+}
+
 export function useDrawShape() {
   const drawingRef = useRef<DrawingState | null>(null);
 
@@ -175,6 +263,11 @@ export function useDrawShape() {
       startPoint,
       settings.style,
       settings.arrowRouting,
+      {
+        fontFamily: settings.fontFamily,
+        fontSize: settings.fontSize,
+        textAlign: settings.textAlign,
+      },
     );
     const element =
       preview.type === "arrow" && startBinding
@@ -258,75 +351,15 @@ export function useDrawShape() {
     arrowBindingIndicatorStore.clear();
 
     if (element) {
-      if (isTooSmall(element.width, element.height, drawing.toolId)) {
-        const defaultSize = CLICK_DEFAULT_SIZES[drawing.toolId];
-        if (defaultSize) {
-          sceneStore.updateById(element.id, (current) =>
-            updateElement(current, {
-              x: drawing.toolId === "callout" ? drawing.startPoint.x + 42 : drawing.startPoint.x,
-              y: drawing.toolId === "callout" ? drawing.startPoint.y + 34 : drawing.startPoint.y,
-              width: defaultSize.width,
-              height: defaultSize.height,
-            }),
-          );
-        } else {
-          sceneStore.removeById(element.id);
-        }
-      }
+      resizeClickCreatedElement(element, drawing);
 
-      const normalizedElement = sceneStore
-        .get()
-        .elements.find((item) => item.id === element.id);
+      const normalizedElement = getSceneElement(element.id);
 
       if (normalizedElement) {
-        if (normalizedElement.type === "arrow") {
-          sceneStore.updateById(normalizedElement.id, (current) =>
-            current.type === "arrow"
-              ? updateElement(current, {
-                  startBinding: drawing.startBinding,
-                  endBinding: drawing.endBinding,
-                })
-              : current,
-          );
-        }
-
-        if (normalizedElement.type === "callout") {
-          const target = getElementAtPoint(drawing.startPoint, normalizedElement.id);
-          if (target) {
-            sceneStore.updateById(normalizedElement.id, (current) =>
-              current.type === "callout"
-                ? updateElement(current, { targetId: target.id })
-                : current,
-            );
-          }
-        }
-
-        if (normalizedElement.type === "frame") {
-          sceneStore.setElements(
-            attachFrameChildren(sceneStore.get().elements, normalizedElement.id),
-          );
-        } else {
-          const parentFrame = findContainingFrame(
-            normalizedElement,
-            sceneStore.get().elements,
-          );
-
-          if (parentFrame) {
-            sceneStore.updateById(normalizedElement.id, (current) =>
-              updateElement(current, { parentId: parentFrame.id }),
-            );
-          }
-        }
-
-        /*
-         * Фигуры — одноразовые инструменты: после завершения сразу
-         * переключаемся на курсор и выделяем созданный объект, чтобы его
-         * можно было сразу передвинуть, изменить или повернуть.
-         */
-        selectionStore.setElementIds([element.id]);
-        if (!toolLockStore.get()) {
-          toolStore.set("selection");
-        }
+        finalizeArrowBindings(normalizedElement, drawing);
+        attachCalloutTarget(normalizedElement, drawing);
+        attachElementToFrame(normalizedElement);
+        selectCreatedElement(element.id);
       }
     }
 

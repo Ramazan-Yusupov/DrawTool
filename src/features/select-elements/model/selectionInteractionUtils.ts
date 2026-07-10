@@ -1,0 +1,89 @@
+import {
+  createArrowBinding,
+  findArrowBindingTarget,
+  getArrowBindingAnchor,
+  hitTestElement,
+} from "@/entities/element";
+import { getFrameDescendantIds, sceneStore } from "@/entities/scene";
+import { viewportStore } from "@/entities/viewport";
+import type { Point, Rect } from "@/shared/types";
+
+const ARROW_BINDING_RADIUS = 18;
+
+export function normalizeRect(start: Point, end: Point): Rect {
+  return {
+    x: Math.min(start.x, end.x),
+    y: Math.min(start.y, end.y),
+    width: Math.abs(end.x - start.x),
+    height: Math.abs(end.y - start.y),
+  };
+}
+
+export function getPointerAngle(point: Point, center: Point) {
+  return Math.atan2(point.y - center.y, point.x - center.x);
+}
+
+export function canEditLabelOnCanvas(element: { type: string }) {
+  return (
+    element.type === "rectangle" ||
+    element.type === "badge" ||
+    element.type === "ellipse" ||
+    element.type === "diamond" ||
+    element.type === "triangle" ||
+    element.type === "hexagon" ||
+    element.type === "star" ||
+    element.type === "cloud" ||
+    element.type === "line" ||
+    element.type === "arrow"
+  );
+}
+
+export function getWaypointHandleIndex(handle: string) {
+  if (!handle.startsWith("waypoint:")) {
+    return undefined;
+  }
+
+  const index = Number(handle.split(":")[1]);
+  return Number.isInteger(index) ? index : undefined;
+}
+
+export function findTopSelectableElement(point: Point) {
+  const elements = sceneStore.get().elements;
+  const hitElement = [...elements]
+    .reverse()
+    .find((element) => !element.locked && hitTestElement(element, point));
+
+  if (hitElement?.type !== "frame") {
+    return hitElement;
+  }
+
+  const descendantIds = getFrameDescendantIds(hitElement.id, elements);
+  const childHit = [...elements]
+    .reverse()
+    .find(
+      (element) =>
+        descendantIds.has(element.id) &&
+        !element.locked &&
+        hitTestElement(element, point),
+    );
+
+  return childHit ?? hitElement;
+}
+
+export function getArrowEndpointBinding(point: Point, arrowId: string) {
+  const target = findArrowBindingTarget(
+    sceneStore.get().elements,
+    point,
+    arrowId,
+    ARROW_BINDING_RADIUS / viewportStore.get().zoom,
+  );
+
+  if (!target) {
+    return undefined;
+  }
+
+  const binding = createArrowBinding(target, point);
+  const anchorPoint = getArrowBindingAnchor(target, binding, point);
+
+  return { anchorPoint, binding, targetId: target.id };
+}

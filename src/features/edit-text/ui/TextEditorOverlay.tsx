@@ -6,18 +6,9 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
-  getElementCenter,
-  getTextContentSize,
   getTextSize,
   TEXT_ELEMENT_PADDING,
-  TEXT_LINE_HEIGHT_RATIO,
   updateElement,
-} from "@/entities/element";
-import type {
-  BoardElement,
-  CalloutElement,
-  StickyElement,
-  TextElement,
 } from "@/entities/element";
 import { historyStore } from "@/entities/history";
 import { expandFramesToFitChildren, sceneStore } from "@/entities/scene";
@@ -26,106 +17,15 @@ import { toolStore } from "@/entities/tool";
 import { viewportStore } from "@/entities/viewport";
 import { editingLockStore } from "@/features/lock-editing";
 import { toolLockStore } from "@/features/tool-lock";
+import {
+  cloneTextElement,
+  getTextColor,
+  isEditableLabelElement,
+  isEditableTextElement,
+  type EditableTextElement,
+} from "../model/editableTextElements";
 import { textEditorStore } from "../model/textEditorStore";
-
-type EditableTextElement = TextElement | StickyElement | CalloutElement;
-type EditableLabelElement = Extract<
-  BoardElement,
-  {
-    type:
-      | "arrow"
-      | "badge"
-      | "cloud"
-      | "diamond"
-      | "ellipse"
-      | "hexagon"
-      | "line"
-      | "rectangle"
-      | "star"
-      | "triangle";
-  }
->;
-
-const TEXT_EDITOR_SIDE_PADDING_RATIO = 1;
-const TEXT_EDITOR_MIN_SIDE_PADDING = 12;
-const TEXT_EDITOR_TYPING_RESERVE_CHARS = 0;
-
-function isEditableTextElement(
-  element: BoardElement | null | undefined,
-): element is EditableTextElement {
-  return (
-    element?.type === "text" ||
-    element?.type === "sticky" ||
-    element?.type === "callout"
-  );
-}
-
-function isEditableLabelElement(
-  element: BoardElement | null | undefined,
-): element is EditableLabelElement {
-  return Boolean(
-    element &&
-    (element.type === "badge" ||
-      element.type === "rectangle" ||
-      element.type === "ellipse" ||
-      element.type === "diamond" ||
-      element.type === "triangle" ||
-      element.type === "hexagon" ||
-      element.type === "star" ||
-      element.type === "cloud" ||
-      element.type === "line" ||
-      element.type === "arrow"),
-  );
-}
-
-function cloneTextElement(element: EditableTextElement): EditableTextElement {
-  return { ...element, style: { ...element.style } };
-}
-
-function getTextAlign(element: EditableTextElement) {
-  return element.type === "text" ? element.textAlign : "left";
-}
-
-function getTextColor(element: EditableTextElement) {
-  return element.type === "callout" ? "#f8fafc" : element.style.strokeColor;
-}
-
-function getTextEditorHorizontalPadding(fontSize: number, zoom: number) {
-  return (
-    Math.max(
-      TEXT_EDITOR_MIN_SIDE_PADDING,
-      fontSize * TEXT_EDITOR_SIDE_PADDING_RATIO,
-    ) * zoom
-  );
-}
-
-function getTextEditorTypingReserve(fontSize: number, zoom: number) {
-  return fontSize * TEXT_EDITOR_TYPING_RESERVE_CHARS * 0.62 * zoom;
-}
-
-function getTextEditorLeft({
-  align,
-  contentLeft,
-  contentRight,
-  editorWidth,
-  padding,
-}: {
-  align: CanvasTextAlign;
-  contentLeft: number;
-  contentRight: number;
-  editorWidth: number;
-  padding: number;
-}) {
-  if (align === "center") {
-    return (contentLeft + contentRight) / 2 - editorWidth / 2;
-  }
-
-  if (align === "right") {
-    return contentRight - editorWidth + padding;
-  }
-
-  return contentLeft - padding;
-}
+import { getTextEditorLayout } from "./textEditorLayout";
 
 export function TextEditorOverlay() {
   const editorState = useSyncExternalStore(
@@ -213,75 +113,13 @@ export function TextEditorOverlay() {
   const activeElementId = activeElement.id;
   const activeElementStyle = activeElement.style;
   const isArrowLabelMode = editingLabel?.type === "arrow";
-
   const isLabelMode = Boolean(editingLabel);
-  const labelCenter = editingLabel ? getElementCenter(editingLabel) : null;
-  const editorFontSize = isLabelMode ? 15 : (editingText?.fontSize ?? 15);
-  const editorFontFamily = isLabelMode
-    ? "Inter, ui-sans-serif, system-ui, sans-serif"
-    : (editingText?.fontFamily ??
-      "Inter, ui-sans-serif, system-ui, sans-serif");
-  const contentSize = getTextContentSize(
-    draft || " ",
-    editorFontSize,
-    editorFontFamily,
-  );
-  const fontSize = editorFontSize * viewport.zoom;
-  const lineHeight =
-    Math.ceil(editorFontSize * TEXT_LINE_HEIGHT_RATIO) * viewport.zoom;
-  const textAlign = editingText ? getTextAlign(editingText) : "left";
-  const textHorizontalPadding = getTextEditorHorizontalPadding(
-    editorFontSize,
-    viewport.zoom,
-  );
-  const textVerticalPadding =
-    Math.max(4, editorFontSize * 0.25) * viewport.zoom;
-  const textContentWidth = contentSize.width * viewport.zoom;
-  const textContentHeight = contentSize.height * viewport.zoom;
-  const textTypingReserve = isLabelMode
-    ? 0
-    : getTextEditorTypingReserve(editorFontSize, viewport.zoom);
-  const textEditorWidth = Math.max(
-    textContentWidth + textHorizontalPadding * 2 + textTypingReserve,
-    28 * viewport.zoom,
-  );
-  const textEditorHeight = Math.max(
-    textContentHeight + textVerticalPadding * 2,
-    lineHeight + textVerticalPadding * 2,
-  );
-  const textContentLeft = editingText
-    ? (editingText.x + TEXT_ELEMENT_PADDING - viewport.x) * viewport.zoom
-    : 0;
-  const textContentRight = editingText
-    ? (editingText.x + editingText.width - TEXT_ELEMENT_PADDING - viewport.x) *
-      viewport.zoom
-    : 0;
-  const textContentTop = editingText
-    ? (editingText.y +
-        (editingText.height - contentSize.height) / 2 -
-        viewport.y) *
-      viewport.zoom
-    : 0;
-  const textEditorLeft = editingText
-    ? getTextEditorLeft({
-        align: textAlign,
-        contentLeft: textContentLeft,
-        contentRight: textContentRight,
-        editorWidth: textEditorWidth,
-        padding: textHorizontalPadding,
-      })
-    : 0;
-  const textEditorTop = textContentTop - textVerticalPadding;
-  const labelWidth = Math.max(contentSize.width * viewport.zoom + 24, 84);
-  const labelHeight = Math.max(contentSize.height * viewport.zoom + 12, 30);
-  const labelHorizontalPadding = 12;
-  const labelVerticalPadding = Math.max(0, (labelHeight - lineHeight) / 2);
-  const labelScreenX = labelCenter
-    ? (labelCenter.x - viewport.x) * viewport.zoom - labelWidth / 2
-    : 0;
-  const labelScreenY = labelCenter
-    ? (labelCenter.y - viewport.y) * viewport.zoom - labelHeight / 2
-    : 0;
+  const layout = getTextEditorLayout({
+    draft,
+    editingLabel,
+    editingText,
+    viewport,
+  });
 
   function updateDraft(nextDraft: string) {
     draftRef.current = nextDraft;
@@ -432,24 +270,24 @@ export function TextEditorOverlay() {
       style={{
         borderRadius: isLabelMode ? 4 : 0,
         boxSizing: "border-box",
-        left: isLabelMode ? labelScreenX : textEditorLeft,
-        top: isLabelMode ? labelScreenY : textEditorTop,
-        width: isLabelMode ? labelWidth : textEditorWidth,
-        height: isLabelMode ? labelHeight : textEditorHeight,
+        left: isLabelMode ? layout.labelScreenX : layout.textEditorLeft,
+        top: isLabelMode ? layout.labelScreenY : layout.textEditorTop,
+        width: isLabelMode ? layout.labelWidth : layout.textEditorWidth,
+        height: isLabelMode ? layout.labelHeight : layout.textEditorHeight,
         padding: isLabelMode
-          ? `${labelVerticalPadding}px ${labelHorizontalPadding}px`
-          : `${textVerticalPadding}px ${textHorizontalPadding}px`,
+          ? `${layout.labelVerticalPadding}px ${layout.labelHorizontalPadding}px`
+          : `${layout.textVerticalPadding}px ${layout.textHorizontalPadding}px`,
         caretColor: isLabelMode
           ? activeElementStyle.strokeColor
           : getTextColor(activeElement as EditableTextElement),
         color: isLabelMode
           ? activeElementStyle.strokeColor
           : getTextColor(activeElement as EditableTextElement),
-        fontFamily: editorFontFamily,
-        fontSize,
-        lineHeight: `${lineHeight}px`,
+        fontFamily: layout.editorFontFamily,
+        fontSize: layout.fontSize,
+        lineHeight: `${layout.lineHeight}px`,
         opacity: activeElementStyle.opacity,
-        textAlign: isLabelMode ? "center" : textAlign,
+        textAlign: isLabelMode ? "center" : layout.textAlign,
         whiteSpace: "pre",
       }}
       value={draft}

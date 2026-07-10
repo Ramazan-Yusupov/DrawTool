@@ -1,7 +1,5 @@
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
-import { hitTestElement } from "@/entities/element";
-import { sceneStore } from "@/entities/scene";
 import { selectionStore } from "@/entities/selection";
 import { toolStore } from "@/entities/tool";
 import { useDrawShape, useFreeDraw } from "@/features/draw-shape";
@@ -15,6 +13,15 @@ import { useSelectElements } from "@/features/select-elements";
 import { useEyedropper } from "@/features/style-clipboard";
 import { useCanvasPointerEvents } from "../model/useCanvasPointerEvents";
 import { useCanvasWheel } from "../model/useCanvasWheel";
+import { getBoardCursorClass } from "../model/getBoardCursorClass";
+import {
+  getContextMenuTarget,
+  getContextSelectionIds,
+} from "../model/contextMenuTarget";
+import {
+  useActivePointerOwner,
+  type PointerOwner,
+} from "../model/useActivePointerOwner";
 import { cn } from "@/shared/lib";
 import { getCanvasPointerPosition } from "@/shared/lib/dom/getCanvasPointerPosition";
 import { screenToWorld, viewportStore } from "@/entities/viewport";
@@ -22,20 +29,6 @@ import { BoardContextMenu } from "./BoardContextMenu";
 
 type BoardCanvasProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
-};
-
-type PointerOwner =
-  | "pan"
-  | "selection"
-  | "draw"
-  | "freeDraw"
-  | "eraser"
-  | "laser"
-  | "lasso";
-
-type ActivePointerInteraction = {
-  owner: PointerOwner;
-  pointerId: number;
 };
 
 type ContextMenuState = {
@@ -46,8 +39,12 @@ type ContextMenuState = {
 };
 
 export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
-  const activePointerRef = useRef<ActivePointerInteraction | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const {
+    clearActivePointerOwner,
+    getActivePointerOwner,
+    setActivePointerOwner,
+  } = useActivePointerOwner();
   const activeTool = useSyncExternalStore(
     toolStore.subscribe,
     toolStore.get,
@@ -75,35 +72,7 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
 
   const isPanOnly = isLocked || activeTool === "pan";
 
-  const cursorClass = isPanOnly
-    ? "cursor-grab active:cursor-grabbing"
-    : activeTool === "selection"
-      ? "cursor-default"
-      : activeTool === "eraser"
-        ? "cursor-cell"
-        : activeTool === "eyedropper"
-          ? "cursor-copy"
-          : "cursor-crosshair";
-
-  function setActivePointerOwner(
-    event: React.PointerEvent<HTMLCanvasElement>,
-    owner: PointerOwner,
-  ) {
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      activePointerRef.current = { owner, pointerId: event.pointerId };
-    }
-  }
-
-  function clearActivePointerOwner(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (activePointerRef.current?.pointerId === event.pointerId) {
-      activePointerRef.current = null;
-    }
-  }
-
-  function getActivePointerOwner(event: React.PointerEvent<HTMLCanvasElement>) {
-    const interaction = activePointerRef.current;
-    return interaction?.pointerId === event.pointerId ? interaction.owner : null;
-  }
+  const cursorClass = getBoardCursorClass(activeTool, isPanOnly);
 
   function onToolPointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
     if (activeTool === "selection") {
@@ -296,14 +265,6 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
     }
   }
 
-  function getContextTarget(event: React.MouseEvent<HTMLCanvasElement>) {
-    const canvasPoint = getCanvasPointerPosition(event.nativeEvent, event.currentTarget);
-    const worldPoint = screenToWorld(canvasPoint, viewportStore.get());
-    return [...sceneStore.get().elements]
-      .reverse()
-      .find((element) => hitTestElement(element, worldPoint));
-  }
-
   return (
     <>
       <canvas
@@ -314,18 +275,12 @@ export function BoardCanvas({ canvasRef }: BoardCanvasProps) {
       onDrop={onDrop}
       onContextMenu={(event) => {
         event.preventDefault();
-        const target = getContextTarget(event);
+        const target = getContextMenuTarget(event);
 
         if (target && !target.locked) {
           const selectedIds = selectionStore.get().elementIds;
           if (!selectedIds.includes(target.id)) {
-            const groupIds = target.groupId
-              ? sceneStore
-                  .get()
-                  .elements.filter((element) => element.groupId === target.groupId && !element.locked)
-                  .map((element) => element.id)
-              : [target.id];
-            selectionStore.setElementIds(groupIds);
+            selectionStore.setElementIds(getContextSelectionIds(target));
           }
         }
 

@@ -143,7 +143,7 @@ function elementToSvg(element: BoardElement) {
     let grid = `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" height="${bounds.height}" rx="${style.cornerStyle === "rounded" ? 10 : 0}" ${common} />`;
     for (let c = 1; c < element.columns; c += 1) grid += `<line x1="${bounds.x + c * cellWidth}" y1="${bounds.y}" x2="${bounds.x + c * cellWidth}" y2="${bounds.y + bounds.height}" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />`;
     for (let r = 1; r < element.rows; r += 1) grid += `<line x1="${bounds.x}" y1="${bounds.y + r * cellHeight}" x2="${bounds.x + bounds.width}" y2="${bounds.y + r * cellHeight}" stroke="${style.strokeColor}" stroke-width="${style.strokeWidth}" />`;
-    element.cells.forEach((cell, index) => { const r = Math.floor(index / element.columns); const c = index % element.columns; grid += textSvg(cell, bounds.x + c * cellWidth + 8, bounds.y + r * cellHeight + 8, 14, "#e2e8f0", cellWidth - 14); });
+    element.cells.forEach((cell, index) => { const r = Math.floor(index / element.columns); const c = index % element.columns; grid += textSvg(cell, bounds.x + c * cellWidth + 8, bounds.y + r * cellHeight + 8, element.fontSize, "#e2e8f0", cellWidth - 14); });
     markup = grid;
   } else if (element.type === "freedraw" || element.type === "highlighter") {
     const points = element.points.map((point) => `${point.x},${point.y}`).join(" ");

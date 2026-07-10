@@ -1,1 +1,5 @@
-export { updateTableCell, updateTableStructure } from "./model/updateTable";
+export {
+  updateTableCell,
+  updateTableFontSize,
+  updateTableStructure,
+} from "./model/updateTable";
