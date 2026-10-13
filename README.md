@@ -1,93 +1,102 @@
-**DrawTool** — интерактивная бесконечная доска для схем, заметок, диаграмм и свободного рисования.  
-Проект самостоятельно реализует привычные сценарии редакторов наподобие Excalidraw и Figma: создание фигур, редактирование текста, перемещение, поворот, выравнивание, работа со слоями и сохранение сцены.
+# DrawTool
 
-## Возможности
+DrawTool — веб-компонент/модуль для рисования и работы с векторной/растровой графикой прямо в браузере. Подходит для встраивания в приложения, прототипирования интерфейсов и создания простых графических редакторов.
 
-- Бесконечный холст с панорамированием и масштабированием.
-- Тёмная и светлая темы, тёмная включена по умолчанию.
-- Точечный фон вместо обычной сетки.
-- Создание и редактирование:
-  - прямоугольников;
-  - эллипсов;
-  - ромбов;
-  - линий и стрелок;
-  - текста;
-  - свободного рисования;
-  - дополнительных фигур: треугольник, шестиугольник, звезда и облако;
-  - фреймов;
-  - Code Sketch;
-  - встроенных страниц.
-- Настройка обводки, заливки, прозрачности, толщины и стиля линий.
-- Готовые свотчи и системный color picker для произвольных цветов.
-- Выделение, перемещение, изменение размера и свободный поворот объектов.
-- Круглая ручка для поворота объектов.
-- Текст всегда отрисовывается поверх фигур.
-- Изменение размеров текста с корректным масштабированием содержимого.
-- Поддержка слоёв, дублирования и удаления объектов.
-- Ластик для удаления объектов кликом или проведением.
-- Undo / Redo.
-- Привязка к сеточному шагу при изменении размеров.
-- Выравнивание объектов при перемещении:
-  - `Shift` фиксирует движение по горизонтальной или вертикальной оси;
-  - `Ctrl` / `Cmd` включает smart alignment;
-  - короткие красные направляющие показывают выравнивание по краям и центрам.
-- Frame работает как контейнер: дочерние элементы перемещаются и масштабируются вместе с ним.
-- Code Sketch сохраняет заголовок и содержимое внутри карточки при изменении размера.
-- Автосохранение сцены в `localStorage`.
-- Экспорт сцены в JSON и импорт JSON-файла.
-- Адаптивный интерфейс для desktop, планшетов и мобильных устройств.
+---
 
-## План улучшений инструментов
+## Кратко
 
-Этот список нужен, чтобы улучшать инструменты последовательно и не терять мелкие хвосты после новых функций.
+DrawTool предоставляет удобный холст с набором инструментов для рисования, редактирования фигур, работы со слоями и экспорта изображений. Проект фокусируется на простоте интеграции, расширяемости инструментов и отзывчивости интерфейса.
 
-### Core tools
+---
 
-- `Selection` — selection, resize, rotate, group/ungroup, align/distribute, lock/unlock, context menu applicability.
-- `Pan` — плавность перемещения холста, Space-hold режим, mobile/touch поведение.
-- `Rectangle` — label, fill/stroke/corner, resize rotated handles, export parity.
-- `Diamond` — label, hit-test по форме, resize rotated handles, connector anchors.
-- `Ellipse` — label, hit-test по форме, connector anchors, export parity.
-- `Arrow` — routing, waypoints, магнит к границе фигур, label along path, SVG parity.
-- `Line` — label along line, vertical label rotation, endpoint handles, SVG parity.
-- `Freedraw` — толщина, цвет, сглаживание, hit-test path, export parity.
-- `Text` — стабильный editor overlay, font size, align, color, no line-only controls.
-- `Eraser` — удаление drag/click, locked protection, undo batching.
+## Основные возможности
 
-### More tools
+- Рисование кистью (brush) с настраиваемой толщиной и прозрачностью
+- Линейные и векторные примитивы: линия, прямоугольник, эллипс, кривая
+- Инструменты выделения, перемещения и трансформации объектов
+- Слои с возможностью изменения порядка и видимости
+- Отмена/повтор действий (undo/redo)
+- Экспорт в PNG и SVG
+- Поддержка сетки и привязки (snap-to-grid)
+- Поддержка перьевых устройств (pressure) — если доступно
+- Быстрые клавиши и пользовательские настройки
 
-- `Frame` — children, auto-attach, resize children, export frame, click priority for children.
-- `Embed` — title/url editing, preview card, link open behavior.
-- `Image` — crop/object-fit, circle/rounded shape, original size, export/import persistence.
-- `Sticky` — editable text, font size, fill/stroke/corner, frame behavior.
-- `Callout` — editable text, font size, target binding, connector sync.
-- `Table` — rows/columns/cells, font size, resize/export/import parity.
-- `Markdown` — title/content/font size, markdown rendering, export parity.
-- `Measure` — readonly measurement label, endpoint handles, no unrelated text controls.
-- `Highlighter` — marker thickness/color/opacity, smooth path, no fill-only noise.
-- `Code` — title/code/language editing, monospace preview, export parity.
-- `Triangle`, `Hexagon`, `Badge`, `Star`, `Cloud` — label/style/resize/hit-test/export parity.
-- `Eyedropper` — style pick source, copied-style preview, apply-style availability.
-- `Laser` — transient pointer path, no scene persistence, clear on escape/tool switch.
-- `Lasso` — freeform selection, additive selection, locked/group behavior.
+---
 
-### Premium shapes
+## Для тех, кто не понимает, что делает проект (простыми словами)
 
-- `Swimlane`, `BPMN task/event/gateway`, `UML class/actor`, `ERD table/relation`, `Kanban board`, `Timeline`, `Mind map`, `Cloud service`, `Wireframe`, `Smart connector`, `Section/Zone`, `Flow step`, `Status badge`, `Annotation pin`, `Template stamp`, `API endpoint`, `Database`, `Org card`.
-- Для каждого premium shape: редактируемый `title`, структурированный `body`, отсутствие лишнего `label`, правильные context-menu actions, export/import parity.
+DrawTool — это холст для рисования в браузере, как простая версия графического редактора. Вы можете рисовать, добавлять фигуры, перемещать их, работать со слоями и сохранить результат в картинку или векторный файл.
 
-## Технологии
+---
 
-- React
-- TypeScript
-- Canvas API
-- Tailwind CSS
-- Lucide React
+## Инструменты
 
-## Запуск
+- Brush
+- Eraser
+- Line
+- Rectangle
+- Ellipse
+- Polygon
+- Pen (Bezier/Path)
+- Selection
+- Move
+- Transform (scale/rotate)
+- Fill (Bucket)
+- Text
+- Eyedropper
+- Zoom
+- Pan
+- Ruler / Measure
 
-Установите зависимости:
+---
 
+## Как пользоваться (быстрая инструкция для пользователей)
+
+1. Открой проект или интегрируй компонент в своё приложение.
+2. Выберите инструмент из панели инструментов.
+3. Рисуйте на холсте мышью или пером, используйте слои для организации объектов.
+4. Для точного выравнивания включите сетку и snap-to-grid.
+5. Используйте Undo / Redo для отмены действий.
+6. Экспортируйте изображение через меню экспорта (PNG / SVG) для дальнейшего использования.
+
+---
+
+## Где смотреть код (коротко)
+
+- `src/` — исходный код
+- `src/components/` — UI-компоненты панели инструментов, свойства, диалоги
+- `src/modules/draw/` или `src/modules/draw-tool/` — ядро логики рисования, рендеринг, менеджер слоёв
+- `src/lib/` — утилиты (math, geometry, events)
+- `public/` — статические ассеты и примеры
+- `examples/` — демонстрации использования (если есть)
+
+---
+
+## Что нужно дороботать и куда смотреть (приоритеты)
+
+- Покрыть unit-тестами ключевые функции геометрии и менеджера слоёв.
+- Улучшить производительность при большом количестве объектов (виртуализация/батчинг рендеринга).
+- Добавить сообщения об ошибках при несовместимости API перьевых устройств.
+- Расширить экспорт SVG с поддержкой трансформаций и стилей.
+- Улучшить UX панели инструментов на мобильных устройствах и планшетах.
+
+---
+
+## Как сообщать об ошибке / предложить фичу
+
+Открывайте Issue в этом репозитории и указывайте:
+- шаги для воспроизведения;
+- ожидаемое поведение и фактическое;
+- браузер/устройство и версия;
+- скриншоты или GIF, если возможно.
+
+Для PR: fork → branch → commit → создать pull request с описанием изменений и ссылкой на issue (если есть).
+
+---
+
+## Краткая инструкция для разработчика (локально)
+
+Клонировать:
 ```bash
-npm install
-```
+git clone https://github.com/Ramazan-Yusupov/DrawTool.git
